@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "requestId": "req_local_profile",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "userId": "user_demo",
+    "displayName": "Usuário Demo",
+    "financialGoal": "equilibrar e crescer",
+    "monthlyIncomeRange": "10k-15k",
+    "monthlyInvestmentTarget": 1000,
+    "availableToInvest": 500,
+    "riskProfile": "moderado",
+    "investmentHorizon": "longo_prazo",
+    "platformsUsed": ["xp", "ion"],
+    "displayPreferences": {
+      "ghostMode": false
+    }
+  }
+}
