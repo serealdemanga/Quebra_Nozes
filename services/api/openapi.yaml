@@ -1,0 +1,82 @@
+openapi: 3.1.0
+info:
+  title: Quebra_Nozes API
+  version: 0.1.0
+  description: API inicial do projeto novo do Esquilo Invest.
+servers:
+  - url: https://api.example.com
+    description: producao
+  - url: https://hml-api.example.com
+    description: homologacao
+paths:
+  /v1/health:
+    get:
+      summary: Health check da aplicacao
+      responses:
+        '200':
+          description: OK
+  /v1/profile/context:
+    get:
+      summary: Ler contexto do usuario
+      responses:
+        '200':
+          description: OK
+    put:
+      summary: Atualizar contexto do usuario
+      responses:
+        '200':
+          description: OK
+  /v1/dashboard/home:
+    get:
+      summary: Ler home da carteira
+      responses:
+        '200':
+          description: OK
+  /v1/portfolio:
+    get:
+      summary: Ler carteira consolidada
+      responses:
+        '200':
+          description: OK
+  /v1/history/snapshots:
+    get:
+      summary: Ler snapshots da carteira
+      responses:
+        '200':
+          description: OK
+  /v1/analysis:
+    get:
+      summary: Ler analise consolidada
+      responses:
+        '200':
+          description: OK
+  /v1/imports/start:
+    post:
+      summary: Iniciar importacao
+      responses:
+        '200':
+          description: OK
+  /v1/imports/{importId}/preview:
+    get:
+      summary: Ler preview da importacao
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/imports/{importId}/commit:
+    post:
+      summary: Confirmar importacao
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
