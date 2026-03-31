@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "requestId": "req_local_portfolio",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "summary": {
+      "totalEquity": 21276.84,
+      "categories": 3,
+      "positions": 4
+    },
+    "groups": [
+      {
+        "categoryCode": "PENSION",
+        "categoryName": "Previdência",
+        "totalValue": 15350.0,
+        "items": [
+          {
+            "holdingId": "pos_4",
+            "assetId": "asset_pension_demo",
+            "name": "Previdência Demo",
+            "code": null,
+            "platformName": "Íon Itaú",
+            "currentValue": 15350.0,
+            "investedAmount": 15000.0,
+            "performancePct": 2.33
+          }
+        ]
+      },
+      {
+        "categoryCode": "FUND",
+        "categoryName": "Fundos",
+        "totalValue": 5200.0,
+        "items": [
+          {
+            "holdingId": "pos_3",
+            "assetId": "asset_fund_demo",
+            "name": "Fundo Multimercado Demo",
+            "code": null,
+            "platformName": "XP Investimentos",
+            "currentValue": 5200.0,
+            "investedAmount": 5000.0,
+            "performancePct": 4.0
+          }
+        ]
+      },
+      {
+        "categoryCode": "STOCK",
+        "categoryName": "Ações",
+        "totalValue": 726.84,
+        "items": [
+          {
+            "holdingId": "pos_1",
+            "assetId": "asset_itsa4",
+            "name": "Itaúsa",
+            "code": "ITSA4",
+            "platformName": "XP Investimentos",
+            "currentValue": 392.04,
+            "investedAmount": 373.68,
+            "performancePct": 4.92
+          },
+          {
+            "holdingId": "pos_2",
+            "assetId": "asset_cmin3",
+            "name": "CSN Mineração",
+            "code": "CMIN3",
+            "platformName": "XP Investimentos",
+            "currentValue": 334.8,
+            "investedAmount": 368.9,
+            "performancePct": -9.24
+          }
+        ]
+      }
+    ],
+    "orders": []
+  }
+}
