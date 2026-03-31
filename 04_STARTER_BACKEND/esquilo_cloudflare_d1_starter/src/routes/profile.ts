@@ -4,7 +4,7 @@ import { ok, readJson } from '../lib/http';
 export async function getProfileContext(_request: Request, env: Env): Promise<Response> {
   return ok(env.API_VERSION, {
     userId: 'stub-user',
-    displayName: 'Usuário Esquilo',
+    displayName: 'Usuario Esquilo',
     context: {
       financialGoal: '',
       monthlyIncomeRange: '',
@@ -17,13 +17,19 @@ export async function getProfileContext(_request: Request, env: Env): Promise<Re
         ghostMode: false
       }
     },
+    identity: {
+      cpf: '',
+      email: '',
+      telegramLinked: false
+    },
     backendHealth: {
       status: 'ok',
       appEnv: env.APP_ENV,
       apiVersion: env.API_VERSION,
       services: {
         d1: 'ok',
-        externalReferences: 'unknown'
+        externalReferences: 'unknown',
+        auth: 'stub'
       }
     },
     displayPreferences: {
@@ -34,20 +40,31 @@ export async function getProfileContext(_request: Request, env: Env): Promise<Re
 
 export async function putProfileContext(request: Request, env: Env): Promise<Response> {
   const payload = await readJson<Record<string, unknown>>(request);
+  const context = (payload.context ?? payload) as Record<string, unknown>;
 
   return ok(env.API_VERSION, {
     userId: 'stub-user',
-    displayName: 'Usuário Esquilo',
-    context: payload,
+    displayName: 'Usuario Esquilo',
+    context: {
+      financialGoal: context.financialGoal ?? '',
+      monthlyIncomeRange: context.monthlyIncomeRange ?? '',
+      monthlyInvestmentTarget: context.monthlyInvestmentTarget ?? 0,
+      availableToInvest: context.availableToInvest ?? 0,
+      riskProfile: context.riskProfile ?? '',
+      investmentHorizon: context.investmentHorizon ?? '',
+      platformsUsed: context.platformsUsed ?? [],
+      displayPreferences: context.displayPreferences ?? { ghostMode: false }
+    },
     backendHealth: {
       status: 'ok',
       appEnv: env.APP_ENV,
       apiVersion: env.API_VERSION,
       services: {
         d1: 'ok',
-        externalReferences: 'unknown'
+        externalReferences: 'unknown',
+        auth: 'stub'
       }
     },
-    displayPreferences: (payload.displayPreferences ?? {}) as Record<string, unknown>
+    displayPreferences: (context.displayPreferences ?? {}) as Record<string, unknown>
   });
 }

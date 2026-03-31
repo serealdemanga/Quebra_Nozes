@@ -15,6 +15,30 @@ paths:
       responses:
         '200':
           description: OK
+  /v1/auth/register:
+    post:
+      summary: Registrar usuario do MVP
+      responses:
+        '200':
+          description: OK
+  /v1/auth/login:
+    post:
+      summary: Login com identificador ou email
+      responses:
+        '200':
+          description: OK
+  /v1/auth/logout:
+    post:
+      summary: Encerrar sessao atual
+      responses:
+        '200':
+          description: OK
+  /v1/auth/recover:
+    post:
+      summary: Solicitar recuperacao por Telegram
+      responses:
+        '200':
+          description: OK
   /v1/profile/context:
     get:
       summary: Ler contexto do usuario
@@ -35,6 +59,23 @@ paths:
   /v1/portfolio:
     get:
       summary: Ler carteira consolidada
+      responses:
+        '200':
+          description: OK
+  /v1/portfolio/{portfolioId}/holdings/{holdingId}:
+    get:
+      summary: Ler detalhe de holding
+      parameters:
+        - in: path
+          name: portfolioId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: holdingId
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK

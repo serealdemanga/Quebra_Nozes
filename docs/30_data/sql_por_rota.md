@@ -1,5 +1,57 @@
 # SQL por rota
 
+## Auth register
+```sql
+INSERT INTO users (
+  id,
+  cpf,
+  email,
+  password_hash,
+  display_name,
+  created_at,
+  updated_at
+) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+```
+
+## Auth login
+```sql
+SELECT
+  id,
+  cpf,
+  email,
+  password_hash,
+  display_name,
+  telegram_chat_id
+FROM users
+WHERE cpf = ? OR email = ?
+LIMIT 1;
+```
+
+## Auth remember device
+```sql
+INSERT INTO auth_sessions (
+  id,
+  user_id,
+  device_fingerprint,
+  remember_device,
+  created_at,
+  last_seen_at
+) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+```
+
+## Auth recover via Telegram
+```sql
+INSERT INTO auth_recovery_requests (
+  id,
+  user_id,
+  channel,
+  status,
+  token_hash,
+  expires_at,
+  created_at
+) VALUES (?, ?, 'TELEGRAM', 'PENDING', ?, ?, CURRENT_TIMESTAMP);
+```
+
 ## Health
 ```sql
 SELECT 1 AS ok;
@@ -10,6 +62,9 @@ SELECT 1 AS ok;
 SELECT
   u.id AS user_id,
   u.display_name,
+  u.cpf,
+  u.email,
+  u.telegram_chat_id,
   c.financial_goal,
   c.monthly_income_range,
   c.monthly_investment_target,
@@ -45,11 +100,12 @@ LIMIT 1;
 SELECT
   at.code AS category_code,
   at.name AS category_name,
-  SUM(sp.current_value) AS total_value
-FROM portfolio_snapshot_positions sp
-JOIN assets a ON a.id = sp.asset_id
+  SUM(pp.current_amount) AS total_value
+FROM portfolio_positions pp
+JOIN assets a ON a.id = pp.asset_id
 JOIN asset_types at ON at.id = a.asset_type_id
-WHERE sp.snapshot_id = ?
+WHERE pp.portfolio_id = ?
+  AND pp.status = 'active'
 GROUP BY at.code, at.name
 ORDER BY total_value DESC;
 ```
@@ -86,14 +142,14 @@ SELECT
   pp.average_price,
   pp.current_price,
   pp.invested_amount,
-  pp.current_value
+  pp.current_amount
 FROM portfolio_positions pp
 JOIN assets a ON a.id = pp.asset_id
 JOIN asset_types at ON at.id = a.asset_type_id
 LEFT JOIN platforms p ON p.id = pp.platform_id
 WHERE pp.portfolio_id = ?
   AND pp.status = 'active'
-ORDER BY pp.current_value DESC;
+ORDER BY pp.current_amount DESC;
 ```
 
 ## Detalhe do ativo
@@ -110,7 +166,7 @@ SELECT
   pp.average_price,
   pp.current_price,
   pp.invested_amount,
-  pp.current_value,
+  pp.current_amount,
   pp.notes
 FROM portfolio_positions pp
 JOIN assets a ON a.id = pp.asset_id
@@ -151,5 +207,6 @@ WHERE i.id = ?;
 ```
 
 ## Regra
-A camada de repositório deve concentrar o SQL.
-As rotas não devem espalhar query na mão.
+A camada de repositório concentra o SQL.
+As rotas não espalham query na mão.
+Este arquivo é a referência autoritativa dos campos mínimos do MVP.
