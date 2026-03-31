@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "requestId": "req_local_history",
+    "timestamp": "2026-03-31T01:00:00Z",
+    "version": "v1"
+  },
+  "data": {
+    "snapshots": [
+      {
+        "snapshotId": "snap_1",
+        "referenceDate": "2026-03-31",
+        "totalEquity": 21276.84,
+        "totalInvested": 20742.58,
+        "totalProfitLoss": 534.26,
+        "totalProfitLossPct": 2.58
+      }
+    ],
+    "events": [
+      {
+        "eventId": "event_1",
+        "type": "seed_created",
+        "status": "ok",
+        "message": "Carteira demo criada com snapshot inicial.",
+        "occurredAt": "2026-03-31T01:00:00Z"
+      }
+    ]
+  }
+}
