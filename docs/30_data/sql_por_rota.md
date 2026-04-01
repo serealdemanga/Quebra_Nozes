@@ -1,6 +1,6 @@
-# SQL por rota — Home
+# SQL por rota — Carteira
 
-## Dashboard Home — sessão com gate de onboarding
+## Portfolio — sessão com gate de onboarding
 ```sql
 SELECT
   s.user_id AS userId,
@@ -21,60 +21,30 @@ WHERE s.session_token_hash = ?
 LIMIT 1;
 ```
 
-## Dashboard Home — último snapshot
+## Portfolio — posições ativas da carteira
 ```sql
 SELECT
-  id,
-  portfolio_id,
-  reference_date,
-  total_equity,
-  total_invested,
-  total_profit_loss,
-  total_profit_loss_pct,
-  created_at
-FROM portfolio_snapshots
-WHERE portfolio_id = ?
-ORDER BY reference_date DESC, created_at DESC
-LIMIT 1;
-```
-
-## Dashboard Home — distribuição por categoria
-```sql
-SELECT
+  pp.id,
+  pp.portfolio_id,
+  a.id AS asset_id,
+  a.code,
+  a.name,
   at.code AS category_code,
   at.name AS category_name,
-  SUM(sp.current_value) AS total_value
-FROM portfolio_snapshot_positions sp
-JOIN assets a ON a.id = sp.asset_id
+  pp.category_label,
+  p.id AS platform_id,
+  p.name AS platform_name,
+  pp.quantity,
+  pp.average_price,
+  pp.current_price,
+  pp.invested_amount,
+  pp.current_amount,
+  pp.status
+FROM portfolio_positions pp
+JOIN assets a ON a.id = pp.asset_id
 JOIN asset_types at ON at.id = a.asset_type_id
-WHERE sp.snapshot_id = ?
-GROUP BY at.code, at.name
-ORDER BY total_value DESC;
-```
-
-## Dashboard Home — última análise do snapshot
-```sql
-SELECT
-  id,
-  score_value,
-  score_status,
-  primary_problem,
-  primary_action,
-  summary_text,
-  generated_at
-FROM portfolio_analyses
-WHERE snapshot_id = ?
-ORDER BY generated_at DESC
-LIMIT 1;
-```
-
-## Dashboard Home — insights da análise
-```sql
-SELECT
-  insight_type,
-  title,
-  message
-FROM analysis_insights
-WHERE analysis_id = ?
-ORDER BY priority ASC, created_at ASC;
+LEFT JOIN platforms p ON p.id = pp.platform_id
+WHERE pp.portfolio_id = ?
+  AND pp.status = 'active'
+ORDER BY pp.current_amount DESC, a.name ASC;
 ```

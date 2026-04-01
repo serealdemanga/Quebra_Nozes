@@ -111,11 +111,19 @@ export interface PortfolioGroup {
   holdings: PortfolioHoldingListItem[];
 }
 
+export interface PortfolioEmptyState {
+  title: string;
+  body: string;
+  ctaLabel: string;
+  target: string;
+}
+
 export interface PortfolioData {
   screenState: 'redirect_onboarding' | 'empty' | 'ready';
   redirectTo?: string;
   portfolioId: string;
   summary: PortfolioSummary;
+  emptyState?: PortfolioEmptyState;
   groups: PortfolioGroup[];
   filters: {
     performance: 'all' | 'best' | 'worst';

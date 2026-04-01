@@ -38,6 +38,12 @@ export async function getPortfolioData(request: Request, env: Env): Promise<Resp
         totalProfitLossPct: 0,
         statusLabel: 'Sem posicoes ativas'
       },
+      emptyState: {
+        title: 'Sua carteira ainda nao tem posicoes ativas',
+        body: 'Importe sua carteira para montar a leitura consolidada dos ativos.',
+        ctaLabel: 'Importar carteira',
+        target: '/import'
+      },
       groups: [],
       filters: { performance: performanceFilter },
       orders: []
@@ -48,7 +54,7 @@ export async function getPortfolioData(request: Request, env: Env): Promise<Resp
   const holdings = rows.map(mapHolding);
   const filteredHoldings = applyPerformanceFilter(holdings, performanceFilter);
   const summary = buildSummary(holdings);
-  const groups = buildGroups(filteredHoldings, summary.totalEquity);
+  const groups = buildGroups(filteredHoldings);
 
   const data: PortfolioData = {
     screenState: 'ready',
@@ -94,10 +100,10 @@ function mapHolding(row: any): PortfolioHoldingListItem {
 
 function applyPerformanceFilter(holdings: PortfolioHoldingListItem[], performance: 'all' | 'best' | 'worst') {
   if (performance === 'best') {
-    return [...holdings].sort((a, b) => (b.performancePct || -Infinity) - (a.performancePct || -Infinity));
+    return holdings.filter((item) => item.performancePct != null && item.performancePct > 0);
   }
   if (performance === 'worst') {
-    return [...holdings].sort((a, b) => (a.performancePct || Infinity) - (b.performancePct || Infinity));
+    return holdings.filter((item) => item.performancePct != null && item.performancePct < 0);
   }
   return holdings;
 }
@@ -119,7 +125,7 @@ function buildSummary(holdings: PortfolioHoldingListItem[]) {
   };
 }
 
-function buildGroups(holdings: PortfolioHoldingListItem[], totalEquity: number): PortfolioGroup[] {
+function buildGroups(holdings: PortfolioHoldingListItem[]): PortfolioGroup[] {
   const map = new Map<string, PortfolioGroup>();
   for (const holding of holdings) {
     const key = holding.categoryKey;

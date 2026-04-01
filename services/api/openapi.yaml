@@ -88,7 +88,14 @@ paths:
           description: OK
   /v1/portfolio:
     get:
-      summary: Ler carteira consolidada
+      summary: Ler listagem analítica da carteira primária
+      parameters:
+        - in: query
+          name: performance
+          required: false
+          schema:
+            type: string
+            enum: [all, best, worst]
       responses:
         '200':
           description: OK
@@ -214,5 +221,13 @@ components:
         screenState:
           type: string
           enum: [redirect_onboarding, empty, portfolio_ready_analysis_pending, ready]
+        redirectTo: { type: string }
+        portfolioId: { type: string }
+    PortfolioData:
+      type: object
+      properties:
+        screenState:
+          type: string
+          enum: [redirect_onboarding, empty, ready]
         redirectTo: { type: string }
         portfolioId: { type: string }
