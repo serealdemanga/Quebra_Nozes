@@ -142,7 +142,7 @@ export async function getManualImportPreview(request: Request, env: Env, params:
       invalidRows: importRecord.invalid_rows,
       duplicateRows: importRecord.duplicate_rows
     },
-    readyToCommit: importRecord.invalid_rows === 0 && importRecord.duplicate_rows === 0,
+    readyToCommit: importRecord.status !== 'COMMITTED' && importRecord.invalid_rows === 0 && importRecord.duplicate_rows === 0,
     rows: rows.map((row) => ({
       id: row.id,
       rowNumber: row.row_number,
@@ -161,6 +161,9 @@ export async function commitManualImport(request: Request, env: Env, params: Rec
   const importRecord = await findImportById(env, params.importId);
   if (!importRecord || importRecord.user_id !== session.userId) {
     return fail(env.API_VERSION, 'import_not_found', 'Importação não encontrada.', 404);
+  }
+  if (importRecord.status === 'COMMITTED') {
+    return fail(env.API_VERSION, 'import_already_committed', 'Esta importação já foi commitada.', 409);
   }
 
   const rows = await findImportRows(env, params.importId);
