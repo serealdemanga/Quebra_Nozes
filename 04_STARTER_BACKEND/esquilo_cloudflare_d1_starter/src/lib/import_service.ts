@@ -19,16 +19,33 @@ import {
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
 const ORIGIN_MANUAL_ENTRY = 'MANUAL_ENTRY';
+const ORIGIN_CUSTOM_TEMPLATE = 'CUSTOM_TEMPLATE';
 const VALID_SOURCE_KINDS = ['ACOES', 'FUNDOS', 'PREVIDENCIA'];
+const TEMPLATE_HEADERS = ['tipo', 'codigo', 'nome', 'quantidade', 'valor_investido', 'valor_atual', 'categoria', 'observacoes'];
+
+export async function startImport(request: Request, env: Env): Promise<Response> {
+  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const origin = typeof payload.origin === 'string' ? payload.origin : ORIGIN_MANUAL_ENTRY;
+
+  if (origin === ORIGIN_CUSTOM_TEMPLATE) {
+    return await startCustomTemplateImport(request, env, payload);
+  }
+
+  return await startManualImportWithPayload(request, env, payload);
+}
 
 export async function startManualImport(request: Request, env: Env): Promise<Response> {
+  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  return await startManualImportWithPayload(request, env, payload);
+}
+
+async function startManualImportWithPayload(request: Request, env: Env, payload: Record<string, unknown>): Promise<Response> {
   const session = await requireImportSession(request, env);
   if (session instanceof Response) return session;
 
-  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
   const origin = typeof payload.origin === 'string' ? payload.origin : ORIGIN_MANUAL_ENTRY;
   if (origin !== ORIGIN_MANUAL_ENTRY) {
-    return fail(env.API_VERSION, 'unsupported_origin', 'Nesta etapa só MANUAL_ENTRY é suportado.', 400);
+    return fail(env.API_VERSION, 'unsupported_origin', 'Nesta etapa só MANUAL_ENTRY é suportado neste fluxo.', 400);
   }
 
   const entries = Array.isArray(payload.entries) ? payload.entries : [];
@@ -36,6 +53,49 @@ export async function startManualImport(request: Request, env: Env): Promise<Res
     return fail(env.API_VERSION, 'missing_entries', 'Envie ao menos um ativo manual.', 400);
   }
 
+  return await persistNormalizedImport(env, session, origin, entries.map((entry, index) => ({ raw: entry, rowNumber: index + 1, parsed: normalizeManualEntry(entry, index + 1) })));
+}
+
+async function startCustomTemplateImport(request: Request, env: Env, payload?: Record<string, unknown>): Promise<Response> {
+  const session = await requireImportSession(request, env);
+  if (session instanceof Response) return session;
+
+  const body = payload || await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const csvContent = typeof body.csvContent === 'string' ? body.csvContent : '';
+  if (!csvContent.trim()) {
+    return fail(env.API_VERSION, 'missing_csv_content', 'Envie o conteúdo CSV do template próprio.', 400);
+  }
+
+  const parsed = parseCsv(csvContent);
+  if (!parsed.headers.length) {
+    return fail(env.API_VERSION, 'invalid_csv', 'CSV vazio ou inválido.', 400);
+  }
+  const headerError = validateTemplateHeaders(parsed.headers);
+  if (headerError) {
+    return fail(env.API_VERSION, 'invalid_template_headers', headerError, 400);
+  }
+  if (!parsed.rows.length) {
+    return fail(env.API_VERSION, 'missing_template_rows', 'O template não possui linhas de ativos.', 400);
+  }
+
+  const normalizedEntries = parsed.rows.map((row, index) => {
+    const raw = mapTemplateRowToRawEntry(row);
+    return {
+      raw,
+      rowNumber: index + 1,
+      parsed: normalizeManualEntry(raw, index + 1)
+    };
+  });
+
+  return await persistNormalizedImport(env, session, ORIGIN_CUSTOM_TEMPLATE, normalizedEntries);
+}
+
+async function persistNormalizedImport(
+  env: Env,
+  session: { userId: string; portfolioId: string },
+  origin: string,
+  entries: Array<{ raw: unknown; rowNumber: number; parsed: ReturnType<typeof normalizeManualEntry> }>
+): Promise<Response> {
   const normalizedRows = [] as Array<{
     id: string;
     rowNumber: number;
@@ -49,16 +109,15 @@ export async function startManualImport(request: Request, env: Env): Promise<Res
   let invalidRows = 0;
   let duplicateRows = 0;
 
-  for (let index = 0; index < entries.length; index += 1) {
-    const entry = normalizeManualEntry(entries[index], index + 1);
-    const duplicates = entry.normalizedName ? await findManualDuplicateCandidates(env, session.portfolioId, entry.normalizedName, entry.code) : [];
+  for (const entry of entries) {
+    const duplicates = entry.parsed.normalizedName ? await findManualDuplicateCandidates(env, session.portfolioId, entry.parsed.normalizedName, entry.parsed.code) : [];
 
     let resolutionStatus = 'NORMALIZED';
     let errorMessage: string | null = null;
 
-    if (entry.errors.length) {
+    if (entry.parsed.errors.length) {
       resolutionStatus = 'FAILED';
-      errorMessage = entry.errors.join(' | ');
+      errorMessage = entry.parsed.errors.join(' | ');
       invalidRows += 1;
     } else if (duplicates.length) {
       resolutionStatus = 'PENDING';
@@ -70,20 +129,20 @@ export async function startManualImport(request: Request, env: Env): Promise<Res
 
     normalizedRows.push({
       id: buildEntityId('imr'),
-      rowNumber: index + 1,
-      sourcePayloadJson: JSON.stringify(entries[index]),
+      rowNumber: entry.rowNumber,
+      sourcePayloadJson: JSON.stringify(entry.raw),
       normalizedPayloadJson: JSON.stringify({
-        sourceKind: entry.sourceKind,
-        code: entry.code,
-        name: entry.name,
-        normalizedName: entry.normalizedName,
-        quantity: entry.quantity,
-        investedAmount: entry.investedAmount,
-        currentAmount: entry.currentAmount,
-        averagePrice: entry.averagePrice,
-        currentPrice: entry.currentPrice,
-        categoryLabel: entry.categoryLabel,
-        notes: entry.notes,
+        sourceKind: entry.parsed.sourceKind,
+        code: entry.parsed.code,
+        name: entry.parsed.name,
+        normalizedName: entry.parsed.normalizedName,
+        quantity: entry.parsed.quantity,
+        investedAmount: entry.parsed.investedAmount,
+        currentAmount: entry.parsed.currentAmount,
+        averagePrice: entry.parsed.averagePrice,
+        currentPrice: entry.parsed.currentPrice,
+        categoryLabel: entry.parsed.categoryLabel,
+        notes: entry.parsed.notes,
         duplicateCandidates: duplicates
       }),
       resolutionStatus,
@@ -274,6 +333,37 @@ export async function commitManualImport(request: Request, env: Env, params: Rec
   });
 }
 
+export async function downloadCustomTemplate(_request: Request): Promise<Response> {
+  const csv = [
+    TEMPLATE_HEADERS.join(','),
+    'ACOES,PETR4,Petrobras PN,100,3200.00,3510.00,Ações,Exemplo',
+    'FUNDOS,,XP Selection Multimercado,1,42022.73,43810.20,Fundos,Exemplo'
+  ].join('\n');
+
+  return new Response(csv, {
+    status: 200,
+    headers: {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': 'attachment; filename="template_proprio.csv"'
+    }
+  });
+}
+
+export async function downloadB3Template(_request: Request): Promise<Response> {
+  const csv = [
+    'codigo,produto,quantidade,preco_medio,valor_atual',
+    'PETR4,Petrobras PN,100,32.00,3510.00'
+  ].join('\n');
+
+  return new Response(csv, {
+    status: 200,
+    headers: {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': 'attachment; filename="template_b3.csv"'
+    }
+  });
+}
+
 async function requireImportSession(request: Request, env: Env): Promise<{ userId: string; portfolioId: string } | Response> {
   const token = readCookie(request.headers.get('cookie') || '', AUTH_COOKIE_NAME);
   if (!token) return fail(env.API_VERSION, 'unauthorized', 'Sessão não encontrada.', 401);
@@ -289,17 +379,17 @@ async function requireImportSession(request: Request, env: Env): Promise<{ userI
 
 function normalizeManualEntry(value: unknown, rowNumber: number) {
   const source = typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
-  const sourceKind = normalizeSourceKind(source.sourceKind);
-  const code = normalizeText(source.code).toUpperCase();
-  const name = normalizeText(source.name);
+  const sourceKind = normalizeSourceKind(source.sourceKind ?? source.tipo);
+  const code = normalizeText(source.code ?? source.codigo).toUpperCase();
+  const name = normalizeText(source.name ?? source.nome);
   const normalizedName = normalizeName(name || code);
-  const quantity = normalizeNumber(source.quantity);
-  const investedAmount = normalizeNumber(source.investedAmount);
-  const currentAmount = normalizeNumber(source.currentAmount);
+  const quantity = normalizeNumber(source.quantity ?? source.quantidade);
+  const investedAmount = normalizeNumber(source.investedAmount ?? source.valor_investido);
+  const currentAmount = normalizeNumber(source.currentAmount ?? source.valor_atual);
   const averagePrice = quantity > 0 ? investedAmount / quantity : 0;
   const currentPrice = quantity > 0 ? currentAmount / quantity : null;
-  const categoryLabel = normalizeText(source.categoryLabel) || mapCategoryLabel(sourceKind);
-  const notes = normalizeText(source.notes);
+  const categoryLabel = normalizeText(source.categoryLabel ?? source.categoria) || mapCategoryLabel(sourceKind);
+  const notes = normalizeText(source.notes ?? source.observacoes);
   const errors: string[] = [];
 
   if (!sourceKind) errors.push(`Linha ${rowNumber}: tipo inválido.`);
@@ -321,6 +411,65 @@ function normalizeManualEntry(value: unknown, rowNumber: number) {
     categoryLabel,
     notes,
     errors
+  };
+}
+
+function parseCsv(csvContent: string): { headers: string[]; rows: string[][] } {
+  const lines = csvContent.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim() !== '');
+  if (!lines.length) return { headers: [], rows: [] };
+  const rows = lines.map(parseCsvLine);
+  return { headers: rows[0].map((item) => item.trim()), rows: rows.slice(1) };
+}
+
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function validateTemplateHeaders(headers: string[]): string {
+  const normalized = headers.map((item) => item.trim().toLowerCase());
+  if (normalized.length !== TEMPLATE_HEADERS.length) {
+    return `Cabeçalho inválido. Esperado: ${TEMPLATE_HEADERS.join(',')}`;
+  }
+  for (let index = 0; index < TEMPLATE_HEADERS.length; index += 1) {
+    if (normalized[index] !== TEMPLATE_HEADERS[index]) {
+      return `Cabeçalho inválido. Esperado: ${TEMPLATE_HEADERS.join(',')}`;
+    }
+  }
+  return '';
+}
+
+function mapTemplateRowToRawEntry(row: string[]): Record<string, unknown> {
+  const values = [...row];
+  while (values.length < TEMPLATE_HEADERS.length) values.push('');
+  return {
+    tipo: values[0] || '',
+    codigo: values[1] || '',
+    nome: values[2] || '',
+    quantidade: values[3] || '',
+    valor_investido: values[4] || '',
+    valor_atual: values[5] || '',
+    categoria: values[6] || '',
+    observacoes: values[7] || ''
   };
 }
 

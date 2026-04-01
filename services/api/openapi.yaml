@@ -6,13 +6,13 @@ info:
 paths:
   /v1/imports/start:
     post:
-      summary: Iniciar importação manual em lote
+      summary: Iniciar importação manual ou por template próprio CSV
       responses:
         '200':
           description: OK
   /v1/imports/{importId}/preview:
     get:
-      summary: Ler preview da importação manual
+      summary: Ler preview da importação
       parameters:
         - in: path
           name: importId
@@ -24,13 +24,25 @@ paths:
           description: OK
   /v1/imports/{importId}/commit:
     post:
-      summary: Commitar importação manual consistente
+      summary: Commitar importação consistente
       parameters:
         - in: path
           name: importId
           required: true
           schema:
             type: string
+      responses:
+        '200':
+          description: OK
+  /v1/imports/templates/custom:
+    get:
+      summary: Baixar template próprio CSV
+      responses:
+        '200':
+          description: OK
+  /v1/imports/templates/b3:
+    get:
+      summary: Baixar modelo CSV de referência B3
       responses:
         '200':
           description: OK
