@@ -7,7 +7,7 @@ import { getProfileContext, putProfileContext } from './routes/profile';
 import { getAnalysis } from './routes/analysis';
 import { getSnapshots } from './routes/history';
 import { postImportStart, getImportPreview, postImportCommit } from './routes/imports';
-import { postAuthRegister, postAuthLogin, postAuthLogout, postAuthRecover } from './routes/auth';
+import { postAuthRegister, postAuthLogin, getAuthSession, postAuthLogout, postAuthRecover } from './routes/auth';
 import type { Env } from './types/env';
 
 const router = new Router();
@@ -15,6 +15,7 @@ const router = new Router();
 router.register('GET', '/v1/health', getHealth);
 router.register('POST', '/v1/auth/register', postAuthRegister);
 router.register('POST', '/v1/auth/login', postAuthLogin);
+router.register('GET', '/v1/auth/session', getAuthSession);
 router.register('POST', '/v1/auth/logout', postAuthLogout);
 router.register('POST', '/v1/auth/recover', postAuthRecover);
 router.register('GET', '/v1/dashboard/home', getDashboardHome);

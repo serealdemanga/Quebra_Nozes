@@ -2,6 +2,11 @@
 
 ## Primeira leva
 - `GET /v1/health`
+- `POST /v1/auth/register`
+- `POST /v1/auth/login`
+- `GET /v1/auth/session`
+- `POST /v1/auth/logout`
+- `POST /v1/auth/recover`
 - `GET /v1/profile/context`
 - `PUT /v1/profile/context`
 - `GET /v1/dashboard/home`
@@ -19,3 +24,4 @@
 
 ## Regra
 Implementar na ordem do menor risco para o maior.
+Cada tela só avança quando contrato, backend e dado mínimo estiverem coerentes.

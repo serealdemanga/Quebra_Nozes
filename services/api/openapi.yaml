@@ -17,36 +17,60 @@ paths:
           description: OK
   /v1/auth/register:
     post:
-      summary: Registrar usuario do MVP
+      summary: Registrar usuario e abrir sessao inicial
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegisterRequest'
       responses:
-        '200':
-          description: OK
+        '201':
+          description: Usuario registrado
   /v1/auth/login:
     post:
-      summary: Login com identificador ou email
+      summary: Login com CPF ou e-mail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
       responses:
         '200':
-          description: OK
+          description: Sessao criada
+  /v1/auth/session:
+    get:
+      summary: Ler sessao atual
+      responses:
+        '200':
+          description: Estado da sessao
   /v1/auth/logout:
     post:
       summary: Encerrar sessao atual
       responses:
         '200':
-          description: OK
+          description: Sessao encerrada
   /v1/auth/recover:
     post:
-      summary: Solicitar recuperacao por Telegram
+      summary: Solicitar recuperacao por e-mail no fluxo inicial
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRecoverRequest'
       responses:
         '200':
-          description: OK
+          description: Recuperacao solicitada
   /v1/profile/context:
     get:
-      summary: Ler contexto do usuario
+      summary: Ler contexto financeiro do usuario
       responses:
         '200':
           description: OK
     put:
-      summary: Atualizar contexto do usuario
+      summary: Atualizar contexto financeiro do usuario
       responses:
         '200':
           description: OK
@@ -121,3 +145,44 @@ paths:
       responses:
         '200':
           description: OK
+components:
+  schemas:
+    AuthRegisterRequest:
+      type: object
+      required:
+        - cpf
+        - email
+        - password
+        - confirmPassword
+      properties:
+        cpf:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        confirmPassword:
+          type: string
+        displayName:
+          type: string
+        rememberDevice:
+          type: boolean
+    AuthLoginRequest:
+      type: object
+      required:
+        - identifier
+        - password
+      properties:
+        identifier:
+          type: string
+        password:
+          type: string
+        rememberDevice:
+          type: boolean
+    AuthRecoverRequest:
+      type: object
+      required:
+        - identifier
+      properties:
+        identifier:
+          type: string

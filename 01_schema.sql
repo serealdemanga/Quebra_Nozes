@@ -6,30 +6,43 @@ CREATE TABLE users (
   email TEXT NOT NULL,
   password_hash TEXT NOT NULL,
   display_name TEXT,
+  email_verified_at TEXT,
+  email_verification_sent_at TEXT,
+  failed_login_attempts INTEGER NOT NULL DEFAULT 0,
+  login_locked_until TEXT,
   telegram_chat_id TEXT,
+  status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'LOCKED', 'DISABLED')),
+  last_login_at TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (cpf),
-  UNIQUE (email)
+  UNIQUE (email),
+  CHECK (length(cpf) = 11)
 );
 
 CREATE TABLE auth_sessions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
+  session_token_hash TEXT NOT NULL,
   device_fingerprint TEXT,
+  user_agent TEXT,
+  ip_address TEXT,
   remember_device INTEGER NOT NULL DEFAULT 0 CHECK (remember_device IN (0, 1)),
+  expires_at TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   revoked_at TEXT,
+  revoke_reason TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE auth_recovery_requests (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
-  channel TEXT NOT NULL CHECK (channel IN ('TELEGRAM')),
+  channel TEXT NOT NULL CHECK (channel IN ('EMAIL', 'TELEGRAM')),
   status TEXT NOT NULL CHECK (status IN ('PENDING', 'SENT', 'USED', 'EXPIRED', 'FAILED')),
   token_hash TEXT NOT NULL,
+  delivery_provider TEXT,
   expires_at TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   used_at TEXT,

@@ -17,19 +17,13 @@ export async function getProfileContext(_request: Request, env: Env): Promise<Re
         ghostMode: false
       }
     },
-    identity: {
-      cpf: '',
-      email: '',
-      telegramLinked: false
-    },
     backendHealth: {
       status: 'ok',
       appEnv: env.APP_ENV,
       apiVersion: env.API_VERSION,
       services: {
         d1: 'ok',
-        externalReferences: 'unknown',
-        auth: 'stub'
+        externalReferences: 'unknown'
       }
     },
     displayPreferences: {
@@ -39,7 +33,7 @@ export async function getProfileContext(_request: Request, env: Env): Promise<Re
 }
 
 export async function putProfileContext(request: Request, env: Env): Promise<Response> {
-  const payload = await readJson<Record<string, unknown>>(request);
+  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
   const context = (payload.context ?? payload) as Record<string, unknown>;
 
   return ok(env.API_VERSION, {
@@ -61,8 +55,7 @@ export async function putProfileContext(request: Request, env: Env): Promise<Res
       apiVersion: env.API_VERSION,
       services: {
         d1: 'ok',
-        externalReferences: 'unknown',
-        auth: 'stub'
+        externalReferences: 'unknown'
       }
     },
     displayPreferences: (context.displayPreferences ?? {}) as Record<string, unknown>
