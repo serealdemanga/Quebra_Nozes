@@ -1,6 +1,6 @@
-# SQL por rota — Histórico / Snapshots
+# SQL por rota — Análise consolidada
 
-## History — sessão com gate de onboarding
+## Analysis — sessão com gate de onboarding
 ```sql
 SELECT
   s.user_id AS userId,
@@ -21,37 +21,35 @@ WHERE s.session_token_hash = ?
 LIMIT 1;
 ```
 
-## History — snapshots da carteira
+## Analysis — última análise consolidada da carteira
 ```sql
 SELECT
   id,
   portfolio_id,
-  reference_date,
-  total_equity,
-  total_invested,
-  total_profit_loss,
-  total_profit_loss_pct,
-  created_at
-FROM portfolio_snapshots
+  snapshot_id,
+  score_value,
+  score_status,
+  primary_problem,
+  primary_action,
+  portfolio_decision,
+  action_plan_text,
+  summary_text,
+  messaging_json,
+  generated_at
+FROM portfolio_analyses
 WHERE portfolio_id = ?
-ORDER BY reference_date DESC, created_at DESC;
+ORDER BY generated_at DESC
+LIMIT 1;
 ```
 
-## History — selo simples da última análise por snapshot
+## Analysis — insights priorizados
 ```sql
 SELECT
-  pa.snapshot_id,
-  pa.score_status,
-  pa.primary_problem,
-  pa.primary_action
-FROM portfolio_analyses pa
-JOIN (
-  SELECT snapshot_id, MAX(generated_at) AS latest_generated_at
-  FROM portfolio_analyses
-  WHERE portfolio_id = ?
-  GROUP BY snapshot_id
-) latest
-  ON latest.snapshot_id = pa.snapshot_id
- AND latest.latest_generated_at = pa.generated_at
-WHERE pa.portfolio_id = ?;
+  insight_type,
+  title,
+  message,
+  priority
+FROM analysis_insights
+WHERE analysis_id = ?
+ORDER BY priority ASC, created_at ASC;
 ```

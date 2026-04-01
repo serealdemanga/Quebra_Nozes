@@ -217,3 +217,45 @@ export interface HistoryData {
   };
   snapshots: HistorySnapshotItem[];
 }
+
+export interface AnalysisData {
+  screenState: 'redirect_onboarding' | 'pending' | 'ready';
+  redirectTo?: string;
+  portfolioId?: string;
+  analysisId?: string;
+  snapshotId?: string;
+  pendingState?: {
+    title: string;
+    body: string;
+    ctaLabel: string;
+    target: string;
+  };
+  score?: {
+    value: number;
+    status: string;
+    explanation: string;
+  };
+  primaryProblem?: {
+    code: string;
+    title: string;
+    body: string;
+    severity: string;
+  };
+  primaryAction?: {
+    code: string;
+    title: string;
+    body: string;
+    ctaLabel: string;
+    target: string;
+  };
+  portfolioDecision?: string;
+  actionPlan?: string[];
+  summary?: string;
+  insights?: Array<{
+    kind: string;
+    title: string;
+    body: string;
+    priority: number;
+  }>;
+  generatedAt?: string;
+}
