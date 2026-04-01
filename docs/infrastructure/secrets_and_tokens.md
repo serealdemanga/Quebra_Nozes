@@ -11,16 +11,17 @@ Define all sensitive values required by Esquilo Invest without storing real secr
 
 ## Required secrets
 
+### Auth recovery via Apps Script
+- APPS_SCRIPT_RECOVERY_URL
+- APPS_SCRIPT_RECOVERY_SECRET
+
+Used by:
+- auth screen backend
+- password recovery flow in the initial delivery
+
 ### Telegram
 - TELEGRAM_BOT_TOKEN
 - TELEGRAM_DEFAULT_CHAT_ID (optional fallback)
-
-Used by:
-- notifications module
-
-### Email / Apps Script
-- APPSCRIPT_EMAIL_WEBHOOK_URL
-- APPSCRIPT_EMAIL_API_KEY (optional if webhook is protected)
 
 Used by:
 - notifications module
@@ -39,10 +40,6 @@ Used by:
 
 Used by:
 - deployment and database access
-
-## Future secrets
-- CVM_API_TOKEN (only if needed later)
-- GOOGLE_FINANCE_PROXY_KEY (only if an intermediary service exists)
 
 ## Final rule
 If a secret is not documented here, it should not be introduced silently in code.

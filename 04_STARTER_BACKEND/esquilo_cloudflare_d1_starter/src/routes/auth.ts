@@ -1,5 +1,6 @@
 import type { Env } from '../types/env';
-import { registerUser, loginUser, getSession, logoutUser, recoverUser } from '../lib/auth_service';
+import { registerUser, loginUser, getSession, logoutUser } from '../lib/auth_service';
+import { recoverUserViaEmailBridge } from '../lib/auth_recovery_service';
 
 export async function postAuthRegister(request: Request, env: Env): Promise<Response> {
   return await registerUser(request, env);
@@ -18,5 +19,5 @@ export async function postAuthLogout(request: Request, env: Env): Promise<Respon
 }
 
 export async function postAuthRecover(request: Request, env: Env): Promise<Response> {
-  return await recoverUser(request, env);
+  return await recoverUserViaEmailBridge(request, env);
 }
