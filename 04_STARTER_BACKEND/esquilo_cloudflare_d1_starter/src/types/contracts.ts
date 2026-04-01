@@ -185,3 +185,35 @@ export interface HoldingDetailData {
   };
   externalLink: string;
 }
+
+export interface HistorySnapshotItem {
+  id: string;
+  referenceDate: string;
+  totalEquity: number;
+  totalInvested: number;
+  totalProfitLoss: number;
+  totalProfitLossPct: number;
+  createdAt: string;
+  analysisBadge: {
+    status: string;
+    primaryProblem: string;
+    primaryAction: string;
+  } | null;
+}
+
+export interface HistoryData {
+  screenState: 'redirect_onboarding' | 'empty' | 'ready';
+  redirectTo?: string;
+  portfolioId: string;
+  emptyState?: {
+    title: string;
+    body: string;
+    ctaLabel: string;
+    target: string;
+  };
+  summary: {
+    totalSnapshots: number;
+    latestReferenceDate: string | null;
+  };
+  snapshots: HistorySnapshotItem[];
+}

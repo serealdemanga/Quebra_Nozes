@@ -1,6 +1,6 @@
-# SQL por rota — Detalhe do ativo
+# SQL por rota — Histórico / Snapshots
 
-## Holding detail — sessão com gate de onboarding
+## History — sessão com gate de onboarding
 ```sql
 SELECT
   s.user_id AS userId,
@@ -21,75 +21,37 @@ WHERE s.session_token_hash = ?
 LIMIT 1;
 ```
 
-## Holding detail — ativo específico da carteira
+## History — snapshots da carteira
 ```sql
 SELECT
-  pp.id,
-  pp.portfolio_id,
-  pp.asset_id,
-  at.code AS asset_type_code,
-  at.name AS asset_type_name,
-  pp.source_kind,
-  a.code,
-  a.name,
-  pp.category_label,
-  p.id AS platform_id,
-  p.name AS platform_name,
-  pp.quantity,
-  pp.average_price,
-  pp.current_price,
-  pp.current_amount,
-  pp.invested_amount,
-  pp.notes,
-  pp.stop_loss,
-  pp.target_price,
-  pp.profitability
-FROM portfolio_positions pp
-JOIN assets a ON a.id = pp.asset_id
-JOIN asset_types at ON at.id = a.asset_type_id
-LEFT JOIN platforms p ON p.id = pp.platform_id
-WHERE pp.portfolio_id = ?
-  AND pp.id = ?
-  AND pp.status = 'active'
-LIMIT 1;
-```
-
-## Holding detail — agregado da categoria
-```sql
-SELECT
-  COALESCE(NULLIF(LOWER(TRIM(pp.category_label)), ''), LOWER(TRIM(at.code)), 'outros') AS category_key,
-  COALESCE(NULLIF(pp.category_label, ''), at.name, at.code, 'Outros') AS category_label,
-  SUM(pp.current_amount) AS total_current,
-  SUM(pp.invested_amount) AS total_invested,
-  COUNT(*) AS holdings_count
-FROM portfolio_positions pp
-JOIN assets a ON a.id = pp.asset_id
-JOIN asset_types at ON at.id = a.asset_type_id
-WHERE pp.portfolio_id = ?
-  AND pp.status = 'active'
-GROUP BY category_key, category_label
-HAVING category_key = ?
-LIMIT 1;
-```
-
-## Holding detail — total da carteira
-```sql
-SELECT SUM(current_amount) AS total_current
-FROM portfolio_positions
+  id,
+  portfolio_id,
+  reference_date,
+  total_equity,
+  total_invested,
+  total_profit_loss,
+  total_profit_loss_pct,
+  created_at
+FROM portfolio_snapshots
 WHERE portfolio_id = ?
-  AND status = 'active';
+ORDER BY reference_date DESC, created_at DESC;
 ```
 
-## Holding detail — última análise consolidada da carteira
+## History — selo simples da última análise por snapshot
 ```sql
 SELECT
-  pa.id,
+  pa.snapshot_id,
   pa.score_status,
   pa.primary_problem,
-  pa.primary_action,
-  pa.summary_text
+  pa.primary_action
 FROM portfolio_analyses pa
-WHERE pa.portfolio_id = ?
-ORDER BY pa.generated_at DESC
-LIMIT 1;
+JOIN (
+  SELECT snapshot_id, MAX(generated_at) AS latest_generated_at
+  FROM portfolio_analyses
+  WHERE portfolio_id = ?
+  GROUP BY snapshot_id
+) latest
+  ON latest.snapshot_id = pa.snapshot_id
+ AND latest.latest_generated_at = pa.generated_at
+WHERE pa.portfolio_id = ?;
 ```
