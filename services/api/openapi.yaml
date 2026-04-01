@@ -4,41 +4,56 @@ info:
   version: 0.1.0
   description: API inicial do projeto novo do Esquilo Invest.
 paths:
-  /v1/history/snapshots:
-    get:
-      summary: Ler histórico de snapshots da carteira primária
+  /v1/imports/start:
+    post:
+      summary: Iniciar importação manual em lote
       responses:
         '200':
           description: OK
-  /v1/analysis:
+  /v1/imports/{importId}/preview:
     get:
-      summary: Ler análise consolidada da carteira primária
+      summary: Ler preview da importação manual
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/imports/{importId}/commit:
+    post:
+      summary: Commitar importação manual consistente
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK
 components:
   schemas:
-    HistoryData:
+    ImportStartData:
       type: object
       properties:
-        screenState:
-          type: string
-          enum: [redirect_onboarding, empty, ready]
-        redirectTo:
-          type: string
-        portfolioId:
-          type: string
-    AnalysisData:
+        importId: { type: string }
+        status: { type: string }
+        nextStep: { type: string }
+    ImportPreviewData:
       type: object
       properties:
-        screenState:
-          type: string
-          enum: [redirect_onboarding, pending, ready]
-        redirectTo:
-          type: string
-        portfolioId:
-          type: string
-        analysisId:
-          type: string
-        snapshotId:
-          type: string
+        importId: { type: string }
+        status: { type: string }
+        origin: { type: string }
+        readyToCommit: { type: boolean }
+    ImportCommitData:
+      type: object
+      properties:
+        importId: { type: string }
+        status: { type: string }
+        createdSnapshotId: { type: string }
+        affectedPositions: { type: number }
+        nextStep: { type: string }

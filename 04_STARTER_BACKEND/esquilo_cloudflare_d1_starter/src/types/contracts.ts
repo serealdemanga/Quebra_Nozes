@@ -259,3 +259,44 @@ export interface AnalysisData {
   }>;
   generatedAt?: string;
 }
+
+export interface ImportStartData {
+  importId: string;
+  status: string;
+  nextStep: string;
+  totals: {
+    totalRows: number;
+    validRows: number;
+    invalidRows: number;
+    duplicateRows: number;
+  };
+}
+
+export interface ImportPreviewData {
+  importId: string;
+  status: string;
+  origin: string;
+  totals: {
+    totalRows: number;
+    validRows: number;
+    invalidRows: number;
+    duplicateRows: number;
+  };
+  readyToCommit: boolean;
+  rows: Array<{
+    id: string;
+    rowNumber: number;
+    source: Record<string, unknown>;
+    normalized: Record<string, unknown>;
+    resolutionStatus: string;
+    errorMessage: string | null;
+  }>;
+}
+
+export interface ImportCommitData {
+  importId: string;
+  status: string;
+  createdSnapshotId: string;
+  affectedPositions: number;
+  nextStep: string;
+}

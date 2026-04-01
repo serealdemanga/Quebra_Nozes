@@ -1,0 +1,269 @@
+import type { Env } from '../types/env';
+
+export interface ImportSessionState {
+  userId: string;
+  portfolioId: string | null;
+  hasContext: number;
+}
+
+export interface ImportRecordRow {
+  id: string;
+  user_id: string;
+  portfolio_id: string | null;
+  status: string;
+  origin: string;
+  total_rows: number;
+  valid_rows: number;
+  invalid_rows: number;
+  duplicate_rows: number;
+}
+
+export interface ImportPreviewRow {
+  id: string;
+  row_number: number;
+  source_payload_json: string | null;
+  normalized_payload_json: string | null;
+  resolution_status: string;
+  error_message: string | null;
+}
+
+export interface DuplicateCandidateRow {
+  asset_id: string;
+  asset_code: string | null;
+  asset_name: string;
+  quantity: number | null;
+  invested_amount: number | null;
+  current_amount: number | null;
+}
+
+export async function findImportSessionStateByTokenHash(env: Env, tokenHash: string): Promise<ImportSessionState | null> {
+  return await env.DB.prepare(
+    `SELECT
+       s.user_id AS userId,
+       p.id AS portfolioId,
+       CASE
+         WHEN c.financial_goal IS NOT NULL AND c.financial_goal <> ''
+          AND COALESCE(c.risk_profile_effective, c.risk_profile) IS NOT NULL
+          AND COALESCE(c.risk_profile_effective, c.risk_profile) <> ''
+         THEN 1
+         ELSE 0
+       END AS hasContext
+     FROM auth_sessions s
+     LEFT JOIN portfolios p ON p.user_id = s.user_id AND p.is_primary = 1
+     LEFT JOIN user_financial_context c ON c.user_id = s.user_id
+     WHERE s.session_token_hash = ?
+       AND s.revoked_at IS NULL
+       AND s.expires_at > CURRENT_TIMESTAMP
+     LIMIT 1`
+  ).bind(tokenHash).first<ImportSessionState>();
+}
+
+export async function createImportRecord(env: Env, input: {
+  importId: string;
+  userId: string;
+  portfolioId: string;
+  status: string;
+  origin: string;
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  duplicateRows: number;
+}): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO imports (
+      id, user_id, portfolio_id, status, origin, total_rows, valid_rows, invalid_rows, duplicate_rows, created_at, started_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+  ).bind(
+    input.importId,
+    input.userId,
+    input.portfolioId,
+    input.status,
+    input.origin,
+    input.totalRows,
+    input.validRows,
+    input.invalidRows,
+    input.duplicateRows
+  ).run();
+}
+
+export async function updateImportRecord(env: Env, input: {
+  importId: string;
+  status: string;
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  duplicateRows: number;
+  finishedAt?: boolean;
+}): Promise<void> {
+  await env.DB.prepare(
+    `UPDATE imports
+     SET status = ?,
+         total_rows = ?,
+         valid_rows = ?,
+         invalid_rows = ?,
+         duplicate_rows = ?,
+         finished_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE finished_at END
+     WHERE id = ?`
+  ).bind(
+    input.status,
+    input.totalRows,
+    input.validRows,
+    input.invalidRows,
+    input.duplicateRows,
+    input.finishedAt ? 1 : 0,
+    input.importId
+  ).run();
+}
+
+export async function replaceImportRows(env: Env, importId: string, rows: Array<{
+  id: string;
+  rowNumber: number;
+  sourcePayloadJson: string;
+  normalizedPayloadJson: string;
+  resolutionStatus: string;
+  errorMessage: string | null;
+}>): Promise<void> {
+  await env.DB.prepare(`DELETE FROM import_rows WHERE import_id = ?`).bind(importId).run();
+  for (const row of rows) {
+    await env.DB.prepare(
+      `INSERT INTO import_rows (
+        id, import_id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+    ).bind(row.id, importId, row.rowNumber, row.sourcePayloadJson, row.normalizedPayloadJson, row.resolutionStatus, row.errorMessage).run();
+  }
+}
+
+export async function findImportById(env: Env, importId: string): Promise<ImportRecordRow | null> {
+  return await env.DB.prepare(
+    `SELECT id, user_id, portfolio_id, status, origin, total_rows, valid_rows, invalid_rows, duplicate_rows
+     FROM imports
+     WHERE id = ?
+     LIMIT 1`
+  ).bind(importId).first<ImportRecordRow>();
+}
+
+export async function findImportRows(env: Env, importId: string): Promise<ImportPreviewRow[]> {
+  const result = await env.DB.prepare(
+    `SELECT id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message
+     FROM import_rows
+     WHERE import_id = ?
+     ORDER BY row_number ASC`
+  ).bind(importId).all<ImportPreviewRow>();
+  return result.results || [];
+}
+
+export async function findManualDuplicateCandidates(env: Env, portfolioId: string, normalizedName: string, code: string): Promise<DuplicateCandidateRow[]> {
+  const result = await env.DB.prepare(
+    `SELECT
+       pp.asset_id,
+       a.code AS asset_code,
+       a.name AS asset_name,
+       pp.quantity,
+       pp.invested_amount,
+       pp.current_amount
+     FROM portfolio_positions pp
+     JOIN assets a ON a.id = pp.asset_id
+     WHERE pp.portfolio_id = ?
+       AND pp.status = 'active'
+       AND (
+         a.normalized_name = ?
+         OR (? <> '' AND a.code = ?)
+       )`
+  ).bind(portfolioId, normalizedName, code, code).all<DuplicateCandidateRow>();
+  return result.results || [];
+}
+
+export async function findAssetTypeByCode(env: Env, code: string): Promise<{ id: string; code: string; name: string } | null> {
+  return await env.DB.prepare(
+    `SELECT id, code, name FROM asset_types WHERE code = ? LIMIT 1`
+  ).bind(code).first<{ id: string; code: string; name: string }>();
+}
+
+export async function findAssetByNormalizedNameOrCode(env: Env, normalizedName: string, code: string): Promise<{ id: string; code: string | null; name: string } | null> {
+  return await env.DB.prepare(
+    `SELECT id, code, name
+     FROM assets
+     WHERE normalized_name = ? OR (? <> '' AND code = ?)
+     LIMIT 1`
+  ).bind(normalizedName, code, code).first<{ id: string; code: string | null; name: string }>();
+}
+
+export async function createAsset(env: Env, input: { assetId: string; assetTypeId: string; code: string; name: string; normalizedName: string }): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO assets (id, asset_type_id, code, name, normalized_name, is_custom, created_at)
+     VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)`
+  ).bind(input.assetId, input.assetTypeId, input.code || null, input.name, input.normalizedName).run();
+}
+
+export async function createPortfolioPosition(env: Env, input: {
+  positionId: string;
+  portfolioId: string;
+  assetId: string;
+  sourceKind: string;
+  quantity: number;
+  averagePrice: number;
+  currentPrice: number | null;
+  investedAmount: number;
+  currentAmount: number;
+  categoryLabel: string;
+  notes: string;
+}): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO portfolio_positions (
+      id, portfolio_id, asset_id, source_kind, status, quantity, average_price, current_price, invested_amount, current_amount, category_label, notes, created_at, updated_at
+     ) VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+  ).bind(
+    input.positionId,
+    input.portfolioId,
+    input.assetId,
+    input.sourceKind,
+    input.quantity,
+    input.averagePrice,
+    input.currentPrice,
+    input.investedAmount,
+    input.currentAmount,
+    input.categoryLabel,
+    input.notes || null
+  ).run();
+}
+
+export async function createPortfolioSnapshot(env: Env, input: {
+  snapshotId: string;
+  portfolioId: string;
+  importId: string;
+  referenceDate: string;
+  totalEquity: number;
+  totalInvested: number;
+  totalProfitLoss: number;
+  totalProfitLossPct: number;
+}): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO portfolio_snapshots (
+      id, portfolio_id, import_id, reference_date, total_equity, total_invested, total_profit_loss, total_profit_loss_pct, created_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+  ).bind(
+    input.snapshotId,
+    input.portfolioId,
+    input.importId,
+    input.referenceDate,
+    input.totalEquity,
+    input.totalInvested,
+    input.totalProfitLoss,
+    input.totalProfitLossPct
+  ).run();
+}
+
+export async function createSnapshotPosition(env: Env, input: {
+  snapshotPositionId: string;
+  snapshotId: string;
+  assetId: string;
+  quantity: number;
+  unitPrice: number | null;
+  currentValue: number;
+}): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO portfolio_snapshot_positions (
+      id, snapshot_id, asset_id, quantity, unit_price, current_value, created_at
+     ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+  ).bind(input.snapshotPositionId, input.snapshotId, input.assetId, input.quantity, input.unitPrice, input.currentValue).run();
+}
