@@ -82,7 +82,7 @@ paths:
           description: OK
   /v1/dashboard/home:
     get:
-      summary: Ler home da carteira
+      summary: Ler home da carteira primária
       responses:
         '200':
           description: OK
@@ -155,48 +155,29 @@ components:
   schemas:
     AuthRegisterRequest:
       type: object
-      required:
-        - cpf
-        - email
-        - password
-        - confirmPassword
+      required: [cpf, email, password, confirmPassword]
       properties:
-        cpf:
-          type: string
-        email:
-          type: string
-        password:
-          type: string
-        confirmPassword:
-          type: string
-        displayName:
-          type: string
-        rememberDevice:
-          type: boolean
+        cpf: { type: string }
+        email: { type: string }
+        password: { type: string }
+        confirmPassword: { type: string }
+        displayName: { type: string }
+        rememberDevice: { type: boolean }
     AuthLoginRequest:
       type: object
-      required:
-        - identifier
-        - password
+      required: [identifier, password]
       properties:
-        identifier:
-          type: string
-        password:
-          type: string
-        rememberDevice:
-          type: boolean
+        identifier: { type: string }
+        password: { type: string }
+        rememberDevice: { type: boolean }
     AuthRecoverRequest:
       type: object
-      required:
-        - identifier
+      required: [identifier]
       properties:
-        identifier:
-          type: string
+        identifier: { type: string }
     ProfileContextUpsertRequest:
       type: object
-      required:
-        - step
-        - context
+      required: [step, context]
       properties:
         step:
           type: string
@@ -204,34 +185,34 @@ components:
         context:
           type: object
           properties:
-            financialGoal:
-              type: string
-            financialGoalOther:
-              type: string
-            monthlyIncomeRange:
-              type: string
-            monthlyInvestmentTarget:
-              type: number
-            availableToInvest:
-              type: number
+            financialGoal: { type: string }
+            financialGoalOther: { type: string }
+            monthlyIncomeRange: { type: string }
+            monthlyInvestmentTarget: { type: number }
+            availableToInvest: { type: number }
             riskProfileSelfDeclared:
               type: string
               enum: [conservador, moderado, arrojado]
             riskProfileQuizResult:
               type: string
               enum: [conservador, moderado, arrojado]
-            investmentHorizon:
-              type: string
+            investmentHorizon: { type: string }
             platformsUsed:
               type: object
               properties:
                 platformIds:
                   type: array
-                  items:
-                    type: string
+                  items: { type: string }
                 otherPlatforms:
                   type: array
-                  items:
-                    type: string
+                  items: { type: string }
             displayPreferences:
               type: object
+    HomeData:
+      type: object
+      properties:
+        screenState:
+          type: string
+          enum: [redirect_onboarding, empty, portfolio_ready_analysis_pending, ready]
+        redirectTo: { type: string }
+        portfolioId: { type: string }

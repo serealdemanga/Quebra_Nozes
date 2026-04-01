@@ -61,6 +61,8 @@ export interface InsightItem {
 }
 
 export interface HomeData {
+  screenState: 'redirect_onboarding' | 'empty' | 'portfolio_ready_analysis_pending' | 'ready';
+  redirectTo?: string;
   portfolioId: string;
   hero: HomeHero;
   primaryProblem: PrimaryProblem;
