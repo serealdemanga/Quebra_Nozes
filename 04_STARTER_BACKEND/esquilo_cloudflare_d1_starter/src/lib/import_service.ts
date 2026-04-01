@@ -20,8 +20,10 @@ import {
 const AUTH_COOKIE_NAME = 'esquilo_session';
 const ORIGIN_MANUAL_ENTRY = 'MANUAL_ENTRY';
 const ORIGIN_CUSTOM_TEMPLATE = 'CUSTOM_TEMPLATE';
+const ORIGIN_B3_CSV = 'B3_CSV';
 const VALID_SOURCE_KINDS = ['ACOES', 'FUNDOS', 'PREVIDENCIA'];
 const TEMPLATE_HEADERS = ['tipo', 'codigo', 'nome', 'quantidade', 'valor_investido', 'valor_atual', 'categoria', 'observacoes'];
+const B3_REQUIRED_HEADERS = ['codigo', 'produto', 'quantidade', 'preco_medio', 'valor_atual'];
 
 export async function startImport(request: Request, env: Env): Promise<Response> {
   const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
@@ -29,6 +31,9 @@ export async function startImport(request: Request, env: Env): Promise<Response>
 
   if (origin === ORIGIN_CUSTOM_TEMPLATE) {
     return await startCustomTemplateImport(request, env, payload);
+  }
+  if (origin === ORIGIN_B3_CSV) {
+    return await startB3CsvImport(request, env, payload);
   }
 
   return await startManualImportWithPayload(request, env, payload);
@@ -88,6 +93,41 @@ async function startCustomTemplateImport(request: Request, env: Env, payload?: R
   });
 
   return await persistNormalizedImport(env, session, ORIGIN_CUSTOM_TEMPLATE, normalizedEntries);
+}
+
+async function startB3CsvImport(request: Request, env: Env, payload?: Record<string, unknown>): Promise<Response> {
+  const session = await requireImportSession(request, env);
+  if (session instanceof Response) return session;
+
+  const body = payload || await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const csvContent = typeof body.csvContent === 'string' ? body.csvContent : '';
+  if (!csvContent.trim()) {
+    return fail(env.API_VERSION, 'missing_csv_content', 'Envie o conteúdo CSV da B3.', 400);
+  }
+
+  const parsed = parseCsv(csvContent);
+  if (!parsed.headers.length) {
+    return fail(env.API_VERSION, 'invalid_csv', 'CSV B3 vazio ou inválido.', 400);
+  }
+  const headerMap = buildHeaderMap(parsed.headers);
+  const headerError = validateB3Headers(headerMap);
+  if (headerError) {
+    return fail(env.API_VERSION, 'invalid_b3_headers', headerError, 400);
+  }
+  if (!parsed.rows.length) {
+    return fail(env.API_VERSION, 'missing_b3_rows', 'O CSV da B3 não possui linhas de posição.', 400);
+  }
+
+  const normalizedEntries = parsed.rows.map((row, index) => {
+    const raw = mapB3RowToRawEntry(row, headerMap);
+    return {
+      raw,
+      rowNumber: index + 1,
+      parsed: normalizeManualEntry(raw, index + 1)
+    };
+  });
+
+  return await persistNormalizedImport(env, session, ORIGIN_B3_CSV, normalizedEntries);
 }
 
 async function persistNormalizedImport(
@@ -381,12 +421,12 @@ function normalizeManualEntry(value: unknown, rowNumber: number) {
   const source = typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
   const sourceKind = normalizeSourceKind(source.sourceKind ?? source.tipo);
   const code = normalizeText(source.code ?? source.codigo).toUpperCase();
-  const name = normalizeText(source.name ?? source.nome);
+  const name = normalizeText(source.name ?? source.nome ?? source.produto);
   const normalizedName = normalizeName(name || code);
   const quantity = normalizeNumber(source.quantity ?? source.quantidade);
-  const investedAmount = normalizeNumber(source.investedAmount ?? source.valor_investido);
+  const investedAmount = normalizeNumber(source.investedAmount ?? source.valor_investido ?? source.preco_medio && quantity ? Number(source.preco_medio) * quantity : 0);
   const currentAmount = normalizeNumber(source.currentAmount ?? source.valor_atual);
-  const averagePrice = quantity > 0 ? investedAmount / quantity : 0;
+  const averagePrice = quantity > 0 ? investedAmount / quantity : normalizeNumber(source.preco_medio);
   const currentPrice = quantity > 0 ? currentAmount / quantity : null;
   const categoryLabel = normalizeText(source.categoryLabel ?? source.categoria) || mapCategoryLabel(sourceKind);
   const notes = normalizeText(source.notes ?? source.observacoes);
@@ -458,6 +498,19 @@ function validateTemplateHeaders(headers: string[]): string {
   return '';
 }
 
+function buildHeaderMap(headers: string[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  headers.forEach((header, index) => {
+    map[header.trim().toLowerCase()] = index;
+  });
+  return map;
+}
+
+function validateB3Headers(headerMap: Record<string, number>): string {
+  const missing = B3_REQUIRED_HEADERS.filter((header) => !(header in headerMap));
+  return missing.length ? `Layout B3 inválido. Colunas obrigatórias ausentes: ${missing.join(',')}` : '';
+}
+
 function mapTemplateRowToRawEntry(row: string[]): Record<string, unknown> {
   const values = [...row];
   while (values.length < TEMPLATE_HEADERS.length) values.push('');
@@ -473,6 +526,44 @@ function mapTemplateRowToRawEntry(row: string[]): Record<string, unknown> {
   };
 }
 
+function mapB3RowToRawEntry(row: string[], headerMap: Record<string, number>): Record<string, unknown> {
+  const codigo = getCsvValue(row, headerMap, 'codigo');
+  const produto = getCsvValue(row, headerMap, 'produto');
+  const quantidade = getCsvValue(row, headerMap, 'quantidade');
+  const precoMedio = getCsvValue(row, headerMap, 'preco_medio');
+  const valorAtual = getCsvValue(row, headerMap, 'valor_atual');
+  const tipo = inferB3SourceKind({ codigo, produto, tipo: getCsvValue(row, headerMap, 'tipo'), categoria: getCsvValue(row, headerMap, 'categoria') });
+
+  return {
+    tipo,
+    codigo,
+    nome: produto,
+    quantidade,
+    valor_investido: multiplyCsvNumbers(quantidade, precoMedio),
+    valor_atual: valorAtual,
+    categoria: mapCategoryLabel(tipo),
+    observacoes: 'Importado de CSV B3'
+  };
+}
+
+function getCsvValue(row: string[], headerMap: Record<string, number>, key: string): string {
+  const index = headerMap[key];
+  return index == null ? '' : (row[index] || '').trim();
+}
+
+function inferB3SourceKind(input: { codigo: string; produto: string; tipo: string; categoria: string }): string {
+  const explicit = normalizeSourceKind(input.tipo || input.categoria);
+  if (explicit) return explicit;
+  const raw = `${input.codigo} ${input.produto}`.toLowerCase();
+  if (raw.includes('previd') || raw.includes('vgbl') || raw.includes('pgbl')) return 'PREVIDENCIA';
+  if (raw.includes('fundo') || raw.includes('fic') || raw.includes('fia') || raw.includes('multimercado') || raw.includes('di ')) return 'FUNDOS';
+  return 'ACOES';
+}
+
+function multiplyCsvNumbers(quantity: string, unitValue: string): number {
+  return normalizeNumber(quantity) * normalizeNumber(unitValue);
+}
+
 function normalizeSourceKind(value: unknown): string {
   const raw = normalizeText(value).toUpperCase();
   return VALID_SOURCE_KINDS.includes(raw) ? raw : '';
@@ -484,7 +575,11 @@ function normalizeText(value: unknown): string {
 
 function normalizeNumber(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value))) return Number(value);
+  if (typeof value === 'string' && value.trim() !== '') {
+    const sanitized = value.replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
+    const parsed = Number(sanitized);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
   return 0;
 }
 

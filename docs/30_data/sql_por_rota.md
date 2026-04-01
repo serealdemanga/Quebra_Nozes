@@ -1,4 +1,4 @@
-# SQL por rota — Template próprio CSV
+# SQL por rota — Importação CSV
 
 ## Import start — sessão com gate de onboarding
 ```sql
@@ -71,6 +71,11 @@ WHERE pp.portfolio_id = ?
     OR (? <> '' AND a.code = ?)
   );
 ```
+
+## Import B3 CSV — colunas obrigatórias no parser
+Obrigatórias: codigo, produto, quantidade, preco_medio, valor_atual.
+Colunas extras podem existir e são ignoradas.
+Layout divergente bloqueia com erro claro.
 
 ## Import commit — criar posições e snapshot
 ```sql

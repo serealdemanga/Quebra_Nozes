@@ -6,7 +6,7 @@ info:
 paths:
   /v1/imports/start:
     post:
-      summary: Iniciar importação manual ou por template próprio CSV
+      summary: Iniciar importação manual, template próprio CSV ou B3 CSV
       responses:
         '200':
           description: OK
