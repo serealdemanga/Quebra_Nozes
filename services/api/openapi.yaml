@@ -65,12 +65,18 @@ paths:
           description: Recuperacao solicitada
   /v1/profile/context:
     get:
-      summary: Ler contexto financeiro do usuario
+      summary: Ler contexto financeiro e status do onboarding
       responses:
         '200':
           description: OK
     put:
-      summary: Atualizar contexto financeiro do usuario
+      summary: Atualizar contexto financeiro por etapa do onboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileContextUpsertRequest'
       responses:
         '200':
           description: OK
@@ -186,3 +192,46 @@ components:
       properties:
         identifier:
           type: string
+    ProfileContextUpsertRequest:
+      type: object
+      required:
+        - step
+        - context
+      properties:
+        step:
+          type: string
+          enum: [goal, risk_quiz, income_horizon, platforms]
+        context:
+          type: object
+          properties:
+            financialGoal:
+              type: string
+            financialGoalOther:
+              type: string
+            monthlyIncomeRange:
+              type: string
+            monthlyInvestmentTarget:
+              type: number
+            availableToInvest:
+              type: number
+            riskProfileSelfDeclared:
+              type: string
+              enum: [conservador, moderado, arrojado]
+            riskProfileQuizResult:
+              type: string
+              enum: [conservador, moderado, arrojado]
+            investmentHorizon:
+              type: string
+            platformsUsed:
+              type: object
+              properties:
+                platformIds:
+                  type: array
+                  items:
+                    type: string
+                otherPlatforms:
+                  type: array
+                  items:
+                    type: string
+            displayPreferences:
+              type: object

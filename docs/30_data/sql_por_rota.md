@@ -100,9 +100,19 @@ SELECT
   s.remember_device,
   s.expires_at,
   s.revoked_at,
-  u.email_verified_at
+  u.email_verified_at,
+  p.id AS portfolio_id,
+  CASE
+    WHEN c.financial_goal IS NOT NULL AND c.financial_goal <> ''
+     AND COALESCE(c.risk_profile_effective, c.risk_profile) IS NOT NULL
+     AND COALESCE(c.risk_profile_effective, c.risk_profile) <> ''
+    THEN 1
+    ELSE 0
+  END AS has_context
 FROM auth_sessions s
 JOIN users u ON u.id = s.user_id
+LEFT JOIN portfolios p ON p.user_id = u.id AND p.is_primary = 1
+LEFT JOIN user_financial_context c ON c.user_id = u.id
 WHERE s.session_token_hash = ?
 LIMIT 1;
 ```
@@ -136,22 +146,65 @@ INSERT INTO auth_recovery_requests (
 SELECT 1 AS ok;
 ```
 
-## Contexto do usuário
+## Contexto do usuário — leitura do onboarding
 ```sql
 SELECT
-  u.id AS user_id,
-  u.display_name,
-  c.financial_goal,
-  c.monthly_income_range,
-  c.monthly_investment_target,
-  c.available_to_invest,
-  c.risk_profile,
-  c.investment_horizon,
-  c.platforms_used_json,
-  c.display_preferences_json
-FROM users u
-LEFT JOIN user_financial_context c ON c.user_id = u.id
-WHERE u.id = ?;
+  id,
+  user_id,
+  financial_goal,
+  monthly_income_range,
+  monthly_investment_target,
+  available_to_invest,
+  risk_profile,
+  risk_profile_self_declared,
+  risk_profile_quiz_result,
+  risk_profile_effective,
+  investment_horizon,
+  platforms_used_json,
+  display_preferences_json,
+  onboarding_step,
+  onboarding_completed_at
+FROM user_financial_context
+WHERE user_id = ?
+LIMIT 1;
+```
+
+## Contexto do usuário — upsert do onboarding
+```sql
+INSERT INTO user_financial_context (
+  id,
+  user_id,
+  financial_goal,
+  monthly_income_range,
+  monthly_investment_target,
+  available_to_invest,
+  risk_profile,
+  risk_profile_self_declared,
+  risk_profile_quiz_result,
+  risk_profile_effective,
+  investment_horizon,
+  platforms_used_json,
+  display_preferences_json,
+  onboarding_step,
+  onboarding_completed_at,
+  created_at,
+  updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT(user_id) DO UPDATE SET
+  financial_goal = excluded.financial_goal,
+  monthly_income_range = excluded.monthly_income_range,
+  monthly_investment_target = excluded.monthly_investment_target,
+  available_to_invest = excluded.available_to_invest,
+  risk_profile = excluded.risk_profile,
+  risk_profile_self_declared = excluded.risk_profile_self_declared,
+  risk_profile_quiz_result = excluded.risk_profile_quiz_result,
+  risk_profile_effective = excluded.risk_profile_effective,
+  investment_horizon = excluded.investment_horizon,
+  platforms_used_json = excluded.platforms_used_json,
+  display_preferences_json = excluded.display_preferences_json,
+  onboarding_step = excluded.onboarding_step,
+  onboarding_completed_at = excluded.onboarding_completed_at,
+  updated_at = CURRENT_TIMESTAMP;
 ```
 
 ## Home — último snapshot
