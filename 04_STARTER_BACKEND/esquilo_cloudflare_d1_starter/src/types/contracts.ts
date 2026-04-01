@@ -130,3 +130,58 @@ export interface PortfolioData {
   };
   orders: Array<never>;
 }
+
+export interface HoldingDetailData {
+  screenState?: 'redirect_onboarding';
+  redirectTo?: string;
+  holding: {
+    id: string;
+    assetId: string;
+    code: string;
+    name: string;
+    categoryKey: string;
+    categoryLabel: string;
+    platformId: string;
+    platformName: string;
+    quantity: number;
+    averagePrice: number;
+    currentPrice: number | null;
+    currentValue: number;
+    investedAmount: number;
+    performanceValue: number;
+    performancePct: number | null;
+    allocationPct: number;
+    recommendation: string;
+    statusLabel: string;
+    quotationStatus: 'priced' | 'missing_quote';
+    notes: string;
+    stopLoss: number | null;
+    targetPrice: number | null;
+    sourceKind: string;
+    assetTypeCode: string;
+  };
+  ranking: {
+    score: number;
+    status: string;
+    motives: string[];
+    opportunityScore: number;
+  };
+  recommendation: {
+    code: string;
+    title: string;
+    body: string;
+  };
+  categoryContext: {
+    categoryKey: string;
+    categoryLabel: string;
+    categoryRisk: string;
+    categoryRecommendation: string;
+    primaryMessage: string;
+    holdingsCount: number;
+    totalCurrent: number;
+    totalInvested: number;
+    totalProfitLoss: number;
+    totalProfitLossPct: number | null;
+  };
+  externalLink: string;
+}

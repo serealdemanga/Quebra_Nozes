@@ -1,6 +1,6 @@
-# SQL por rota — Carteira
+# SQL por rota — Detalhe do ativo
 
-## Portfolio — sessão com gate de onboarding
+## Holding detail — sessão com gate de onboarding
 ```sql
 SELECT
   s.user_id AS userId,
@@ -21,30 +21,75 @@ WHERE s.session_token_hash = ?
 LIMIT 1;
 ```
 
-## Portfolio — posições ativas da carteira
+## Holding detail — ativo específico da carteira
 ```sql
 SELECT
   pp.id,
   pp.portfolio_id,
-  a.id AS asset_id,
+  pp.asset_id,
+  at.code AS asset_type_code,
+  at.name AS asset_type_name,
+  pp.source_kind,
   a.code,
   a.name,
-  at.code AS category_code,
-  at.name AS category_name,
   pp.category_label,
   p.id AS platform_id,
   p.name AS platform_name,
   pp.quantity,
   pp.average_price,
   pp.current_price,
-  pp.invested_amount,
   pp.current_amount,
-  pp.status
+  pp.invested_amount,
+  pp.notes,
+  pp.stop_loss,
+  pp.target_price,
+  pp.profitability
 FROM portfolio_positions pp
 JOIN assets a ON a.id = pp.asset_id
 JOIN asset_types at ON at.id = a.asset_type_id
 LEFT JOIN platforms p ON p.id = pp.platform_id
 WHERE pp.portfolio_id = ?
+  AND pp.id = ?
   AND pp.status = 'active'
-ORDER BY pp.current_amount DESC, a.name ASC;
+LIMIT 1;
+```
+
+## Holding detail — agregado da categoria
+```sql
+SELECT
+  COALESCE(NULLIF(LOWER(TRIM(pp.category_label)), ''), LOWER(TRIM(at.code)), 'outros') AS category_key,
+  COALESCE(NULLIF(pp.category_label, ''), at.name, at.code, 'Outros') AS category_label,
+  SUM(pp.current_amount) AS total_current,
+  SUM(pp.invested_amount) AS total_invested,
+  COUNT(*) AS holdings_count
+FROM portfolio_positions pp
+JOIN assets a ON a.id = pp.asset_id
+JOIN asset_types at ON at.id = a.asset_type_id
+WHERE pp.portfolio_id = ?
+  AND pp.status = 'active'
+GROUP BY category_key, category_label
+HAVING category_key = ?
+LIMIT 1;
+```
+
+## Holding detail — total da carteira
+```sql
+SELECT SUM(current_amount) AS total_current
+FROM portfolio_positions
+WHERE portfolio_id = ?
+  AND status = 'active';
+```
+
+## Holding detail — última análise consolidada da carteira
+```sql
+SELECT
+  pa.id,
+  pa.score_status,
+  pa.primary_problem,
+  pa.primary_action,
+  pa.summary_text
+FROM portfolio_analyses pa
+WHERE pa.portfolio_id = ?
+ORDER BY pa.generated_at DESC
+LIMIT 1;
 ```
