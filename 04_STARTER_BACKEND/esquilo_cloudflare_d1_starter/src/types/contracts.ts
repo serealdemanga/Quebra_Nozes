@@ -72,3 +72,53 @@ export interface HomeData {
   insights: InsightItem[];
   updatedAt: string;
 }
+
+export interface PortfolioSummary {
+  totalEquity: number;
+  totalInvested: number;
+  totalProfitLoss: number;
+  totalProfitLossPct: number;
+  statusLabel: string;
+}
+
+export interface PortfolioHoldingListItem {
+  id: string;
+  assetId: string;
+  code: string;
+  name: string;
+  categoryKey: string;
+  categoryLabel: string;
+  platformId: string;
+  platformName: string;
+  quantity: number;
+  averagePrice: number;
+  currentPrice: number | null;
+  currentValue: number;
+  investedAmount: number;
+  performanceValue: number;
+  performancePct: number | null;
+  allocationPct: number;
+  quotationStatus: 'priced' | 'missing_quote';
+}
+
+export interface PortfolioGroup {
+  categoryKey: string;
+  categoryLabel: string;
+  totalInvested: number;
+  totalCurrent: number;
+  totalProfitLoss: number;
+  totalProfitLossPct: number | null;
+  holdings: PortfolioHoldingListItem[];
+}
+
+export interface PortfolioData {
+  screenState: 'redirect_onboarding' | 'empty' | 'ready';
+  redirectTo?: string;
+  portfolioId: string;
+  summary: PortfolioSummary;
+  groups: PortfolioGroup[];
+  filters: {
+    performance: 'all' | 'best' | 'worst';
+  };
+  orders: Array<never>;
+}

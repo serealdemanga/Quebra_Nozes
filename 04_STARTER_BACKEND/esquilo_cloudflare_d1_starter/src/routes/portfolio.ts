@@ -1,22 +1,9 @@
 import type { Env } from '../types/env';
+import { getPortfolioData } from '../lib/portfolio_service';
 import { ok } from '../lib/http';
 
 export async function getPortfolio(request: Request, env: Env): Promise<Response> {
-  const url = new URL(request.url);
-  const portfolioId = url.searchParams.get('portfolioId') ?? 'primary';
-
-  return ok(env.API_VERSION, {
-    portfolioId,
-    summary: {
-      totalEquity: 0,
-      totalInvested: 0,
-      totalProfitLoss: 0,
-      totalProfitLossPct: 0,
-      statusLabel: 'Em leitura'
-    },
-    groups: [],
-    orders: []
-  });
+  return await getPortfolioData(request, env);
 }
 
 export async function getHoldingDetail(_request: Request, env: Env, params: Record<string, string>): Promise<Response> {
