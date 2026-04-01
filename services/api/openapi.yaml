@@ -10,6 +10,12 @@ paths:
       responses:
         '200':
           description: OK
+  /v1/analysis:
+    get:
+      summary: Ler análise consolidada da carteira primária
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     HistoryData:
@@ -21,4 +27,18 @@ components:
         redirectTo:
           type: string
         portfolioId:
+          type: string
+    AnalysisData:
+      type: object
+      properties:
+        screenState:
+          type: string
+          enum: [redirect_onboarding, pending, ready]
+        redirectTo:
+          type: string
+        portfolioId:
+          type: string
+        analysisId:
+          type: string
+        snapshotId:
           type: string
