@@ -76,7 +76,13 @@ export async function findSessionStateByTokenHash(env: Env, tokenHash: string): 
        s.revoked_at,
        u.email_verified_at,
        p.id AS portfolio_id,
-       CASE WHEN c.user_id IS NULL THEN 0 ELSE 1 END AS has_context
+       CASE
+         WHEN c.financial_goal IS NOT NULL AND c.financial_goal <> ''
+          AND COALESCE(c.risk_profile_effective, c.risk_profile) IS NOT NULL
+          AND COALESCE(c.risk_profile_effective, c.risk_profile) <> ''
+         THEN 1
+         ELSE 0
+       END AS has_context
      FROM auth_sessions s
      JOIN users u ON u.id = s.user_id
      LEFT JOIN portfolios p ON p.user_id = u.id AND p.is_primary = 1
