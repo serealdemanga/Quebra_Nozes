@@ -101,7 +101,7 @@ paths:
           description: OK
   /v1/portfolio/{portfolioId}/holdings/{holdingId}:
     get:
-      summary: Ler detalhe de holding
+      summary: Ler detalhe analítico de um ativo da carteira
       parameters:
         - in: path
           name: portfolioId
@@ -231,3 +231,21 @@ components:
           enum: [redirect_onboarding, empty, ready]
         redirectTo: { type: string }
         portfolioId: { type: string }
+    HoldingDetailData:
+      type: object
+      properties:
+        screenState:
+          type: string
+          enum: [redirect_onboarding]
+        redirectTo:
+          type: string
+        externalLink:
+          type: string
+        holding:
+          type: object
+        ranking:
+          type: object
+        recommendation:
+          type: object
+        categoryContext:
+          type: object
