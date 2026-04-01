@@ -3,14 +3,12 @@ import { ok, fail, readJson } from './http';
 import { buildEntityId, generateOpaqueToken, hashPassword, hashToken, verifyPassword } from './auth_crypto';
 import { findUserByCpfOrEmail, findUserByIdentifier, incrementFailedLogin, resetFailedLogin } from '../repositories/auth_user_repository';
 import { registerUserWithPrimaryPortfolioAndSession, createSession, findSessionStateByTokenHash, revokeSessionByTokenHash } from '../repositories/auth_session_repository';
-import { findRecoveryTargetByIdentifier, createRecoveryRequest, updateRecoveryRequestStatus } from '../repositories/auth_recovery_repository';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
 const LOCKOUT_MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 const SHORT_SESSION_HOURS = 12;
 const REMEMBER_SESSION_DAYS = 30;
-const RECOVERY_EXPIRY_MINUTES = 30;
 
 export async function registerUser(request: Request, env: Env): Promise<Response> {
   const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
@@ -22,9 +20,9 @@ export async function registerUser(request: Request, env: Env): Promise<Response
   const rememberDevice = Boolean(payload.rememberDevice);
 
   if (cpf.length !== 11) return fail(env.API_VERSION, 'invalid_cpf', 'CPF inválido.', 400);
-  if (!looksLikeEmail(email)) return fail(env.API_VERSION, 'invalid_email', 'E-mail inválido.', 400);
+  if (!looksLikeEmail(email)) return fail(env.API_VERSION, 'invalid_email', 'E-mail invâvalido.', 400);
   if (password.length < 8) return fail(env.API_VERSION, 'weak_password', 'A senha deve ter pelo menos 8 caracteres.', 400);
-  if (password !== confirmPassword) return fail(env.API_VERSION, 'password_mismatch', 'As senhas não conferem.', 400);
+  if (password !== confirmPassword) return fail(env.API_VERSION, 'password_mismatch', 'As senhas nao conferem.', 400);
 
   const existing = await findUserByCpfOrEmail(env, cpf, email);
   if (existing?.cpf === cpf) return fail(env.API_VERSION, 'cpf_in_use', 'CPF já cadastrado.', 409);
@@ -38,7 +36,15 @@ export async function registerUser(request: Request, env: Env): Promise<Response
   const sessionTokenHash = await hashToken(sessionToken);
 
   await registerUserWithPrimaryPortfolioAndSession(env, {
-    userId, cpf, email, passwordHash, displayName, portfolioId, sessionId, sessionTokenHash, rememberDevice,
+    userId,
+    cpf,
+    email,
+    passwordHash,
+    displayName,
+    portfolioId,
+    sessionId,
+    sessionTokenHash,
+    rememberDevice,
     deviceFingerprint: getDeviceFingerprint(request),
     userAgent: request.headers.get('user-agent') || '',
     ipAddress: request.headers.get('CF-Connecting-IP') || '',
@@ -65,15 +71,23 @@ export async function loginUser(request: Request, env: Env): Promise<Response> {
   if (!password) return fail(env.API_VERSION, 'missing_password', 'Informe a senha.', 400);
 
   const user = await findUserByIdentifier(env, identifier);
-  if (!user) return fail(env.API_VERSION, 'invalid_credentials', 'CPF, e-mail ou senha inválidos.', 401);
+  if (!user) return fail(env.API_VERSION, 'invalid_credentials', 'CPF, e-mail ou senha invâvalidos.', 401);
   if (user.status === 'DISABLED') return fail(env.API_VERSION, 'account_disabled', 'Conta indisponível.', 403);
-  if (isLocked(user.login_locked_until)) return fail(env.API_VERSION, 'account_locked', 'Acesso temporariamente bloqueado. Tente novamente mais tarde.', 423);
+
+  if (user.login_locked_until && !isLocked(user.login_locked_until)) {
+    await resetFailedLogin(env, user.id);
+    user.failed_login_attempts = 0;
+    user.login_locked_until = null;
+  }
+  if (isLocked(user.login_locked_until)) {
+    return fail(env.API_VERSION, 'account_locked', 'Acesso temporariamente bloqueado. Tente novamente mais tarde.', 423);
+  }
 
   const passwordOk = await verifyPassword(user.password_hash, password);
   if (!passwordOk) {
     const nextLockUntil = Number(user.failed_login_attempts || 0) + 1 >= LOCKOUT_MAX_ATTEMPTS ? buildFutureIso(LOCKOUT_MINUTES) : null;
     await incrementFailedLogin(env, user, nextLockUntil);
-    return fail(env.API_VERSION, 'invalid_credentials', 'CPF, e-mail ou senha inválidos.', 401);
+    return fail(env.API_VERSION, 'invalid_credentials', 'CPF, e-mail ou senha invâvalidos.', 401);
   }
 
   await resetFailedLogin(env, user.id);
@@ -83,7 +97,10 @@ export async function loginUser(request: Request, env: Env): Promise<Response> {
   const sessionState = await findPrimaryPortfolioAndContextState(env, user.id);
 
   await createSession(env, {
-    sessionId, userId: user.id, sessionTokenHash, rememberDevice,
+    sessionId,
+    userId: user.id,
+    sessionTokenHash,
+    rememberDevice,
     deviceFingerprint: getDeviceFingerprint(request),
     userAgent: request.headers.get('user-agent') || '',
     ipAddress: request.headers.get('CF-Connecting-IP') || '',
@@ -106,13 +123,16 @@ export async function loginUser(request: Request, env: Env): Promise<Response> {
 export async function getSession(request: Request, env: Env): Promise<Response> {
   const token = readCookie(request.headers.get('cookie') || '', AUTH_COOKIE_NAME);
   if (!token) return ok(env.API_VERSION, { authenticated: false, nextStep: '/login' });
+
   const tokenHash = await hashToken(token);
   const session = await findSessionStateByTokenHash(env, tokenHash);
   if (!session || session.revoked_at || isExpired(session.expires_at)) {
+    if (token) await revokeSessionByTokenHash(env, tokenHash, 'expired');
     const response = ok(env.API_VERSION, { authenticated: false, nextStep: '/login' });
     response.headers.append('Set-Cookie', clearSessionCookie(env));
     return response;
   }
+
   return ok(env.API_VERSION, {
     authenticated: true,
     userId: session.user_id,
@@ -125,50 +145,23 @@ export async function getSession(request: Request, env: Env): Promise<Response> 
 export async function logoutUser(request: Request, env: Env): Promise<Response> {
   const token = readCookie(request.headers.get('cookie') || '', AUTH_COOKIE_NAME);
   if (token) await revokeSessionByTokenHash(env, await hashToken(token), 'logout');
+
   const response = ok(env.API_VERSION, { authenticated: false, status: 'logged_out', nextStep: '/login' });
   response.headers.append('Set-Cookie', clearSessionCookie(env));
   return response;
 }
 
-export async function recoverUser(request: Request, env: Env): Promise<Response> {
-  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
-  const identifier = normalizeIdentifier(payload.identifier);
-  if (!identifier) return fail(env.API_VERSION, 'missing_identifier', 'Informe CPF ou e-mail.', 400);
-
-  const target = await findRecoveryTargetByIdentifier(env, identifier);
-  if (!target) return ok(env.API_VERSION, { status: 'requested', channel: 'email', provider: 'apps_script', nextStep: '/login' });
-
-  const requestId = buildEntityId('rcv');
-  const recoveryToken = generateOpaqueToken();
-  const recoveryTokenHash = await hashToken(recoveryToken);
-  await createRecoveryRequest(env, requestId, target.id, recoveryTokenHash, buildFutureIso(RECOVERY_EXPIRY_MINUTES), 'APPS_SCRIPT', 'PENDING');
-
-  if (env.APPS_SCRIPT_RECOVERY_URL) {
-    try {
-      const appScriptResponse = await fetch(env.APPS_SCRIPT_RECOVERY_URL, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          ...(env.APPS_SCRIPT_RECOVERY_SECRET ? { 'x-recovery-secret': env.APPS_SCRIPT_RECOVERY_SECRET } : {})
-        },
-        body: JSON.stringify({ userId: target.id, email: target.email, recoveryToken, requestId })
-      });
-      await updateRecoveryRequestStatus(env, requestId, appScriptResponse.ok ? 'SENT' : 'FAILED');
-    } catch {
-      await updateRecoveryRequestStatus(env, requestId, 'FAILED');
-    }
-  }
-
-  return ok(env.API_VERSION, { status: 'requested', channel: 'email', provider: 'apps_script', nextStep: '/login' });
-}
-
 function stringValue(value: unknown): string { return typeof value === 'string' ? value.trim() : ''; }
 function normalizeCpf(value: unknown): string { return stringValue(value).replace(/\D+/g, ''); }
 function normalizeEmail(value: unknown): string { return stringValue(value).toLowerCase(); }
-function normalizeIdentifier(value: unknown): string { const raw = stringValue(value); const cpf = raw.replace(/\D+/g, ''); return cpf.length === 11 ? cpf : raw.toLowerCase(); }
+function normalizeIdentifier(value: unknown): string {
+  const raw = stringValue(value);
+  const cpf = raw.replace(/\D+/g, '');
+  return cpf.length === 11 ? cpf : raw.toLowerCase();
+}
 function looksLikeEmail(value: string): boolean { return value.includes('@') && value.includes('.'); }
 function isLocked(lockUntil: string | null): boolean { return Boolean(lockUntil && Date.parse(lockUntil) > Date.now()); }
-function isExpired(expiresAt: string): boolean { return Date.parse(expiresAt) <= Date.now(); }
+function isExpired(expiresAt: string): boolean { return Date.parse(expiresAt) <= Date.now()); }
 function buildFutureIso(minutes: number): string { return new Date(Date.now() + minutes * 60 * 1000).toISOString(); }
 function getDeviceFingerprint(request: Request): string { return request.headers.get('cf-ray') || request.headers.get('x-device-fingerprint') || ''; }
 function buildSessionCookie(token: string, rememberDevice: boolean, env: Env): string {
