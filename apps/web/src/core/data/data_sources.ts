@@ -1,7 +1,10 @@
 import type {
   ApiAnalysisEnvelope,
   ApiHistorySnapshotsEnvelope,
-  ApiHistoryTimelineEnvelope
+  ApiHistoryTimelineEnvelope,
+  ApiProfileContextGetEnvelope,
+  ApiProfileContextPutEnvelope,
+  ProfileContextPutRequest
 } from './contracts';
 
 export interface AnalysisDataSource {
@@ -13,8 +16,14 @@ export interface HistoryDataSource {
   getHistoryTimeline(input?: { limit?: number }): Promise<ApiHistoryTimelineEnvelope>;
 }
 
+export interface ProfileDataSource {
+  getProfileContext(): Promise<ApiProfileContextGetEnvelope>;
+  putProfileContext(input: ProfileContextPutRequest): Promise<ApiProfileContextPutEnvelope>;
+}
+
 export interface AppDataSources {
   analysis: AnalysisDataSource;
   history: HistoryDataSource;
+  profile: ProfileDataSource;
 }
 

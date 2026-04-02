@@ -2,7 +2,10 @@ import type { AppDataSources } from '../data_sources';
 import type {
   ApiAnalysisEnvelope,
   ApiHistorySnapshotsEnvelope,
-  ApiHistoryTimelineEnvelope
+  ApiHistoryTimelineEnvelope,
+  ApiProfileContextGetEnvelope,
+  ApiProfileContextPutEnvelope,
+  ProfileContextPutRequest
 } from '../contracts';
 import type { JsonLoader } from '../types';
 
@@ -28,7 +31,23 @@ export function createLocalMockDataSources(options: MockProviderOptions): AppDat
       async getHistoryTimeline(): Promise<ApiHistoryTimelineEnvelope> {
         return await loader.load<ApiHistoryTimelineEnvelope>(`${basePath}/history_timeline.json`);
       }
+    },
+    profile: {
+      async getProfileContext(): Promise<ApiProfileContextGetEnvelope> {
+        return await loader.load<ApiProfileContextGetEnvelope>(`${basePath}/profile_context.json`);
+      },
+      async putProfileContext(_input: ProfileContextPutRequest): Promise<ApiProfileContextPutEnvelope> {
+        // Mock simples: reusa o GET como estado "persistido".
+        const current = await loader.load<ApiProfileContextGetEnvelope>(`${basePath}/profile_context.json`);
+        if (!current.ok) return current as unknown as ApiProfileContextPutEnvelope;
+
+        const { backendHealth, ...rest } = current.data;
+        return {
+          ok: true,
+          meta: current.meta,
+          data: rest
+        };
+      }
     }
   };
 }
-

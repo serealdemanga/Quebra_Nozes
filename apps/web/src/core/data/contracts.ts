@@ -112,3 +112,62 @@ export type HistoryTimelineReadyData = {
 export type HistoryTimelineData = ScreenStateRedirect | HistoryTimelineEmptyData | HistoryTimelineReadyData;
 export type ApiHistoryTimelineEnvelope = ApiEnvelope<HistoryTimelineData>;
 
+// ===== Profile / Context =====
+
+export type ProfilePlatformsUsed = {
+  platformIds: string[];
+  otherPlatforms: string[];
+};
+
+export type ProfileDisplayPreferences = {
+  ghostMode: boolean;
+};
+
+export type ProfileContextPayload = {
+  financialGoal: string | null;
+  monthlyIncomeRange: string | null;
+  monthlyInvestmentTarget: number | null;
+  availableToInvest: number | null;
+  riskProfileSelfDeclared: string | null;
+  riskProfileQuizResult: string | null;
+  riskProfileEffective: string | null;
+  investmentHorizon: string | null;
+  platformsUsed: ProfilePlatformsUsed | null;
+  displayPreferences: ProfileDisplayPreferences | null;
+};
+
+export type ProfileOnboardingState = {
+  currentStep: string;
+  completed: boolean;
+  completedAt: string | null;
+  homeUnlocked: boolean;
+  completedSteps: string[];
+  missing: string[];
+};
+
+export type ProfileBackendHealth = {
+  status: string;
+  appEnv: string;
+  apiVersion: string;
+  services: Record<string, string>;
+};
+
+export type ProfileContextGetData = {
+  userId: string;
+  portfolioId: string | null;
+  context: ProfileContextPayload;
+  onboarding: ProfileOnboardingState;
+  backendHealth: ProfileBackendHealth;
+};
+
+export type ProfileContextPutData = Omit<ProfileContextGetData, 'backendHealth'>;
+
+export type ProfileContextStep = 'goal' | 'risk_quiz' | 'income_horizon' | 'platforms' | 'confirm';
+
+export type ProfileContextPutRequest = {
+  context?: Partial<ProfileContextPayload>;
+  step?: ProfileContextStep;
+} & Partial<ProfileContextPayload>;
+
+export type ApiProfileContextGetEnvelope = ApiEnvelope<ProfileContextGetData>;
+export type ApiProfileContextPutEnvelope = ApiEnvelope<ProfileContextPutData>;
