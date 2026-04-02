@@ -23,6 +23,9 @@ export function createRouter(): Router {
       if (path === '/imports/entry') return { id: 'imports_entry' };
       if (path === '/profile') return { id: 'profile' };
       if (path === '/history') return { id: 'history' };
+      // Backend pode sugerir sub-rotas (ex: `/history/snapshots`) como nextStep; mapeamos para a tela unica por enquanto.
+      if (path === '/history/snapshots') return { id: 'history' };
+      if (path === '/history/timeline') return { id: 'history' };
       if (path === '/radar') return { id: 'radar' };
 
       const holding = matchHoldingDetail(path);

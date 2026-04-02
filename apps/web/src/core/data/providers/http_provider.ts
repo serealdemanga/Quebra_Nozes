@@ -81,7 +81,7 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
       async startImport(input?: { payload?: unknown }): Promise<ApiImportStartEnvelope> {
         // OpenAPI atual nao define request body; payload fica opcional para evolucao sem quebrar UI.
         return await fetchJson<ApiImportStartEnvelope>(fetchImpl, `${baseUrl}/v1/imports/start`, input?.payload !== undefined
-          ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) }
+          ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input.payload) }
           : { method: 'POST' });
       },
       async getImportPreview(input: { importId: string }): Promise<ApiImportPreviewEnvelope> {

@@ -20,8 +20,13 @@ export function ImportsEntryScreen(props: ImportsEntryScreenProps): JSX.Element 
     setBusy(true);
     setError(null);
     try {
-      // payload e opcional; hoje so usamos para indicar intencao (sem upload ainda).
-      const res = await controller.start({ mode });
+      // Backend usa `origin` para escolher o pipeline; aqui so declaramos intencao (sem upload ainda).
+      const origin =
+        mode === 'b3_csv' ? 'B3_CSV'
+          : mode === 'custom_template' ? 'CUSTOM_TEMPLATE'
+            : mode === 'document' ? 'DOCUMENT_AI_PARSE'
+              : 'MANUAL_ENTRY';
+      const res = await controller.start({ origin });
       if (!res.envelope.ok) {
         setError(`${res.envelope.error.code}: ${res.envelope.error.message}`);
         setBusy(false);
@@ -89,4 +94,3 @@ function ChoiceRow(props: { label: string; hint: string; selected: boolean; onCl
     </button>
   );
 }
-
