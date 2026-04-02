@@ -40,8 +40,14 @@ export function createLocalMockDataSources(options: MockProviderOptions): AppDat
       }
     },
     holdingDetail: {
-      async getHoldingDetail(): Promise<ApiHoldingDetailEnvelope> {
-        return await loader.load<ApiHoldingDetailEnvelope>(`${basePath}/holding_detail_pos_1.json`);
+      async getHoldingDetail(input: { portfolioId: string; holdingId: string }): Promise<ApiHoldingDetailEnvelope> {
+        // Mock deterministico por holdingId, para cobrir fundo/previdencia/acao sem UI real.
+        const holdingId = input.holdingId;
+        const file =
+          holdingId === 'pos_bal_3' ? 'holding_detail_pos_bal_3.json'
+            : holdingId === 'pos_bal_4' ? 'holding_detail_pos_bal_4.json'
+              : 'holding_detail_pos_1.json';
+        return await loader.load<ApiHoldingDetailEnvelope>(`${basePath}/${file}`);
       }
     },
     profile: {
