@@ -1,6 +1,7 @@
 import type { Env } from '../types/env';
 import { ok, fail, readJson } from './http';
 import { buildEntityId, hashToken } from './auth_crypto';
+import { recordOperationalEvent } from './operational_events_service';
 import { findImportSessionStateByTokenHash, createImportRecord, updateImportRecord, replaceImportRows, findImportById, findImportRows, findManualDuplicateCandidates, findAssetTypeByCode, findAssetByNormalizedNameOrCode, createAsset, createPortfolioPosition, createPortfolioSnapshot, createSnapshotPosition } from '../repositories/import_repository';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
@@ -229,6 +230,22 @@ async function persistNormalizedImport(env: Env, session: { userId: string; port
   const status = previewRows.totals.invalidRows === 0 && previewRows.totals.duplicateRows === 0 ? 'PREVIEW_READY' : 'PROCESSING';
   await createImportRecord(env, { importId, userId: session.userId, portfolioId: session.portfolioId, status, origin, totalRows: previewRows.totals.totalRows, validRows: previewRows.totals.validRows, invalidRows: previewRows.totals.invalidRows, duplicateRows: previewRows.totals.duplicateRows });
   await replaceImportRows(env, importId, previewRows.rows.map((row) => ({ id: row.id, rowNumber: row.rowNumber, sourcePayloadJson: row.sourcePayloadJson, normalizedPayloadJson: row.normalizedPayloadJson, resolutionStatus: row.resolutionStatus, errorMessage: row.errorMessage })));
+
+  await recordOperationalEvent(env, {
+    userId: session.userId,
+    portfolioId: session.portfolioId,
+    eventType: 'import_created',
+    status: 'ok',
+    message: 'Importacao criada.',
+    details: {
+      importId,
+      origin,
+      status,
+      totals: previewRows.totals,
+      importable: input.importable
+    }
+  });
+
   return ok(env.API_VERSION, { importId, status: 'pending_preview', nextStep: `/v1/imports/${importId}/preview`, totals: previewRows.totals, document: input.documentMeta, importable: input.importable });
 }
 
@@ -278,6 +295,21 @@ export async function commitManualImport(request: Request, env: Env, params: Rec
   await createPortfolioSnapshot(env, { snapshotId, portfolioId: session.portfolioId, importId: params.importId, referenceDate, totalEquity, totalInvested, totalProfitLoss, totalProfitLossPct });
   for (const asset of createdAssets) await createSnapshotPosition(env, { snapshotPositionId: buildEntityId('sps'), snapshotId, assetId: asset.assetId, quantity: asset.quantity, unitPrice: asset.currentPrice, currentValue: asset.currentValue });
   await updateImportRecord(env, { importId: params.importId, status: 'COMMITTED', totalRows: importRecord.total_rows, validRows: importRecord.valid_rows, invalidRows: importRecord.invalid_rows, duplicateRows: importRecord.duplicate_rows, finishedAt: true });
+
+  await recordOperationalEvent(env, {
+    userId: session.userId,
+    portfolioId: session.portfolioId,
+    eventType: 'import_committed',
+    status: 'ok',
+    message: 'Importacao commitada e snapshot criado.',
+    details: {
+      importId: params.importId,
+      snapshotId,
+      affectedPositions: createdAssets.length,
+      totals: { totalEquity, totalInvested, totalProfitLoss, totalProfitLossPct }
+    }
+  });
+
   return ok(env.API_VERSION, { importId: params.importId, status: 'committed', createdSnapshotId: snapshotId, affectedPositions: createdAssets.length, nextStep: '/history/snapshots' });
 }
 

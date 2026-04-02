@@ -12,6 +12,7 @@ import { getImportConflicts } from './routes/import_conflicts';
 import { getImportDetail } from './routes/import_detail';
 import { getImportEngineStatus } from './routes/import_engine_status';
 import { postAuthRegister, postAuthLogin, getAuthSession, postAuthLogout, postAuthRecover } from './routes/auth';
+import { getOperationalEvents } from './routes/ops';
 import type { Env } from './types/env';
 
 const router = new Router();
@@ -39,6 +40,7 @@ router.register('GET', '/v1/imports/:importId/detail', getImportDetail);
 router.register('PATCH', '/v1/imports/:importId/rows/:rowId', patchImportRow);
 router.register('POST', '/v1/imports/:importId/rows/:rowId/duplicate-resolution', postImportRowDuplicateResolution);
 router.register('POST', '/v1/imports/:importId/commit', postImportCommit);
+router.register('GET', '/v1/ops/events', getOperationalEvents);
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {

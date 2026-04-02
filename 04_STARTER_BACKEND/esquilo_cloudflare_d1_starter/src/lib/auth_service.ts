@@ -1,6 +1,8 @@
 import type { Env } from '../types/env';
 import { ok, fail, readJson } from './http';
 import { buildEntityId, generateOpaqueToken, hashPassword, hashToken, verifyPassword } from './auth_crypto';
+import { d1 } from './d1';
+import { recordOperationalEvent } from './operational_events_service';
 import { findUserByCpfOrEmail, findUserByIdentifier, incrementFailedLogin, resetFailedLogin } from '../repositories/auth_user_repository';
 import { registerUserWithPrimaryPortfolioAndSession, createSession, findSessionStateByTokenHash, revokeSessionByTokenHash } from '../repositories/auth_session_repository';
 
@@ -49,6 +51,15 @@ export async function registerUser(request: Request, env: Env): Promise<Response
     userAgent: request.headers.get('user-agent') || '',
     ipAddress: request.headers.get('CF-Connecting-IP') || '',
     sessionExpiresAt: buildFutureIso(rememberDevice ? REMEMBER_SESSION_DAYS * 24 * 60 : SHORT_SESSION_HOURS * 60)
+  });
+
+  await recordOperationalEvent(env, {
+    userId,
+    portfolioId,
+    eventType: 'auth_register',
+    status: 'ok',
+    message: 'Usuario registrado.',
+    details: { rememberDevice }
   });
 
   const response = ok(env.API_VERSION, {
@@ -107,6 +118,15 @@ export async function loginUser(request: Request, env: Env): Promise<Response> {
     sessionExpiresAt: buildFutureIso(rememberDevice ? REMEMBER_SESSION_DAYS * 24 * 60 : SHORT_SESSION_HOURS * 60)
   });
 
+  await recordOperationalEvent(env, {
+    userId: user.id,
+    portfolioId: sessionState.portfolioId || null,
+    eventType: 'auth_login',
+    status: 'ok',
+    message: 'Login realizado.',
+    details: { rememberDevice }
+  });
+
   const response = ok(env.API_VERSION, {
     authenticated: true,
     userId: user.id,
@@ -144,7 +164,18 @@ export async function getSession(request: Request, env: Env): Promise<Response> 
 
 export async function logoutUser(request: Request, env: Env): Promise<Response> {
   const token = readCookie(request.headers.get('cookie') || '', AUTH_COOKIE_NAME);
-  if (token) await revokeSessionByTokenHash(env, await hashToken(token), 'logout');
+  if (token) {
+    const tokenHash = await hashToken(token);
+    const session = await findSessionStateByTokenHash(env, tokenHash);
+    await revokeSessionByTokenHash(env, tokenHash, 'logout');
+    await recordOperationalEvent(env, {
+      userId: session?.user_id || null,
+      portfolioId: session?.portfolio_id || null,
+      eventType: 'auth_logout',
+      status: 'ok',
+      message: 'Logout realizado.'
+    });
+  }
 
   const response = ok(env.API_VERSION, { authenticated: false, status: 'logged_out', nextStep: '/login' });
   response.headers.append('Set-Cookie', clearSessionCookie(env));
@@ -161,7 +192,7 @@ function normalizeIdentifier(value: unknown): string {
 }
 function looksLikeEmail(value: string): boolean { return value.includes('@') && value.includes('.'); }
 function isLocked(lockUntil: string | null): boolean { return Boolean(lockUntil && Date.parse(lockUntil) > Date.now()); }
-function isExpired(expiresAt: string): boolean { return Date.parse(expiresAt) <= Date.now()); }
+function isExpired(expiresAt: string): boolean { return Date.parse(expiresAt) <= Date.now(); }
 function buildFutureIso(minutes: number): string { return new Date(Date.now() + minutes * 60 * 1000).toISOString(); }
 function getDeviceFingerprint(request: Request): string { return request.headers.get('cf-ray') || request.headers.get('x-device-fingerprint') || ''; }
 function buildSessionCookie(token: string, rememberDevice: boolean, env: Env): string {
@@ -179,12 +210,13 @@ function readCookie(cookieHeader: string, cookieName: string): string {
   return match ? decodeURIComponent(match.slice(prefix.length)) : '';
 }
 async function findPrimaryPortfolioAndContextState(env: Env, userId: string): Promise<{ portfolioId: string; hasContext: boolean }> {
-  const row = await env.DB.prepare(
+  const row = await d1(env).first<{ portfolio_id: string | null; has_context: number }>(
     `SELECT p.id AS portfolio_id, CASE WHEN c.user_id IS NULL THEN 0 ELSE 1 END AS has_context
      FROM portfolios p
      LEFT JOIN user_financial_context c ON c.user_id = p.user_id
      WHERE p.user_id = ? AND p.is_primary = 1
-     LIMIT 1`
-  ).bind(userId).first<{ portfolio_id: string | null; has_context: number }>();
+     LIMIT 1`,
+    [userId]
+  );
   return { portfolioId: row?.portfolio_id || '', hasContext: Boolean(row?.has_context) };
 }
