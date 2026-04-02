@@ -1,5 +1,6 @@
 import type {
   ApiAnalysisEnvelope,
+  ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
@@ -11,6 +12,10 @@ import type {
 
 export interface AnalysisDataSource {
   getAnalysis(): Promise<ApiAnalysisEnvelope>;
+}
+
+export interface DashboardDataSource {
+  getDashboardHome(): Promise<ApiDashboardHomeEnvelope>;
 }
 
 export interface HistoryDataSource {
@@ -32,6 +37,7 @@ export interface ProfileDataSource {
 }
 
 export interface AppDataSources {
+  dashboard: DashboardDataSource;
   analysis: AnalysisDataSource;
   history: HistoryDataSource;
   portfolio: PortfolioDataSource;

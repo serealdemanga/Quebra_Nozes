@@ -1,6 +1,7 @@
 import type { AppDataSources } from '../data_sources';
 import type {
   ApiAnalysisEnvelope,
+  ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
@@ -21,6 +22,11 @@ export function createLocalMockDataSources(options: MockProviderOptions): AppDat
   const loader = options.loader;
 
   return {
+    dashboard: {
+      async getDashboardHome(): Promise<ApiDashboardHomeEnvelope> {
+        return await loader.load<ApiDashboardHomeEnvelope>(`${basePath}/dashboard_home.json`);
+      }
+    },
     analysis: {
       async getAnalysis(): Promise<ApiAnalysisEnvelope> {
         return await loader.load<ApiAnalysisEnvelope>(`${basePath}/analysis.json`);

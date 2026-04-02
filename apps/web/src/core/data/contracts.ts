@@ -282,3 +282,70 @@ export type HoldingDetailDataReady = {
 
 export type HoldingDetailData = ScreenStateRedirect | HoldingDetailDataReady;
 export type ApiHoldingDetailEnvelope = ApiEnvelope<HoldingDetailData>;
+
+// ===== Dashboard Home =====
+
+export type DashboardHero = {
+  totalEquity: number;
+  totalInvested: number;
+  totalProfitLoss: number;
+  totalProfitLossPct: number;
+  statusLabel: string;
+};
+
+export type DashboardScore = {
+  value: number;
+  status: string;
+  explanation: string;
+};
+
+export type DashboardDistributionItem = {
+  key: string;
+  label: string;
+  value: number;
+  sharePct: number;
+  performancePct: number | null;
+  sourceType: string;
+};
+
+export type DashboardInsight = {
+  kind: string;
+  title: string;
+  body: string;
+  severity?: string;
+};
+
+export type DashboardHomeEmptyData = {
+  screenState: 'empty';
+  portfolioId: string;
+  emptyState: EmptyState;
+};
+
+export type DashboardHomeAnalysisPendingData = {
+  screenState: 'portfolio_ready_analysis_pending';
+  portfolioId: string;
+  hero: DashboardHero;
+  primaryProblem: { code: string; title: string; body: string; severity: string };
+  primaryAction: { code: string; title: string; body: string; ctaLabel: string; target: string };
+  score: DashboardScore;
+  distribution: DashboardDistributionItem[];
+  insights: DashboardInsight[];
+  updatedAt: string;
+  sourceWarning: string | null;
+};
+
+export type DashboardHomeReadyData = {
+  screenState: 'ready';
+  portfolioId: string;
+  hero: DashboardHero;
+  primaryProblem: { code: string; title: string; body: string; severity: string };
+  primaryAction: { code: string; title: string; body: string; ctaLabel: string; target: string };
+  score: DashboardScore;
+  distribution: DashboardDistributionItem[];
+  insights: DashboardInsight[];
+  updatedAt: string;
+  sourceWarning: string | null;
+};
+
+export type DashboardHomeData = ScreenStateRedirect | DashboardHomeEmptyData | DashboardHomeAnalysisPendingData | DashboardHomeReadyData;
+export type ApiDashboardHomeEnvelope = ApiEnvelope<DashboardHomeData>;
