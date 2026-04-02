@@ -1,6 +1,6 @@
-# SQL por rota — Análise consolidada
+# SQL por rota — Documento assistido
 
-## Analysis — sessão com gate de onboarding
+## Import start — sessão com gate de onboarding
 ```sql
 SELECT
   s.user_id AS userId,
@@ -21,35 +21,36 @@ WHERE s.session_token_hash = ?
 LIMIT 1;
 ```
 
-## Analysis — última análise consolidada da carteira
+## Import start — persistência do preview assistido
 ```sql
-SELECT
-  id,
-  portfolio_id,
-  snapshot_id,
-  score_value,
-  score_status,
-  primary_problem,
-  primary_action,
-  portfolio_decision,
-  action_plan_text,
-  summary_text,
-  messaging_json,
-  generated_at
-FROM portfolio_analyses
-WHERE portfolio_id = ?
-ORDER BY generated_at DESC
-LIMIT 1;
+INSERT INTO imports (
+  id, user_id, portfolio_id, status, origin, total_rows, valid_rows, invalid_rows, duplicate_rows, created_at, started_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 ```
 
-## Analysis — insights priorizados
 ```sql
-SELECT
-  insight_type,
-  title,
-  message,
-  priority
-FROM analysis_insights
-WHERE analysis_id = ?
-ORDER BY priority ASC, created_at ASC;
+DELETE FROM import_rows WHERE import_id = ?;
 ```
+
+```sql
+INSERT INTO import_rows (
+  id, import_id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message, created_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
+```
+
+## Import preview — leitura com origem/confiança por campo
+```sql
+SELECT id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message
+FROM import_rows
+WHERE import_id = ?
+ORDER BY row_number ASC;
+```
+
+## Regras da etapa
+- origem: DOCUMENT_AI_PARSE
+- um arquivo por vez
+- tipos aceitos: PDF, imagem e DOCX
+- parser por regra vem antes da IA
+- documento não importável bloqueia commit
+- pendência crítica bloqueia commit
+- preview exibe origem do campo: rule, ai ou manual
