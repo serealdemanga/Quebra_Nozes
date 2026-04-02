@@ -4,6 +4,8 @@ import { createAppShell } from './app_shell';
 import { createViteJsonLoader } from './vite_json_loader';
 import type { DataSourceMode } from '../core/data/data_source_factory';
 import { SplashScreen } from '../features/splash/SplashScreen';
+import { OnboardingScreen } from '../features/onboarding/OnboardingScreen';
+import { HomeScreen } from '../features/home/HomeScreen';
 
 function getEnv(): AppEnv {
   const raw = String(import.meta.env.VITE_APP_ENV ?? 'local');
@@ -35,6 +37,7 @@ export function App(): JSX.Element {
   }, [env]);
 
   const state = useSyncExternalStore(shell.subscribe, shell.getState, shell.getState);
+  const dataSources = shell.getDataSources();
 
   useEffect(() => {
     const onPop = () => shell.navigateTo(window.location.pathname);
@@ -54,6 +57,26 @@ export function App(): JSX.Element {
       <SplashScreen
         onStart={() => navigate('/onboarding')}
         onSeeHowItWorks={() => navigate('/onboarding')}
+      />
+    );
+  }
+
+  if (state.route.id === 'onboarding') {
+    return (
+      <OnboardingScreen
+        dataSources={dataSources}
+        onDone={() => navigate('/home')}
+        onSkip={() => navigate('/home')}
+      />
+    );
+  }
+
+  if (state.route.id === 'home') {
+    return (
+      <HomeScreen
+        dataSources={dataSources}
+        onGoToOnboarding={() => navigate('/onboarding')}
+        onGoToPortfolio={() => navigate('/portfolio')}
       />
     );
   }

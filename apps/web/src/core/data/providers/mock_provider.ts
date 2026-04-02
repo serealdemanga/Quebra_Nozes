@@ -21,6 +21,14 @@ export function createLocalMockDataSources(options: MockProviderOptions): AppDat
   const basePath = (options.basePath ?? 'apps/web/src/core/data/mock/local').replace(/\/+$/, '');
   const loader = options.loader;
 
+  let profileCache: ApiProfileContextGetEnvelope | null = null;
+
+  async function loadProfile(): Promise<ApiProfileContextGetEnvelope> {
+    if (profileCache) return profileCache;
+    profileCache = await loader.load<ApiProfileContextGetEnvelope>(`${basePath}/profile_context.json`);
+    return profileCache;
+  }
+
   return {
     dashboard: {
       async getDashboardHome(): Promise<ApiDashboardHomeEnvelope> {
@@ -58,14 +66,40 @@ export function createLocalMockDataSources(options: MockProviderOptions): AppDat
     },
     profile: {
       async getProfileContext(): Promise<ApiProfileContextGetEnvelope> {
-        return await loader.load<ApiProfileContextGetEnvelope>(`${basePath}/profile_context.json`);
+        return await loadProfile();
       },
       async putProfileContext(_input: ProfileContextPutRequest): Promise<ApiProfileContextPutEnvelope> {
-        // Mock simples: reusa o GET como estado "persistido".
-        const current = await loader.load<ApiProfileContextGetEnvelope>(`${basePath}/profile_context.json`);
+        // Mock persistente em memoria: aplica patch e devolve estado atualizado
+        const input = _input;
+        const current = await loadProfile();
         if (!current.ok) return current as unknown as ApiProfileContextPutEnvelope;
 
-        const { backendHealth, ...rest } = current.data;
+        const nextContext = { ...current.data.context, ...(input.context ?? {}) };
+        const currentOnboarding = current.data.onboarding;
+
+        const step = input.step ?? null;
+        const completedSteps = new Set(currentOnboarding.completedSteps ?? []);
+        if (step) completedSteps.add(step);
+
+        const nextOnboarding = {
+          ...currentOnboarding,
+          currentStep: step ?? currentOnboarding.currentStep,
+          completedSteps: Array.from(completedSteps),
+          completed: step === 'confirm' ? true : currentOnboarding.completed,
+          completedAt: step === 'confirm' ? new Date().toISOString() : currentOnboarding.completedAt,
+          homeUnlocked: step === 'confirm' ? true : currentOnboarding.homeUnlocked
+        };
+
+        profileCache = {
+          ...current,
+          data: {
+            ...current.data,
+            context: nextContext,
+            onboarding: nextOnboarding
+          }
+        };
+
+        const { backendHealth, ...rest } = profileCache.data;
         return {
           ok: true,
           meta: current.meta,
