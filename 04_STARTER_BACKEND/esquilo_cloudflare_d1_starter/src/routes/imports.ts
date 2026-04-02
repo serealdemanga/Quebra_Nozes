@@ -1,5 +1,5 @@
 import type { Env } from '../types/env';
-import { startImport, getManualImportPreview, commitManualImport, downloadCustomTemplate, downloadB3Template } from '../lib/import_service';
+import { startImport, getManualImportPreview, commitManualImport, downloadCustomTemplate, downloadB3Template, patchImportPreviewRow, postImportResolveDuplicate } from '../lib/import_service';
 
 export async function postImportStart(request: Request, env: Env): Promise<Response> {
   return await startImport(request, env);
@@ -7,6 +7,14 @@ export async function postImportStart(request: Request, env: Env): Promise<Respo
 
 export async function getImportPreview(request: Request, env: Env, params: Record<string, string>): Promise<Response> {
   return await getManualImportPreview(request, env, params);
+}
+
+export async function patchImportRow(request: Request, env: Env, params: Record<string, string>): Promise<Response> {
+  return await patchImportPreviewRow(request, env, params);
+}
+
+export async function postImportRowDuplicateResolution(request: Request, env: Env, params: Record<string, string>): Promise<Response> {
+  return await postImportResolveDuplicate(request, env, params);
 }
 
 export async function postImportCommit(request: Request, env: Env, params: Record<string, string>): Promise<Response> {
