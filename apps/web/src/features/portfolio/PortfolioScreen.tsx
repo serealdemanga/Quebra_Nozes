@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { AppDataSources } from '../../core/data/data_sources';
 import type { PortfolioData, PortfolioGroup, PortfolioHolding } from '../../core/data/contracts';
+import { ShellLayout } from '../../app/ShellLayout';
 
 type PerfFilter = 'all' | 'best' | 'worst';
 
@@ -8,6 +9,8 @@ export interface PortfolioScreenProps {
   dataSources: AppDataSources;
   onBack(): void;
   onOpenHolding(input: { portfolioId: string; holdingId: string }): void;
+  onGoToHome(): void;
+  onGoToRadar(): void;
 }
 
 export function PortfolioScreen(props: PortfolioScreenProps): JSX.Element {
@@ -58,26 +61,21 @@ export function PortfolioScreen(props: PortfolioScreenProps): JSX.Element {
   }, [state, query]);
 
   return (
-    <div className="app">
-      <div className="container" style={{ paddingTop: 18, paddingBottom: 28 }}>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img
-              src="/brand/esquilo-icon.png"
-              alt="Esquilo"
-              width={34}
-              height={34}
-              style={{ borderRadius: 12, background: 'rgba(255,255,255,0.85)', boxShadow: 'var(--shadow-1)' }}
-            />
-            <div style={{ fontWeight: 900 }}>Carteira</div>
-          </div>
-          <button className="btn btnGhost" onClick={props.onBack}>
-            Voltar
-          </button>
-        </header>
-
-        <main style={{ marginTop: 14, display: 'grid', gap: 12 }}>
-          <div className="card" style={{ padding: 14 }}>
+    <ShellLayout
+      title="Carteira"
+      activeRouteId="portfolio"
+      onNavigate={(href) => {
+        if (href === '/home') props.onGoToHome();
+        else if (href === '/radar') props.onGoToRadar();
+      }}
+      rightSlot={
+        <button className="btn btnGhost" onClick={props.onBack}>
+          Voltar
+        </button>
+      }
+    >
+      <div style={{ display: 'grid', gap: 12 }}>
+        <div className="card" style={{ padding: 14 }}>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <FilterPill label="Todos" selected={perf === 'all'} onClick={() => setPerf('all')} />
@@ -100,7 +98,7 @@ export function PortfolioScreen(props: PortfolioScreenProps): JSX.Element {
             </div>
           </div>
 
-          {state.kind === 'loading' ? (
+        {state.kind === 'loading' ? (
             <div className="card" style={{ padding: 16 }}>
               Carregando...
             </div>
@@ -112,9 +110,8 @@ export function PortfolioScreen(props: PortfolioScreenProps): JSX.Element {
           ) : (
             <PortfolioContent data={filtered ?? state.data} onOpenHolding={props.onOpenHolding} />
           )}
-        </main>
       </div>
-    </div>
+    </ShellLayout>
   );
 }
 
@@ -274,4 +271,3 @@ function formatPct(v: number): string {
   const s = (n >= 0 ? `+${n}` : String(n)).replace('.', ',');
   return `${s}%`;
 }
-
