@@ -16,3 +16,7 @@ Permitir ajuste de contexto do usuário e controle de preferências visuais.
 
 ## Regra
 O perfil melhora a leitura da carteira. Não deve parecer cadastro bancário chato.
+
+## Estados (E2E-003)
+- ao reabrir, dados devem reaparecer iguais ao salvo (fonte de verdade = GET /v1/profile/context).
+- salvar deve atualizar `onboarding` quando o usuário concluir o fluxo.
