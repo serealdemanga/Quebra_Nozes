@@ -3,46 +3,91 @@
 ## Route
 `GET /v1/portfolio/{portfolioId}/holdings/{holdingId}`
 
-## Response shape
+## Envelope HTTP
+
+Sucesso:
+
+```json
+{ "ok": true, "meta": { "requestId": "uuid", "timestamp": "2026-04-02T00:00:00.000Z", "version": "v1" }, "data": {} }
+```
+
+Erro:
+
+```json
+{ "ok": false, "meta": { "requestId": "uuid", "timestamp": "2026-04-02T00:00:00.000Z", "version": "v1" }, "error": { "code": "holding_not_found", "message": "Ativo nao encontrado." } }
+```
+
+Headers:
+
+- `x-request-id` (sempre)
+- `x-error-code` (apenas em erro)
+
+## Response shape (data)
+
+Pode retornar redirect:
+
+```json
+{ "screenState": "redirect_onboarding", "redirectTo": "/onboarding" }
+```
+
+No caminho feliz:
+
 ```json
 {
-  "meta": {
-    "requestId": "req_123",
-    "timestamp": "2026-03-31T01:00:00Z",
-    "version": "v1"
+  "holding": {
+    "id": "pos_123",
+    "assetId": "ast_123",
+    "code": "ITSA4",
+    "name": "Itausa",
+    "categoryKey": "acoes",
+    "categoryLabel": "Acoes",
+    "platformId": "plt_xp",
+    "platformName": "XP Investimentos",
+    "quantity": 10,
+    "averagePrice": 13.5,
+    "currentPrice": 14.5,
+    "currentValue": 145,
+    "investedAmount": 135,
+    "performanceValue": 10,
+    "performancePct": 7.4,
+    "allocationPct": 1.2,
+    "recommendation": "Manter e monitorar",
+    "statusLabel": "Cotacao disponivel",
+    "quotationStatus": "priced",
+    "notes": "",
+    "stopLoss": null,
+    "targetPrice": null,
+    "sourceKind": "manual",
+    "assetTypeCode": "STOCK"
   },
-  "data": {
-    "holdingId": "pos_1",
-    "portfolioId": "portfolio_main",
-    "asset": {
-      "id": "asset_itsa4",
-      "code": "ITSA4",
-      "name": "Itaúsa",
-      "categoryCode": "STOCK",
-      "categoryName": "Ações"
-    },
-    "platform": {
-      "id": "platform_xp",
-      "name": "XP Investimentos"
-    },
-    "quantity": 27,
-    "averagePrice": 13.84,
-    "currentPrice": 14.52,
-    "investedAmount": 373.68,
-    "currentValue": 392.04,
-    "performancePct": 4.92,
-    "score": {
-      "value": 74,
-      "status": "atencao_leve"
-    },
-    "summary": "Este ativo cumpre um papel pequeno, mas ainda útil na carteira.",
-    "primaryMessage": "Vale acompanhar sem transformar isso no maior foco agora.",
-    "externalLink": null
-  }
+  "ranking": {
+    "score": 70,
+    "status": "Neutro",
+    "motives": [],
+    "opportunityScore": 70
+  },
+  "recommendation": {
+    "code": "hold_and_monitor",
+    "title": "Manter e monitorar",
+    "body": "Texto"
+  },
+  "categoryContext": {
+    "categoryKey": "acoes",
+    "categoryLabel": "Acoes",
+    "categoryRisk": "Neutra",
+    "categoryRecommendation": "Sem recomendacao consolidada especifica",
+    "primaryMessage": "Contexto...",
+    "holdingsCount": 3,
+    "totalCurrent": 60000,
+    "totalInvested": 50000,
+    "totalProfitLoss": 10000,
+    "totalProfitLossPct": 20
+  },
+  "externalLink": "https://www.google.com/finance/quote/ITSA4:BVMF"
 }
 ```
 
 ## Rules
-- detalhe aprofunda sem virar relatório gigante
-- externalLink só aparece se existir origem válida
-- a recomendação precisa ser coerente com o peso do ativo na carteira
+
+- detalhe aprofunda sem virar relatorio gigante.
+- a recomendacao deve ser coerente com peso (`allocationPct`) e performance (`performancePct`).

@@ -1,39 +1,65 @@
-# Analysis contract
+# Analysis (Radar) contract
 
 ## Route
 `GET /v1/analysis`
 
-## Response shape
+## Envelope HTTP
+
+Sucesso:
+
+```json
+{ "ok": true, "meta": { "requestId": "uuid", "timestamp": "2026-04-02T00:00:00.000Z", "version": "v1" }, "data": {} }
+```
+
+Erro:
+
+```json
+{ "ok": false, "meta": { "requestId": "uuid", "timestamp": "2026-04-02T00:00:00.000Z", "version": "v1" }, "error": { "code": "portfolio_not_found", "message": "Carteira principal nao encontrada." } }
+```
+
+Headers:
+
+- `x-request-id` (sempre)
+- `x-error-code` (apenas em erro)
+
+## Response shape (data)
+
+Estados:
+
+- `redirect_onboarding`
+- `pending` (nao existe analise persistida)
+- `ready`
+
+Pending:
+
 ```json
 {
-  "meta": {
-    "requestId": "req_123",
-    "timestamp": "2026-03-31T01:00:00Z",
-    "version": "v1"
-  },
-  "data": {
-    "scope": "portfolio",
-    "score": {
-      "value": 72,
-      "status": "atencao_moderada"
-    },
-    "summary": "Sua carteira está funcional, mas concentrada demais em previdência.",
-    "primaryProblem": "O principal ponto de atenção hoje é a concentração excessiva em um único bloco.",
-    "recommendation": {
-      "tag": "REDUCE_CONCENTRATION",
-      "targetType": "category",
-      "targetId": "PENSION",
-      "title": "Diluir concentração aos poucos",
-      "body": "Use novos aportes para abrir mais equilíbrio fora da previdência."
-    },
-    "insights": [],
-    "generatedAt": "2026-03-31T01:00:00Z"
-  }
+  "screenState": "pending",
+  "portfolioId": "pfl_123",
+  "pendingState": { "title": "string", "body": "string", "ctaLabel": "string", "target": "/history/snapshots" }
+}
+```
+
+Ready:
+
+```json
+{
+  "screenState": "ready",
+  "analysisId": "anl_123",
+  "portfolioId": "pfl_123",
+  "snapshotId": "snp_123",
+  "score": { "value": 72, "status": "atencao_moderada", "explanation": "Resumo" },
+  "primaryProblem": { "code": "concentracao", "title": "string", "body": "string", "severity": "info" },
+  "primaryAction": { "code": "diluir_concentracao", "title": "string", "body": "string", "ctaLabel": "Ver carteira", "target": "/portfolio" },
+  "portfolioDecision": "string",
+  "actionPlan": ["passo 1", "passo 2"],
+  "summary": "Resumo",
+  "insights": [{ "kind": "concentration", "title": "Insight", "body": "Mensagem", "priority": 1 }],
+  "generatedAt": "2026-04-02T00:00:00.000Z"
 }
 ```
 
 ## Rules
-- a análise lê o snapshot e o contexto do usuário
-- a resposta precisa ser curta
-- sempre há uma recomendação principal
-- a recommendation tag é obrigatória
+
+- a analise deve explicar e orientar com foco em problema/acao principal.
+- `pending` deve orientar proximo passo sem “deixar a tela muda”.
