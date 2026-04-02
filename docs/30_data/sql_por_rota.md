@@ -1,6 +1,6 @@
-# SQL por rota — Detalhe do ativo
+# SQL por rota — Documento assistido
 
-## Holding detail — sessão com gate de onboarding
+## Import start — sessão com gate de onboarding
 ```sql
 SELECT
   s.user_id AS userId,
@@ -21,75 +21,36 @@ WHERE s.session_token_hash = ?
 LIMIT 1;
 ```
 
-## Holding detail — ativo específico da carteira
+## Import start — persistência do preview assistido
 ```sql
-SELECT
-  pp.id,
-  pp.portfolio_id,
-  pp.asset_id,
-  at.code AS asset_type_code,
-  at.name AS asset_type_name,
-  pp.source_kind,
-  a.code,
-  a.name,
-  pp.category_label,
-  p.id AS platform_id,
-  p.name AS platform_name,
-  pp.quantity,
-  pp.average_price,
-  pp.current_price,
-  pp.current_amount,
-  pp.invested_amount,
-  pp.notes,
-  pp.stop_loss,
-  pp.target_price,
-  pp.profitability
-FROM portfolio_positions pp
-JOIN assets a ON a.id = pp.asset_id
-JOIN asset_types at ON at.id = a.asset_type_id
-LEFT JOIN platforms p ON p.id = pp.platform_id
-WHERE pp.portfolio_id = ?
-  AND pp.id = ?
-  AND pp.status = 'active'
-LIMIT 1;
+INSERT INTO imports (
+  id, user_id, portfolio_id, status, origin, total_rows, valid_rows, invalid_rows, duplicate_rows, created_at, started_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 ```
 
-## Holding detail — agregado da categoria
 ```sql
-SELECT
-  COALESCE(NULLIF(LOWER(TRIM(pp.category_label)), ''), LOWER(TRIM(at.code)), 'outros') AS category_key,
-  COALESCE(NULLIF(pp.category_label, ''), at.name, at.code, 'Outros') AS category_label,
-  SUM(pp.current_amount) AS total_current,
-  SUM(pp.invested_amount) AS total_invested,
-  COUNT(*) AS holdings_count
-FROM portfolio_positions pp
-JOIN assets a ON a.id = pp.asset_id
-JOIN asset_types at ON at.id = a.asset_type_id
-WHERE pp.portfolio_id = ?
-  AND pp.status = 'active'
-GROUP BY category_key, category_label
-HAVING category_key = ?
-LIMIT 1;
+DELETE FROM import_rows WHERE import_id = ?;
 ```
 
-## Holding detail — total da carteira
 ```sql
-SELECT SUM(current_amount) AS total_current
-FROM portfolio_positions
-WHERE portfolio_id = ?
-  AND status = 'active';
+INSERT INTO import_rows (
+  id, import_id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message, created_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
 ```
 
-## Holding detail — última análise consolidada da carteira
+## Import preview — leitura com origem/confiança por campo
 ```sql
-SELECT
-  pa.id,
-  pa.score_status,
-  pa.primary_problem,
-  pa.primary_action,
-  pa.summary_text
-FROM portfolio_analyses pa
-WHERE pa.portfolio_id = ?
-ORDER BY pa.generated_at DESC
-LIMIT 1;
+SELECT id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message
+FROM import_rows
+WHERE import_id = ?
+ORDER BY row_number ASC;
 ```
+
+## Regras da etapa
+- origem: DOCUMENT_AI_PARSE
+- um arquivo por vez
+- tipos aceitos: PDF, imagem e DOCX
+- parser por regra vem antes da IA
+- documento não importável bloqueia commit
+- pendência crítica bloqueia commit
+- preview exibe origem do campo: rule, ai ou manual
