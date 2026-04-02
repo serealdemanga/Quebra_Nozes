@@ -24,4 +24,4 @@ Ela recebe um data source já resolvido.
 Trocar local -> hml -> prd com o mínimo de atrito.
 
 ## Estado atual
-Existe implementação mínima em TypeScript para `AnalysisDataSource` e `HistoryDataSource` (mock e HTTP), sem bootstrapping do app ainda.
+Existe implementação mínima em TypeScript para `AnalysisDataSource`, `HistoryDataSource` e `ProfileDataSource` (mock e HTTP), sem bootstrapping do app ainda.
