@@ -1,6 +1,22 @@
 # API
 
-Esta pasta vai receber o backend novo.
+Esta pasta e a casa final oficial do backend novo.
+
+Nesta fase, o runtime executavel ainda esta em:
+
+- `04_STARTER_BACKEND/esquilo_cloudflare_d1_starter`
+
+Papel desta pasta agora:
+
+- definir contrato HTTP oficial
+- registrar rotas e fronteiras por dominio
+- servir como destino estrutural da absorcao do starter
+
+Regra:
+
+- nao abrir API nova fora desta trilha
+- nao tratar esta pasta como "documentacao opcional"
+- toda mudanca relevante de rota deve ficar coerente com o runtime oficial de transicao
 
 Responsabilidades esperadas:
 - health
