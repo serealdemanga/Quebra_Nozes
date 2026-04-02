@@ -573,6 +573,33 @@ components:
           $ref: '#/components/schemas/CategoryContext'
         externalLink:
           type: string
+        benchmarkComparison:
+          type: object
+          nullable: true
+          properties:
+            benchmark:
+              type: string
+              enum: [CDI]
+            fromDate:
+              type: string
+              example: '2026-01-01'
+            toDate:
+              type: string
+              example: '2026-04-01'
+            benchmarkAccumulatedPct:
+              type: number
+              nullable: true
+            holdingPerformancePct:
+              type: number
+              nullable: true
+            deltaPct:
+              type: number
+              nullable: true
+            status:
+              type: string
+              enum: [disabled, degraded, ok]
+            label:
+              type: string
 
     HoldingRanking:
       type: object

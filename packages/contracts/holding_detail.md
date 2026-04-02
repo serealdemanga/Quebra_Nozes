@@ -83,7 +83,17 @@ No caminho feliz:
     "totalProfitLoss": 10000,
     "totalProfitLossPct": 20
   },
-  "externalLink": "https://www.google.com/finance/quote/ITSA4:BVMF"
+  "externalLink": "https://www.google.com/finance/quote/ITSA4:BVMF",
+  "benchmarkComparison": {
+    "benchmark": "CDI",
+    "fromDate": "2026-01-01",
+    "toDate": "2026-04-01",
+    "benchmarkAccumulatedPct": 3.21,
+    "holdingPerformancePct": 2.5,
+    "deltaPct": -0.71,
+    "status": "ok",
+    "label": "Abaixo do CDI"
+  }
 }
 ```
 
@@ -91,3 +101,4 @@ No caminho feliz:
 
 - detalhe aprofunda sem virar relatorio gigante.
 - a recomendacao deve ser coerente com peso (`allocationPct`) e performance (`performancePct`).
+- `benchmarkComparison` e complementar e pode ser `null` quando a referencia externa estiver desabilitada ou indisponivel.
