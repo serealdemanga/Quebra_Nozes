@@ -118,6 +118,18 @@ export async function updateImportRecord(env: Env, input: {
   );
 }
 
+export async function cancelImportRecord(env: Env, importId: string): Promise<void> {
+  await d1(env).run(
+    `UPDATE imports
+     SET status = 'CANCELLED',
+         updated_at = CURRENT_TIMESTAMP,
+         finished_at = COALESCE(finished_at, CURRENT_TIMESTAMP)
+     WHERE id = ?
+       AND status <> 'COMMITTED'`,
+    [importId]
+  );
+}
+
 export async function replaceImportRows(env: Env, importId: string, rows: Array<{
   id: string;
   rowNumber: number;

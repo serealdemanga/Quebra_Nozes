@@ -679,6 +679,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeError'
+  /v1/imports/{importId}/cancel:
+    post:
+      summary: Cancelar importação antes do commit
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkImportCancel'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '409':
+          description: Conflito (ja commitada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
   /v1/imports/templates/custom:
     get:
       summary: Baixar template próprio CSV
@@ -1085,6 +1119,13 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/ImportCommitData'
+    ApiOkImportCancel:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportCancelData'
     ImportStartData:
       type: object
       properties:
@@ -1145,4 +1186,10 @@ components:
         status: { type: string }
         createdSnapshotId: { type: string }
         affectedPositions: { type: number }
+        nextStep: { type: string }
+    ImportCancelData:
+      type: object
+      properties:
+        importId: { type: string }
+        status: { type: string }
         nextStep: { type: string }
