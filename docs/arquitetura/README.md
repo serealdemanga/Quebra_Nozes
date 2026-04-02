@@ -14,7 +14,8 @@ Separar com clareza:
 
 ## Ordem de leitura
 
-1. `01_mapa_estrutural.md`
-2. `02_fontes_oficiais_e_conflitos.md`
-3. `03_reorganizacao_segura_da_arvore.md`
-4. `04_mapa_de_servicos_externos.md`
+1. `../10_target_architecture/backend_oficial_e_fronteira_de_transicao.md`
+2. `01_mapa_estrutural.md`
+3. `02_fontes_oficiais_e_conflitos.md`
+4. `03_reorganizacao_segura_da_arvore.md`
+5. `04_mapa_de_servicos_externos.md`
