@@ -7,6 +7,7 @@ import { getProfileContext, putProfileContext } from './routes/profile';
 import { getAnalysis } from './routes/analysis';
 import { getSnapshots } from './routes/history';
 import { postImportStart, getImportPreview, patchImportRow, postImportRowDuplicateResolution, postImportCommit } from './routes/imports';
+import { getPortfolioEntryOnboardingRoute } from './routes/onboarding';
 import { postAuthRegister, postAuthLogin, getAuthSession, postAuthLogout, postAuthRecover } from './routes/auth';
 import type { Env } from './types/env';
 
@@ -23,6 +24,7 @@ router.register('GET', '/v1/portfolio', getPortfolio);
 router.register('GET', '/v1/portfolio/:portfolioId/holdings/:holdingId', getHoldingDetail);
 router.register('GET', '/v1/profile/context', getProfileContext);
 router.register('PUT', '/v1/profile/context', putProfileContext);
+router.register('GET', '/v1/onboarding/portfolio-entry', getPortfolioEntryOnboardingRoute);
 router.register('GET', '/v1/analysis', getAnalysis);
 router.register('GET', '/v1/history/snapshots', getSnapshots);
 router.register('POST', '/v1/imports/start', postImportStart);
