@@ -1,32 +1,49 @@
 {
+  "ok": true,
   "meta": {
     "requestId": "req_local_analysis",
     "timestamp": "2026-03-31T01:00:00Z",
     "version": "v1"
   },
   "data": {
-    "scope": "portfolio",
+    "screenState": "ready",
+    "analysisId": "anl_bal_1",
+    "portfolioId": "pfl_seed_balanced",
+    "snapshotId": "snp_bal_1",
     "score": {
       "value": 72,
-      "status": "atencao_moderada"
+      "status": "atencao_moderada",
+      "explanation": "Carteira funcional, mas com concentracao relevante."
     },
-    "summary": "Sua carteira está funcional, mas concentrada demais em previdência.",
-    "primaryProblem": "O principal ponto de atenção hoje é a concentração excessiva em um único bloco.",
-    "recommendation": {
-      "tag": "REDUCE_CONCENTRATION",
-      "targetType": "category",
-      "targetId": "PENSION",
-      "title": "Diluir concentração aos poucos",
-      "body": "Use novos aportes para abrir mais equilíbrio fora da previdência."
+    "primaryProblem": {
+      "code": "concentracao",
+      "title": "Concentracao em Previdencia",
+      "body": "A previdencia virou um bloco grande demais dentro da carteira.",
+      "severity": "warning"
     },
+    "primaryAction": {
+      "code": "diluir_concentracao",
+      "title": "Diluir concentracao aos poucos",
+      "body": "Use novos aportes para equilibrar fora da previdencia.",
+      "ctaLabel": "Ver carteira",
+      "target": "/portfolio"
+    },
+    "portfolioDecision": "Priorizar aportes fora da previdencia ate reduzir concentracao.",
+    "actionPlan": [
+      "Definir percentual alvo por classe",
+      "Direcionar novos aportes para a classe sub-representada",
+      "Reavaliar em 30 dias"
+    ],
+    "summary": "Carteira funcional, mas com concentracao relevante.",
     "insights": [
       {
         "kind": "concentration",
-        "title": "Previdência pesa demais",
-        "body": "Sua proteção virou bloco grande demais dentro da carteira.",
-        "severity": "warning"
+        "title": "Previdencia pesa demais",
+        "body": "Sua previdencia virou o maior bloco da carteira.",
+        "priority": 1
       }
     ],
     "generatedAt": "2026-03-31T01:00:00Z"
   }
 }
+
