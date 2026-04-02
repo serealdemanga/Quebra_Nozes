@@ -13,6 +13,7 @@ import { getImportDetail } from './routes/import_detail';
 import { getImportEngineStatus } from './routes/import_engine_status';
 import { postAuthRegister, postAuthLogin, getAuthSession, postAuthLogout, postAuthRecover } from './routes/auth';
 import { getOperationalEvents } from './routes/ops';
+import { logHttpRequest, logHttpUnhandledError } from './lib/logger';
 import type { Env } from './types/env';
 
 const router = new Router();
@@ -44,14 +45,52 @@ router.register('GET', '/v1/ops/events', getOperationalEvents);
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const startedAt = Date.now();
+    const url = new URL(request.url);
+    const path = url.pathname;
+    const method = request.method.toUpperCase();
+    const cfRay = request.headers.get('cf-ray');
+    const ip = request.headers.get('CF-Connecting-IP');
+
     try {
       const matched = await router.handle(request, env);
-      if (matched) return matched;
-      return fail(env.API_VERSION, 'route_not_found', 'Rota não encontrada.', 404);
+      const response = matched ?? fail(env.API_VERSION, 'route_not_found', 'Rota não encontrada.', 404);
+      const requestId = response.headers.get('x-request-id');
+      const errorCode = response.headers.get('x-error-code');
+      logHttpRequest(env, {
+        requestId,
+        method,
+        path,
+        status: response.status,
+        durationMs: Date.now() - startedAt,
+        errorCode,
+        cfRay,
+        ip
+      });
+      return response;
     } catch (error) {
-      return fail(env.API_VERSION, 'internal_error', 'Erro interno da API.', 500, {
+      logHttpUnhandledError(env, {
+        requestId: null,
+        method,
+        path,
+        cfRay,
+        ip,
+        error
+      });
+      const response = fail(env.API_VERSION, 'internal_error', 'Erro interno da API.', 500, {
         reason: String(error)
       });
+      logHttpRequest(env, {
+        requestId: response.headers.get('x-request-id'),
+        method,
+        path,
+        status: response.status,
+        durationMs: Date.now() - startedAt,
+        errorCode: response.headers.get('x-error-code'),
+        cfRay,
+        ip
+      });
+      return response;
     }
   }
 };

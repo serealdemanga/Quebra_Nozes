@@ -1,5 +1,6 @@
 import type { Env } from '../types/env';
 import { buildEntityId } from './auth_crypto';
+import { logEvent } from './logger';
 import { insertOperationalEvent, listOperationalEventsByUserId, type OperationalEventRow } from '../repositories/operational_events_repository';
 
 export type OperationalEventStatus = 'ok' | 'error';
@@ -12,6 +13,14 @@ export async function recordOperationalEvent(env: Env, input: {
   message?: string | null;
   details?: Record<string, unknown> | null;
 }): Promise<void> {
+  logEvent(env, input.status === 'error' ? 'error' : 'info', 'operational_event', {
+    type: input.eventType,
+    status: input.status,
+    userId: input.userId,
+    portfolioId: input.portfolioId,
+    message: input.message ?? null
+  });
+
   try {
     await insertOperationalEvent(env, {
       eventId: buildEntityId('evt'),
@@ -74,4 +83,3 @@ function safeParseJson(value: string | null): Record<string, unknown> | null {
     return null;
   }
 }
-
