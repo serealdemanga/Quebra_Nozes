@@ -20,6 +20,7 @@ export function createRouter(): Router {
       if (path === '/home') return { id: 'home' };
       if (path === '/portfolio') return { id: 'portfolio' };
       if (path === '/imports') return { id: 'imports' };
+      if (path === '/imports/entry') return { id: 'imports_entry' };
       if (path === '/profile') return { id: 'profile' };
       if (path === '/history') return { id: 'history' };
       if (path === '/radar') return { id: 'radar' };
@@ -49,6 +50,8 @@ export function createRouter(): Router {
           return `/portfolio/${encodeURIComponent(route.params.portfolioId)}/holdings/${encodeURIComponent(route.params.holdingId)}`;
         case 'imports':
           return '/imports';
+        case 'imports_entry':
+          return '/imports/entry';
         case 'imports_preview':
           return `/imports/${encodeURIComponent(route.params.importId)}/preview`;
         case 'profile':
@@ -75,6 +78,7 @@ export function isRouteId(id: string): id is RouteId {
     id === 'portfolio' ||
     id === 'holding_detail' ||
     id === 'imports' ||
+    id === 'imports_entry' ||
     id === 'imports_preview' ||
     id === 'profile' ||
     id === 'history' ||

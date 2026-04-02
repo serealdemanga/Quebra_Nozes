@@ -3,6 +3,9 @@ import type {
   ApiAnalysisEnvelope,
   ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
+  ApiImportCommitEnvelope,
+  ApiImportPreviewEnvelope,
+  ApiImportStartEnvelope,
   ApiImportsCenterEnvelope,
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
@@ -112,6 +115,17 @@ export function createLocalMockDataSources(options: MockProviderOptions): AppDat
     importsCenter: {
       async getImportsCenter(): Promise<ApiImportsCenterEnvelope> {
         return await loader.load<ApiImportsCenterEnvelope>(`${basePath}/imports_center.json`);
+      }
+    },
+    imports: {
+      async startImport(_input?: { payload?: unknown }): Promise<ApiImportStartEnvelope> {
+        return await loader.load<ApiImportStartEnvelope>(`${basePath}/imports_start.json`);
+      },
+      async getImportPreview(_input: { importId: string }): Promise<ApiImportPreviewEnvelope> {
+        return await loader.load<ApiImportPreviewEnvelope>(`${basePath}/imports_preview.json`);
+      },
+      async commitImport(_input: { importId: string }): Promise<ApiImportCommitEnvelope> {
+        return await loader.load<ApiImportCommitEnvelope>(`${basePath}/imports_commit.json`);
       }
     }
   };
