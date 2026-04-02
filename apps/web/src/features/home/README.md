@@ -19,3 +19,7 @@ Responder rápido como a carteira está, qual é o principal ponto de atenção 
 ## Regra
 A Home deve caber em leitura rápida.
 Uma ação principal por vez.
+
+## Navegacao (E2E-010)
+- CTA principal vem de `primaryAction.target`
+- targets devem ser validados contra o router para evitar rota orfa
