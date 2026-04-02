@@ -16,6 +16,10 @@ Ler a carteira por categoria e por ativo sem confusão.
 
 ## Regra
 A carteira precisa ser legível mesmo sem filtro avançado no começo.
+Agrupamento por categoria e a base da leitura macro (US029).
 
 ## Filtros (contrato atual)
 - `performance=all|best|worst` (opcional)
+
+## Filtros locais (sem inventar contrato)
+- `categoryKey` e `platformId` podem ser aplicados no front sobre o payload atual
