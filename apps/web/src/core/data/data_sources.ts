@@ -1,5 +1,7 @@
 import type {
   ApiAnalysisEnvelope,
+  ApiHoldingDetailEnvelope,
+  ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
   ApiHistoryTimelineEnvelope,
   ApiProfileContextGetEnvelope,
@@ -16,6 +18,14 @@ export interface HistoryDataSource {
   getHistoryTimeline(input?: { limit?: number }): Promise<ApiHistoryTimelineEnvelope>;
 }
 
+export interface PortfolioDataSource {
+  getPortfolio(input?: { performance?: 'all' | 'best' | 'worst' }): Promise<ApiPortfolioEnvelope>;
+}
+
+export interface HoldingDetailDataSource {
+  getHoldingDetail(input: { portfolioId: string; holdingId: string }): Promise<ApiHoldingDetailEnvelope>;
+}
+
 export interface ProfileDataSource {
   getProfileContext(): Promise<ApiProfileContextGetEnvelope>;
   putProfileContext(input: ProfileContextPutRequest): Promise<ApiProfileContextPutEnvelope>;
@@ -24,6 +34,8 @@ export interface ProfileDataSource {
 export interface AppDataSources {
   analysis: AnalysisDataSource;
   history: HistoryDataSource;
+  portfolio: PortfolioDataSource;
+  holdingDetail: HoldingDetailDataSource;
   profile: ProfileDataSource;
 }
 

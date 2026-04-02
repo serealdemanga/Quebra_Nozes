@@ -1,6 +1,8 @@
 import type { AppDataSources } from '../data_sources';
 import type {
   ApiAnalysisEnvelope,
+  ApiHoldingDetailEnvelope,
+  ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
   ApiHistoryTimelineEnvelope,
   ApiProfileContextGetEnvelope,
@@ -30,6 +32,16 @@ export function createLocalMockDataSources(options: MockProviderOptions): AppDat
       },
       async getHistoryTimeline(): Promise<ApiHistoryTimelineEnvelope> {
         return await loader.load<ApiHistoryTimelineEnvelope>(`${basePath}/history_timeline.json`);
+      }
+    },
+    portfolio: {
+      async getPortfolio(): Promise<ApiPortfolioEnvelope> {
+        return await loader.load<ApiPortfolioEnvelope>(`${basePath}/portfolio.json`);
+      }
+    },
+    holdingDetail: {
+      async getHoldingDetail(): Promise<ApiHoldingDetailEnvelope> {
+        return await loader.load<ApiHoldingDetailEnvelope>(`${basePath}/holding_detail_pos_1.json`);
       }
     },
     profile: {
