@@ -171,3 +171,114 @@ export type ProfileContextPutRequest = {
 
 export type ApiProfileContextGetEnvelope = ApiEnvelope<ProfileContextGetData>;
 export type ApiProfileContextPutEnvelope = ApiEnvelope<ProfileContextPutData>;
+
+// ===== Portfolio =====
+
+export type PortfolioFilters = {
+  performance: 'all' | 'best' | 'worst';
+};
+
+export type PortfolioHolding = {
+  id: string;
+  assetId: string;
+  code: string | null;
+  name: string;
+  categoryKey: string;
+  categoryLabel: string;
+  platformId: string | null;
+  platformName: string | null;
+  quantity: number | null;
+  averagePrice: number | null;
+  currentPrice: number | null;
+  currentValue: number;
+  investedAmount: number | null;
+  performanceValue: number | null;
+  performancePct: number | null;
+  allocationPct: number | null;
+  quotationStatus: string;
+};
+
+export type PortfolioGroup = {
+  categoryKey: string;
+  categoryLabel: string;
+  totalInvested: number;
+  totalCurrent: number;
+  totalProfitLoss: number;
+  totalProfitLossPct: number;
+  holdings: PortfolioHolding[];
+};
+
+export type PortfolioDataEmpty = {
+  screenState: 'empty';
+  portfolioId: string;
+  emptyState: EmptyState;
+  summary: {
+    totalEquity: number;
+    totalInvested: number;
+    totalProfitLoss: number;
+    totalProfitLossPct: number;
+    statusLabel: string;
+  };
+  groups: [];
+  filters: PortfolioFilters;
+  orders: unknown[];
+};
+
+export type PortfolioDataReady = {
+  screenState: 'ready';
+  portfolioId: string;
+  summary: {
+    totalEquity: number;
+    totalInvested: number;
+    totalProfitLoss: number;
+    totalProfitLossPct: number;
+    statusLabel: string;
+  };
+  groups: PortfolioGroup[];
+  filters: PortfolioFilters;
+  orders: unknown[];
+};
+
+export type PortfolioData = ScreenStateRedirect | PortfolioDataEmpty | PortfolioDataReady;
+export type ApiPortfolioEnvelope = ApiEnvelope<PortfolioData>;
+
+// ===== Holding detail =====
+
+export type HoldingDetailDataReady = {
+  holding: PortfolioHolding & {
+    recommendation: string;
+    statusLabel: string;
+    notes: string;
+    stopLoss: number | null;
+    targetPrice: number | null;
+    sourceKind: string;
+    assetTypeCode: string;
+  };
+  ranking: {
+    score: number;
+    status: string;
+    motives: string[];
+    opportunityScore: number;
+  };
+  recommendation: {
+    code: string;
+    title: string;
+    body: string;
+  };
+  categoryContext: {
+    categoryKey: string;
+    categoryLabel: string;
+    categoryRisk: string;
+    categoryRecommendation: string;
+    primaryMessage: string;
+    holdingsCount: number;
+    totalCurrent: number;
+    totalInvested: number;
+    totalProfitLoss: number;
+    totalProfitLossPct: number;
+  };
+  externalLink: string | null;
+};
+
+export type HoldingDetailData = ScreenStateRedirect | HoldingDetailDataReady;
+export type ApiHoldingDetailEnvelope = ApiEnvelope<HoldingDetailData>;

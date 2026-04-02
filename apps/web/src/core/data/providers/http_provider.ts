@@ -1,6 +1,8 @@
 import type { AppDataSources } from '../data_sources';
 import type {
   ApiAnalysisEnvelope,
+  ApiHoldingDetailEnvelope,
+  ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
   ApiHistoryTimelineEnvelope,
   ApiProfileContextGetEnvelope,
@@ -33,6 +35,19 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
         const url = new URL(`${baseUrl}/v1/history/timeline`);
         if (input?.limit != null) url.searchParams.set('limit', String(input.limit));
         return await fetchJson<ApiHistoryTimelineEnvelope>(fetchImpl, url.toString());
+      }
+    },
+    portfolio: {
+      async getPortfolio(input?: { performance?: 'all' | 'best' | 'worst' }): Promise<ApiPortfolioEnvelope> {
+        const url = new URL(`${baseUrl}/v1/portfolio`);
+        if (input?.performance) url.searchParams.set('performance', input.performance);
+        return await fetchJson<ApiPortfolioEnvelope>(fetchImpl, url.toString());
+      }
+    },
+    holdingDetail: {
+      async getHoldingDetail(input: { portfolioId: string; holdingId: string }): Promise<ApiHoldingDetailEnvelope> {
+        const path = `/v1/portfolio/${encodeURIComponent(input.portfolioId)}/holdings/${encodeURIComponent(input.holdingId)}`;
+        return await fetchJson<ApiHoldingDetailEnvelope>(fetchImpl, `${baseUrl}${path}`);
       }
     },
     profile: {
