@@ -1,7 +1,7 @@
 import type { Env } from '../types/env';
 import { ok, fail } from './http';
 import { hashToken } from './auth_crypto';
-import { findImportSessionStateByTokenHash, findImportById, findImportRows } from '../repositories/import_repository';
+import { findImportSessionStateByTokenHash, findOwnedImportById, findImportRows, findLatestSnapshotByOwnedImportId } from '../repositories/import_repository';
 import { buildImportOperationalFacts, deriveImportEngineStatus } from './import_operational_helpers';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
@@ -10,13 +10,13 @@ export async function getImportDetailData(request: Request, env: Env, params: Re
   const session = await requireImportSession(request, env);
   if (session instanceof Response) return session;
 
-  const importRecord = await findImportById(env, params.importId);
-  if (!importRecord || importRecord.user_id !== session.userId) {
+  const importRecord = await findOwnedImportById(env, session.userId, params.importId);
+  if (!importRecord) {
     return fail(env.API_VERSION, 'import_not_found', 'Importação não encontrada.', 404);
   }
 
   const rows = await findImportRows(env, params.importId);
-  const snapshot = await findSnapshotByImportId(env, params.importId);
+  const snapshot = await findLatestSnapshotByOwnedImportId(env, session.userId, params.importId);
   const facts = buildImportOperationalFacts(rows, importRecord.origin);
   const engineStatus = deriveImportEngineStatus(importRecord.status, facts);
   const detailedRows = rows.map((row) => mapImportDetailRow(row));
@@ -93,23 +93,6 @@ async function requireImportSession(request: Request, env: Env): Promise<{ userI
   if (!session.hasContext) return ok(env.API_VERSION, { screenState: 'redirect_onboarding', redirectTo: '/onboarding' });
   if (!session.portfolioId) return fail(env.API_VERSION, 'portfolio_not_found', 'Carteira principal não encontrada.', 404);
   return { userId: session.userId, portfolioId: session.portfolioId };
-}
-
-async function findSnapshotByImportId(env: Env, importId: string) {
-  return await env.DB.prepare(
-    `SELECT id, reference_date, total_equity, total_invested, total_profit_loss, total_profit_loss_pct
-       FROM portfolio_snapshots
-      WHERE import_id = ?
-      ORDER BY created_at DESC
-      LIMIT 1`
-  ).bind(importId).first<{
-    id: string;
-    reference_date: string;
-    total_equity: number | null;
-    total_invested: number | null;
-    total_profit_loss: number | null;
-    total_profit_loss_pct: number | null;
-  }>();
 }
 
 function mapImportDetailRow(row: {

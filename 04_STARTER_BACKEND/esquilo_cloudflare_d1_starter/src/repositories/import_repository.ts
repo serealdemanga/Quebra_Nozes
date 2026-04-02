@@ -12,10 +12,16 @@ export interface ImportRecordRow {
   portfolio_id: string | null;
   status: string;
   origin: string;
+  file_name?: string | null;
+  mime_type?: string | null;
   total_rows: number;
   valid_rows: number;
   invalid_rows: number;
   duplicate_rows: number;
+  created_at?: string;
+  started_at?: string;
+  updated_at?: string | null;
+  finished_at?: string | null;
 }
 
 export interface ImportPreviewRow {
@@ -135,11 +141,74 @@ export async function replaceImportRows(env: Env, importId: string, rows: Array<
 
 export async function findImportById(env: Env, importId: string): Promise<ImportRecordRow | null> {
   return await env.DB.prepare(
-    `SELECT id, user_id, portfolio_id, status, origin, total_rows, valid_rows, invalid_rows, duplicate_rows
+    `SELECT id,
+            user_id,
+            portfolio_id,
+            status,
+            origin,
+            file_name,
+            mime_type,
+            total_rows,
+            valid_rows,
+            invalid_rows,
+            duplicate_rows,
+            created_at,
+            started_at,
+            updated_at,
+            finished_at
      FROM imports
      WHERE id = ?
      LIMIT 1`
   ).bind(importId).first<ImportRecordRow>();
+}
+
+export async function findOwnedImportById(env: Env, userId: string, importId: string): Promise<ImportRecordRow | null> {
+  return await env.DB.prepare(
+    `SELECT id,
+            user_id,
+            portfolio_id,
+            status,
+            origin,
+            file_name,
+            mime_type,
+            total_rows,
+            valid_rows,
+            invalid_rows,
+            duplicate_rows,
+            created_at,
+            started_at,
+            updated_at,
+            finished_at
+     FROM imports
+     WHERE id = ?
+       AND user_id = ?
+     LIMIT 1`
+  ).bind(importId, userId).first<ImportRecordRow>();
+}
+
+export async function findLatestSnapshotByOwnedImportId(env: Env, userId: string, importId: string) {
+  return await env.DB.prepare(
+    `SELECT ps.id,
+            ps.reference_date,
+            ps.total_equity,
+            ps.total_invested,
+            ps.total_profit_loss,
+            ps.total_profit_loss_pct
+     FROM portfolio_snapshots ps
+     JOIN imports i
+       ON i.id = ps.import_id
+      AND i.user_id = ?
+     WHERE ps.import_id = ?
+     ORDER BY ps.created_at DESC
+     LIMIT 1`
+  ).bind(userId, importId).first<{
+    id: string;
+    reference_date: string;
+    total_equity: number | null;
+    total_invested: number | null;
+    total_profit_loss: number | null;
+    total_profit_loss_pct: number | null;
+  }>();
 }
 
 export async function findImportRows(env: Env, importId: string): Promise<ImportPreviewRow[]> {

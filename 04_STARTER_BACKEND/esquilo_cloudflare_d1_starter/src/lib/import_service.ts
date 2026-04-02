@@ -1,7 +1,7 @@
 import type { Env } from '../types/env';
 import { ok, fail, readJson } from './http';
 import { buildEntityId, hashToken } from './auth_crypto';
-import { findImportSessionStateByTokenHash, createImportRecord, updateImportRecord, replaceImportRows, findImportById, findImportRows, findManualDuplicateCandidates, findAssetTypeByCode, findAssetByNormalizedNameOrCode, createAsset, createPortfolioPosition, createPortfolioSnapshot, createSnapshotPosition } from '../repositories/import_repository';
+import { findImportSessionStateByTokenHash, createImportRecord, updateImportRecord, replaceImportRows, findOwnedImportById, findImportRows, findManualDuplicateCandidates, findAssetTypeByCode, findAssetByNormalizedNameOrCode, createAsset, createPortfolioPosition, createPortfolioSnapshot, createSnapshotPosition } from '../repositories/import_repository';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
 const ORIGIN_MANUAL_ENTRY = 'MANUAL_ENTRY';
@@ -289,7 +289,7 @@ async function requireImportSession(request: Request, env: Env): Promise<{ userI
   const tokenHash = await hashToken(token); const session = await findImportSessionStateByTokenHash(env, tokenHash); if (!session) return fail(env.API_VERSION, 'unauthorized', 'Sessão inválida.', 401); if (!session.hasContext) return ok(env.API_VERSION, { screenState: 'redirect_onboarding', redirectTo: '/onboarding' }); if (!session.portfolioId) return fail(env.API_VERSION, 'portfolio_not_found', 'Carteira principal não encontrada.', 404); return { userId: session.userId, portfolioId: session.portfolioId };
 }
 
-async function findOwnedImport(env: Env, userId: string, importId: string) { const importRecord = await findImportById(env, importId); if (!importRecord || importRecord.user_id !== userId) return fail(env.API_VERSION, 'import_not_found', 'Importação não encontrada.', 404); return importRecord; }
+async function findOwnedImport(env: Env, userId: string, importId: string) { const importRecord = await findOwnedImportById(env, userId, importId); if (!importRecord) return fail(env.API_VERSION, 'import_not_found', 'Importação não encontrada.', 404); return importRecord; }
 
 async function buildPreviewRows(env: Env, portfolioId: string, entries: Array<{ id: string; rowNumber: number; sourcePayloadJson: string; normalizedPayloadJson: string; parsed: ReturnType<typeof normalizeManualEntry>; fieldSources: Record<string, unknown>; fieldConfidences: Record<string, unknown>; warnings: string[] }>, importable: boolean) {
   const rows: Array<{ id: string; rowNumber: number; sourcePayloadJson: string; normalizedPayloadJson: string; resolutionStatus: string; errorMessage: string | null }> = [];
