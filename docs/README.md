@@ -29,6 +29,25 @@ Este é o mapa principal da documentação do `Quebra_Nozes`.
 ### 6. Entender stories e recortes de entrega
 - `50_stories/00_index.md`
 
+### 7. Entender estado real e auditoria
+- `90_diagnostico/README.md`
+
+### 8. Entender a arquitetura consolidada desta fase
+- `arquitetura/README.md`
+
+### 9. Entender backlog real e auditoria do GitHub
+- `backlog_real/README.md`
+
+### 10. Entender fluxos consolidados
+- `fluxos/README.md`
+
+### 11. Entender como organizar a arvore sem risco
+- `arquitetura/03_reorganizacao_segura_da_arvore.md`
+
+## Regra de organizacao
+- material ativo fica nas pastas oficiais do projeto
+- material historico ou fora do fluxo atual fica em `../OLD/`
+
 ## Regra da documentação
 - nomes curtos
 - papel claro por pasta

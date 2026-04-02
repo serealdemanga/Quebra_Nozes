@@ -10,6 +10,7 @@ import { postImportStart, getImportPreview, patchImportRow, postImportRowDuplica
 import { getPortfolioEntryOnboardingRoute } from './routes/onboarding';
 import { getImportConflicts } from './routes/import_conflicts';
 import { getImportDetail } from './routes/import_detail';
+import { getImportEngineStatus } from './routes/import_engine_status';
 import { postAuthRegister, postAuthLogin, getAuthSession, postAuthLogout, postAuthRecover } from './routes/auth';
 import type { Env } from './types/env';
 
@@ -32,6 +33,7 @@ router.register('GET', '/v1/history/snapshots', getSnapshots);
 router.register('GET', '/v1/history/imports', getImportsCenter);
 router.register('POST', '/v1/imports/start', postImportStart);
 router.register('GET', '/v1/imports/:importId/preview', getImportPreview);
+router.register('GET', '/v1/imports/:importId/engine-status', getImportEngineStatus);
 router.register('GET', '/v1/imports/:importId/conflicts', getImportConflicts);
 router.register('GET', '/v1/imports/:importId/detail', getImportDetail);
 router.register('PATCH', '/v1/imports/:importId/rows/:rowId', patchImportRow);

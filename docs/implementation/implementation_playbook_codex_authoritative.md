@@ -105,7 +105,7 @@ Goal:
 Calculate deterministic portfolio score.
 
 Expected files:
-- score.routes.ts
+- OLD/codigo_solto/score.routes.ts
 - score.service.ts
 - score.rules.ts
 - score.types.ts

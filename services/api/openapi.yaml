@@ -22,6 +22,30 @@ paths:
       responses:
         '200':
           description: OK
+  /v1/imports/{importId}/engine-status:
+    get:
+      summary: Ler status operacional do motor de extração
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/imports/{importId}/detail:
+    get:
+      summary: Ler detalhe operacional do processamento da importação
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
   /v1/imports/{importId}/commit:
     post:
       summary: Commitar importação consistente
@@ -63,6 +87,44 @@ components:
         origin: { type: string }
         readyToCommit: { type: boolean }
         importable: { type: boolean }
+    ImportEngineStatusData:
+      type: object
+      properties:
+        importId: { type: string }
+        origin: { type: string }
+        importStatus: { type: string }
+        document:
+          type: object
+          properties:
+            parserMode: { type: string, nullable: true }
+            confidence: { type: number, nullable: true }
+            importable: { type: boolean }
+        engineStatus:
+          type: object
+          properties:
+            code: { type: string }
+            label: { type: string }
+            body: { type: string }
+            readyForReview: { type: boolean }
+            readyToCommit: { type: boolean }
+    ImportDetailData:
+      type: object
+      properties:
+        importId: { type: string }
+        issueSummary:
+          type: object
+          properties:
+            errorRows: { type: number }
+            conflictRows: { type: number }
+            lowConfidenceRows: { type: number }
+            nonImportableRows: { type: number }
+        decisionSummary:
+          type: object
+          properties:
+            manualRows: { type: number }
+            fallbackRows: { type: number }
+            aiRows: { type: number }
+            systemRows: { type: number }
     ImportCommitData:
       type: object
       properties:
