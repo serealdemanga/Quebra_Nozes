@@ -38,7 +38,7 @@ INSERT INTO portfolios (id, user_id, name, is_primary, status) VALUES
 INSERT INTO user_financial_context (
   id, user_id, financial_goal, monthly_income_range, monthly_investment_target, available_to_invest,
   risk_profile, risk_profile_self_declared, risk_profile_quiz_result, risk_profile_effective,
-  investment_horizon, platforms_used_json, display_preferences_json, onboarding_step
+  investment_horizon, platforms_used_json, display_preferences_json, onboarding_step, onboarding_completed_at
 ) VALUES (
   'ctx_seed_balanced',
   'usr_seed_balanced',
@@ -51,9 +51,10 @@ INSERT INTO user_financial_context (
   'moderado',
   'moderado',
   'longo_prazo',
-  '["xp","ion"]',
+  '{"platformIds":["xp","ion"],"otherPlatforms":[]}',
   '{"ghostMode":false}',
-  'done'
+  'confirm',
+  '2026-03-31T00:00:00.000Z'
 );
 
 INSERT INTO portfolio_positions (
@@ -114,7 +115,7 @@ INSERT INTO portfolios (id, user_id, name, is_primary, status) VALUES
 INSERT INTO user_financial_context (
   id, user_id, financial_goal, monthly_income_range, monthly_investment_target, available_to_invest,
   risk_profile, risk_profile_self_declared, risk_profile_quiz_result, risk_profile_effective,
-  investment_horizon, platforms_used_json, display_preferences_json, onboarding_step
+  investment_horizon, platforms_used_json, display_preferences_json, onboarding_step, onboarding_completed_at
 ) VALUES (
   'ctx_seed_concentrated',
   'usr_seed_concentrated',
@@ -127,9 +128,10 @@ INSERT INTO user_financial_context (
   'arrojado',
   'arrojado',
   'longo_prazo',
-  '["xp"]',
+  '{"platformIds":["xp"],"otherPlatforms":[]}',
   '{"ghostMode":false}',
-  'done'
+  'confirm',
+  '2026-03-31T00:00:00.000Z'
 );
 
 INSERT INTO portfolio_positions (
@@ -185,7 +187,7 @@ INSERT INTO portfolios (id, user_id, name, is_primary, status) VALUES
 INSERT INTO user_financial_context (
   id, user_id, financial_goal, monthly_income_range, monthly_investment_target, available_to_invest,
   risk_profile, risk_profile_self_declared, risk_profile_quiz_result, risk_profile_effective,
-  investment_horizon, platforms_used_json, display_preferences_json, onboarding_step
+  investment_horizon, platforms_used_json, display_preferences_json, onboarding_step, onboarding_completed_at
 ) VALUES (
   'ctx_seed_empty',
   'usr_seed_empty',
@@ -198,9 +200,10 @@ INSERT INTO user_financial_context (
   'conservador',
   'conservador',
   'medio_prazo',
-  '[]',
+  '{"platformIds":["xp"],"otherPlatforms":[]}',
   '{"ghostMode":false}',
-  'done'
+  'confirm',
+  '2026-03-31T00:00:00.000Z'
 );
 
 INSERT INTO operational_events (id, user_id, portfolio_id, event_type, event_status, message) VALUES
