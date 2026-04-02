@@ -59,19 +59,25 @@ export async function getHoldingDetailData(request: Request, env: Env, params: R
   const portfolioTotal = Number(portfolioAggregate?.total_current || 0);
   const allocationPct = portfolioTotal > 0 ? (currentValue / portfolioTotal) * 100 : 0;
 
-  const ranking = buildRanking({ allocationPct, performancePct, hasQuote: currentPrice != null });
-  const recommendation = buildRecommendation({ allocationPct, performancePct, hasQuote: currentPrice != null, analysisAction: latestAnalysis?.primary_action || '' });
+  const benchmarkComparison = await buildBenchmarkComparison(env, {
+    assetTypeCode: holding.asset_type_code || '',
+    holdingCreatedAt: holding.created_at,
+    holdingPerformancePct: performancePct
+  });
+
+  const ranking = buildRanking({ allocationPct, performancePct, hasQuote: currentPrice != null, benchmarkComparison });
+  const recommendation = buildRecommendation({
+    allocationPct,
+    performancePct,
+    hasQuote: currentPrice != null,
+    analysisAction: latestAnalysis?.primary_action || '',
+    benchmarkComparison
+  });
   const categoryContext = buildCategoryContext({
     categoryKey,
     categoryLabel,
     categoryAggregate,
     latestAnalysis
-  });
-
-  const benchmarkComparison = await buildBenchmarkComparison(env, {
-    assetTypeCode: holding.asset_type_code || '',
-    holdingCreatedAt: holding.created_at,
-    holdingPerformancePct: performancePct
   });
 
   return ok(env.API_VERSION, {
@@ -193,7 +199,30 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-function buildRanking(input: { allocationPct: number; performancePct: number | null; hasQuote: boolean }) {
+function daysBetweenIsoDates(fromDate: string, toDate: string): number | null {
+  const from = Date.parse(fromDate + 'T00:00:00.000Z');
+  const to = Date.parse(toDate + 'T00:00:00.000Z');
+  if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) return null;
+  return Math.floor((to - from) / (24 * 60 * 60 * 1000));
+}
+
+function buildRanking(input: {
+  allocationPct: number;
+  performancePct: number | null;
+  hasQuote: boolean;
+  benchmarkComparison:
+    | {
+        benchmark: 'CDI';
+        fromDate: string;
+        toDate: string;
+        benchmarkAccumulatedPct: number | null;
+        holdingPerformancePct: number | null;
+        deltaPct: number | null;
+        status: 'disabled' | 'degraded' | 'ok';
+        label: string;
+      }
+    | null;
+}) {
   let score = 70;
   const motives: string[] = [];
 
@@ -220,6 +249,16 @@ function buildRanking(input: { allocationPct: number; performancePct: number | n
     motives.push('Ativo sem cotacao atual');
   }
 
+  // US049: warn when a FUND stays below CDI for a meaningful window.
+  if (input.benchmarkComparison?.benchmark === 'CDI' && input.benchmarkComparison.status === 'ok') {
+    const days = daysBetweenIsoDates(input.benchmarkComparison.fromDate, input.benchmarkComparison.toDate);
+    const delta = input.benchmarkComparison.deltaPct;
+    if (days != null && days >= 60 && delta != null && delta <= -2) {
+      score -= 10;
+      motives.push('Fundo abaixo do CDI no periodo');
+    }
+  }
+
   score = Math.max(0, Math.min(100, score));
   return {
     score,
@@ -229,13 +268,45 @@ function buildRanking(input: { allocationPct: number; performancePct: number | n
   };
 }
 
-function buildRecommendation(input: { allocationPct: number; performancePct: number | null; hasQuote: boolean; analysisAction: string }) {
+function buildRecommendation(input: {
+  allocationPct: number;
+  performancePct: number | null;
+  hasQuote: boolean;
+  analysisAction: string;
+  benchmarkComparison:
+    | {
+        benchmark: 'CDI';
+        fromDate: string;
+        toDate: string;
+        benchmarkAccumulatedPct: number | null;
+        holdingPerformancePct: number | null;
+        deltaPct: number | null;
+        status: 'disabled' | 'degraded' | 'ok';
+        label: string;
+      }
+    | null;
+}) {
   if (!input.hasQuote) {
     return {
       code: 'monitor_without_quote',
       title: 'Monitorar sem cotacao',
       body: 'O ativo continua visivel, mas sem cotacao atual a leitura fica incompleta. Revise a origem dos dados antes de decidir.'
     };
+  }
+
+  if (input.benchmarkComparison?.benchmark === 'CDI' && input.benchmarkComparison.status === 'ok') {
+    const days = daysBetweenIsoDates(input.benchmarkComparison.fromDate, input.benchmarkComparison.toDate);
+    const delta = input.benchmarkComparison.deltaPct;
+    if (days != null && days >= 60 && delta != null && delta <= -2) {
+      return {
+        code: 'review_fund_below_cdi',
+        title: 'Revisar fundo (abaixo do CDI)',
+        body:
+          'O fundo ficou abaixo do CDI por um periodo relevante. ' +
+          'Antes de trocar, valide taxas e se o papel dele na carteira ainda faz sentido. ' +
+          appendAnalysisContext(input.analysisAction)
+      };
+    }
   }
   if (input.performancePct != null && input.performancePct < -10 && input.allocationPct > 15) {
     return {
