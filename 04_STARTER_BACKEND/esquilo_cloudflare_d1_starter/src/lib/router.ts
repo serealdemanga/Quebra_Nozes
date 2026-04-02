@@ -1,3 +1,5 @@
+import { fail } from './http';
+
 export type RouteHandler = (request: Request, env: any, params: Record<string, string>) => Promise<Response> | Response;
 
 interface Route {
@@ -26,18 +28,31 @@ export class Router {
   async handle(request: Request, env: any): Promise<Response | null> {
     const url = new URL(request.url);
     const method = request.method.toUpperCase();
+    const pathname = url.pathname;
+    const allowedMethods = new Set<string>();
 
     for (const route of this.routes) {
-      if (route.method !== method) continue;
-      const match = url.pathname.match(route.pattern);
+      const match = pathname.match(route.pattern);
       if (!match) continue;
 
-      const params: Record<string, string> = {};
-      route.keys.forEach((key, index) => {
-        params[key] = match[index + 1];
-      });
+      if (route.method === method) {
+        const params: Record<string, string> = {};
+        route.keys.forEach((key, index) => {
+          params[key] = match[index + 1];
+        });
+        return await route.handler(request, env, params);
+      }
 
-      return await route.handler(request, env, params);
+      allowedMethods.add(route.method);
+    }
+
+    if (allowedMethods.size) {
+      const allow = Array.from(allowedMethods).sort();
+      const response = fail(env?.API_VERSION || 'v1', 'method_not_allowed', 'Método não permitido para esta rota.', 405, {
+        allowedMethods: allow
+      });
+      response.headers.set('Allow', allow.join(', '));
+      return response;
     }
 
     return null;
