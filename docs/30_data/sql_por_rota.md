@@ -1,6 +1,6 @@
-# SQL por rota — Histórico / Snapshots
+# SQL por rota — Documento assistido
 
-## History — sessão com gate de onboarding
+## Import start — sessão com gate de onboarding
 ```sql
 SELECT
   s.user_id AS userId,
@@ -21,37 +21,36 @@ WHERE s.session_token_hash = ?
 LIMIT 1;
 ```
 
-## History — snapshots da carteira
+## Import start — persistência do preview assistido
 ```sql
-SELECT
-  id,
-  portfolio_id,
-  reference_date,
-  total_equity,
-  total_invested,
-  total_profit_loss,
-  total_profit_loss_pct,
-  created_at
-FROM portfolio_snapshots
-WHERE portfolio_id = ?
-ORDER BY reference_date DESC, created_at DESC;
+INSERT INTO imports (
+  id, user_id, portfolio_id, status, origin, total_rows, valid_rows, invalid_rows, duplicate_rows, created_at, started_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 ```
 
-## History — selo simples da última análise por snapshot
 ```sql
-SELECT
-  pa.snapshot_id,
-  pa.score_status,
-  pa.primary_problem,
-  pa.primary_action
-FROM portfolio_analyses pa
-JOIN (
-  SELECT snapshot_id, MAX(generated_at) AS latest_generated_at
-  FROM portfolio_analyses
-  WHERE portfolio_id = ?
-  GROUP BY snapshot_id
-) latest
-  ON latest.snapshot_id = pa.snapshot_id
- AND latest.latest_generated_at = pa.generated_at
-WHERE pa.portfolio_id = ?;
+DELETE FROM import_rows WHERE import_id = ?;
 ```
+
+```sql
+INSERT INTO import_rows (
+  id, import_id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message, created_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
+```
+
+## Import preview — leitura com origem/confiança por campo
+```sql
+SELECT id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message
+FROM import_rows
+WHERE import_id = ?
+ORDER BY row_number ASC;
+```
+
+## Regras da etapa
+- origem: DOCUMENT_AI_PARSE
+- um arquivo por vez
+- tipos aceitos: PDF, imagem e DOCX
+- parser por regra vem antes da IA
+- documento não importável bloqueia commit
+- pendência crítica bloqueia commit
+- preview exibe origem do campo: rule, ai ou manual
