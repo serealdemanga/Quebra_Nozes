@@ -266,6 +266,19 @@ paths:
   /v1/portfolio:
     get:
       summary: Ler carteira (lista e grupos)
+      parameters:
+        - in: query
+          name: performance
+          schema: { type: string, enum: [all, best, worst] }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: platformId
+          schema: { type: string }
+        - in: query
+          name: attentionOnly
+          schema: { type: boolean }
       responses:
         '200':
           description: OK
