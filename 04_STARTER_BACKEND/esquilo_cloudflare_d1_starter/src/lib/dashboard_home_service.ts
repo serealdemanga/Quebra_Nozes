@@ -27,7 +27,12 @@ export async function getDashboardHomeData(request: Request, env: Env): Promise<
     });
   }
   if (!session.portfolioId) {
-    return fail(env.API_VERSION, 'portfolio_not_found', 'Carteira principal nao encontrada.', 404);
+    // Primeiro acesso ou estado inconsistente: nunca devolver erro "técnico" para a Home.
+    // O produto precisa orientar o próximo passo.
+    return ok(env.API_VERSION, {
+      screenState: 'redirect_onboarding',
+      redirectTo: '/onboarding/portfolio-entry'
+    });
   }
 
   const snapshot = await findLatestSnapshotByPortfolioId(env, session.portfolioId);
