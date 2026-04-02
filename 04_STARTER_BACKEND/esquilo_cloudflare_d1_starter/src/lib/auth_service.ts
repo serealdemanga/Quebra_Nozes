@@ -161,7 +161,7 @@ function normalizeIdentifier(value: unknown): string {
 }
 function looksLikeEmail(value: string): boolean { return value.includes('@') && value.includes('.'); }
 function isLocked(lockUntil: string | null): boolean { return Boolean(lockUntil && Date.parse(lockUntil) > Date.now()); }
-function isExpired(expiresAt: string): boolean { return Date.parse(expiresAt) <= Date.now()); }
+function isExpired(expiresAt: string): boolean { return Date.parse(expiresAt) <= Date.now(); }
 function buildFutureIso(minutes: number): string { return new Date(Date.now() + minutes * 60 * 1000).toISOString(); }
 function getDeviceFingerprint(request: Request): string { return request.headers.get('cf-ray') || request.headers.get('x-device-fingerprint') || ''; }
 function buildSessionCookie(token: string, rememberDevice: boolean, env: Env): string {
