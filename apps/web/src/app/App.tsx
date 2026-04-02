@@ -10,6 +10,7 @@ import { PortfolioScreen } from '../features/portfolio/PortfolioScreen';
 import { HoldingDetailScreen } from '../features/holding_detail/HoldingDetailScreen';
 import { RadarScreen } from '../features/radar/RadarScreen';
 import { HistoryScreen } from '../features/history/HistoryScreen';
+import { ImportsCenterScreen } from '../features/imports/ImportsCenterScreen';
 
 function getEnv(): AppEnv {
   const raw = String(import.meta.env.VITE_APP_ENV ?? 'local');
@@ -123,6 +124,10 @@ export function App(): JSX.Element {
 
   if (state.route.id === 'history') {
     return <HistoryScreen dataSources={dataSources} onGoToTarget={(path) => navigate(path)} />;
+  }
+
+  if (state.route.id === 'imports') {
+    return <ImportsCenterScreen dataSources={dataSources} onGoToTarget={(path) => navigate(path)} />;
   }
 
   // placeholder headless: as telas vão entrando uma a uma, sempre com contratos/mocks.

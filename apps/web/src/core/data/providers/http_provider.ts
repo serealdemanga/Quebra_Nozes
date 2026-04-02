@@ -3,6 +3,7 @@ import type {
   ApiAnalysisEnvelope,
   ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
+  ApiImportsCenterEnvelope,
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
   ApiHistoryTimelineEnvelope,
@@ -66,6 +67,11 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(input)
         });
+      }
+    },
+    importsCenter: {
+      async getImportsCenter(): Promise<ApiImportsCenterEnvelope> {
+        return await fetchJson<ApiImportsCenterEnvelope>(fetchImpl, `${baseUrl}/v1/history/imports`);
       }
     }
   };

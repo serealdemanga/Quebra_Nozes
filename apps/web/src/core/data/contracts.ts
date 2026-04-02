@@ -283,6 +283,61 @@ export type HoldingDetailDataReady = {
 export type HoldingDetailData = ScreenStateRedirect | HoldingDetailDataReady;
 export type ApiHoldingDetailEnvelope = ApiEnvelope<HoldingDetailData>;
 
+// ===== Imports center (history/imports) =====
+
+export type ImportsCenterImportTotals = {
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  duplicateRows: number;
+};
+
+export type ImportsCenterImportSnapshot = {
+  id: string;
+  referenceDate: string | null;
+  target: string;
+};
+
+export type ImportsCenterImportAction = {
+  code: string;
+  title: string;
+  target: string;
+};
+
+export type ImportsCenterImportItem = {
+  id: string;
+  origin: string;
+  originLabel: string;
+  status: string;
+  statusLabel: string;
+  fileName: string | null;
+  mimeType: string | null;
+  totals: ImportsCenterImportTotals;
+  createdAt: string;
+  updatedAt: string;
+  snapshot: ImportsCenterImportSnapshot | null;
+  primaryAction: ImportsCenterImportAction;
+  secondaryAction: ImportsCenterImportAction | null;
+};
+
+export type ImportsCenterEmptyData = {
+  screenState: 'empty';
+  portfolioId: string;
+  emptyState: EmptyState;
+  summary: { totalImports: number; pendingImports: number; completedImports: number; failedImports: number };
+  imports: [];
+};
+
+export type ImportsCenterReadyData = {
+  screenState: 'ready';
+  portfolioId: string;
+  summary: { totalImports: number; pendingImports: number; completedImports: number; failedImports: number };
+  imports: ImportsCenterImportItem[];
+};
+
+export type ImportsCenterData = ScreenStateRedirect | ImportsCenterEmptyData | ImportsCenterReadyData;
+export type ApiImportsCenterEnvelope = ApiEnvelope<ImportsCenterData>;
+
 // ===== Dashboard Home =====
 
 export type DashboardHero = {

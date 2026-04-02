@@ -3,6 +3,7 @@ import type {
   ApiAnalysisEnvelope,
   ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
+  ApiImportsCenterEnvelope,
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
   ApiHistoryTimelineEnvelope,
@@ -105,6 +106,12 @@ export function createLocalMockDataSources(options: MockProviderOptions): AppDat
           meta: current.meta,
           data: rest
         };
+      }
+    }
+    ,
+    importsCenter: {
+      async getImportsCenter(): Promise<ApiImportsCenterEnvelope> {
+        return await loader.load<ApiImportsCenterEnvelope>(`${basePath}/imports_center.json`);
       }
     }
   };
