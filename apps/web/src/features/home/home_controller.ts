@@ -4,6 +4,7 @@ import { tryParseRoute, type AppRoute } from '../../core/router';
 import type { OperationFeedback } from '../../core/ops/load_state';
 import { loading } from '../../core/ops/load_state';
 import { toErrorFeedback } from '../../core/ops/error_catalog';
+import { bannerFromSourceWarning, type ExternalDataBanner } from '../../core/view_models/external_data';
 
 export interface HomeNavigationTargets {
   primaryAction?: { label: string; pathname: string; route: AppRoute };
@@ -17,6 +18,7 @@ export interface HomeControllerResult {
   nav: HomeNavigationTargets;
   loadingFeedback: OperationFeedback;
   errorFeedback?: OperationFeedback;
+  externalDataBanner?: ExternalDataBanner | null;
 }
 
 export interface HomeController {
@@ -38,7 +40,9 @@ export function createHomeController(input: { dashboard: DashboardDataSource }):
       if (!envelope.ok) return { envelope, nav: {}, loadingFeedback, errorFeedback: toErrorFeedback(envelope.error, { area: 'home' }) };
 
       const nav = resolveNav(envelope.data);
-      return { envelope, nav, loadingFeedback };
+      const externalDataBanner =
+        envelope.data.screenState === 'ready' ? bannerFromSourceWarning((envelope.data as any).sourceWarning) : null;
+      return { envelope, nav, loadingFeedback, externalDataBanner };
     }
   };
 }
