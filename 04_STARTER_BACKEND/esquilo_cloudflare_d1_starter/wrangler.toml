@@ -5,11 +5,52 @@ compatibility_date = "2026-03-30"
 [observability]
 enabled = true
 
-[[d1_databases]]
+[vars]
+API_VERSION = "v1"
+
+# Regra: nao usar configuracao default para evitar "rodar sem querer" apontando para recursos errados.
+# Sempre executar com `--env local|hml|production`.
+
+[env.local]
+name = "esquilo-invest-api-local"
+
+[env.local.vars]
+APP_ENV = "local"
+API_VERSION = "v1"
+
+[[env.local.d1_databases]]
+binding = "DB"
+database_name = "esquilo-invest-local"
+database_id = "REPLACE_WITH_LOCAL_D1_DATABASE_ID"
+
+[env.hml]
+name = "esquilo-invest-api-hml"
+
+[env.hml.vars]
+APP_ENV = "hml"
+API_VERSION = "v1"
+
+[[env.hml.d1_databases]]
+binding = "DB"
+database_name = "esquilo-invest-hml"
+database_id = "REPLACE_WITH_HML_D1_DATABASE_ID"
+
+[[env.hml.r2_buckets]]
+binding = "IMPORTS_BUCKET"
+bucket_name = "esquilo-invest-imports-hml"
+
+[env.production]
+name = "esquilo-invest-api"
+
+[env.production.vars]
+APP_ENV = "production"
+API_VERSION = "v1"
+
+[[env.production.d1_databases]]
 binding = "DB"
 database_name = "esquilo-invest"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "REPLACE_WITH_PROD_D1_DATABASE_ID"
 
-[vars]
-APP_ENV = "dev"
-API_VERSION = "v1"
+[[env.production.r2_buckets]]
+binding = "IMPORTS_BUCKET"
+bucket_name = "esquilo-invest-imports"
