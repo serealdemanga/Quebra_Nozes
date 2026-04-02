@@ -7,7 +7,7 @@ import { findProfileContextByUserId, upsertProfileContext } from '../repositorie
 import { getExternalReferencesServiceStatus } from './external_references_service';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
-const VALID_ONBOARDING_STEPS = ['goal', 'risk_quiz', 'income_horizon', 'platforms'];
+const VALID_ONBOARDING_STEPS = ['goal', 'risk_quiz', 'income_horizon', 'platforms', 'review', 'confirm', 'profile_edit'];
 const VALID_RISK_PROFILES = ['conservador', 'moderado', 'arrojado'];
 
 export async function getProfileContextForOnboarding(request: Request, env: Env): Promise<Response> {
@@ -41,11 +41,13 @@ export async function putProfileContextForOnboarding(request: Request, env: Env)
 
   const payload = await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const context = (payload.context ?? payload) as Record<string, unknown>;
-  const onboardingStep = normalizeStep(payload.step ?? context.onboardingStep);
+  const existing = await findProfileContextByUserId(env, session.userId);
+  const hasCompletedOnboarding = Boolean(existing?.onboarding_completed_at);
+  const rawStep = normalizeText(payload.step ?? context.onboardingStep);
+  const onboardingStep = rawStep ? rawStep : (hasCompletedOnboarding ? 'profile_edit' : (existing?.onboarding_step || 'goal'));
+  const storedStep = onboardingStep === 'profile_edit' ? (existing?.onboarding_step || 'goal') : onboardingStep;
 
-  if (!VALID_ONBOARDING_STEPS.includes(onboardingStep)) {
-    return fail(env.API_VERSION, 'invalid_onboarding_step', 'Etapa de onboarding invalida.', 400);
-  }
+  if (!VALID_ONBOARDING_STEPS.includes(onboardingStep)) return fail(env.API_VERSION, 'invalid_onboarding_step', 'Etapa de onboarding invalida.', 400);
 
   const financialGoalValue = normalizeText(context.financialGoal);
   const financialGoalOther = normalizeText(context.financialGoalOther);
@@ -60,20 +62,20 @@ export async function putProfileContextForOnboarding(request: Request, env: Env)
   const platformsUsed = normalizePlatforms(context.platformsUsed);
   const displayPreferences = normalizeDisplayPreferences(context.displayPreferences);
 
-  if (onboardingStep === 'goal' && !financialGoal) {
-    return fail(env.API_VERSION, 'missing_financial_goal', 'Objetivo financeiro obrigatorio.', 400);
-  }
-  if (onboardingStep === 'risk_quiz' && !riskProfileQuizResult) {
-    return fail(env.API_VERSION, 'missing_risk_profile', 'Resultado do questionario obrigatorio.', 400);
-  }
-  if (onboardingStep === 'income_horizon' && !monthlyIncomeRange) {
-    return fail(env.API_VERSION, 'missing_income_range', 'Faixa de renda obrigatoria.', 400);
-  }
-  if (onboardingStep === 'platforms' && !hasAnyPlatform(platformsUsed)) {
-    return fail(env.API_VERSION, 'missing_platforms', 'Informe pelo menos uma plataforma.', 400);
+  if (onboardingStep !== 'profile_edit' || !hasCompletedOnboarding) {
+    if (onboardingStep === 'goal' && !financialGoal) return fail(env.API_VERSION, 'missing_financial_goal', 'Objetivo financeiro obrigatorio.', 400);
+    if (onboardingStep === 'risk_quiz' && !riskProfileQuizResult) return fail(env.API_VERSION, 'missing_risk_profile', 'Resultado do questionario obrigatorio.', 400);
+    if (onboardingStep === 'income_horizon') {
+      if (!monthlyIncomeRange) return fail(env.API_VERSION, 'missing_income_range', 'Faixa de renda obrigatoria.', 400);
+      if (!investmentHorizon) return fail(env.API_VERSION, 'missing_investment_horizon', 'Horizonte obrigatorio.', 400);
+    }
+    if (onboardingStep === 'platforms' && !hasAnyPlatform(platformsUsed)) return fail(env.API_VERSION, 'missing_platforms', 'Informe pelo menos uma plataforma.', 400);
+    if (onboardingStep === 'confirm') {
+      // Confirmacao final: exige consistencia do contexto completo.
+      // O payload pode vir vazio (apenas confirm), entao a validacao usa o "merged" mais abaixo.
+    }
   }
 
-  const existing = await findProfileContextByUserId(env, session.userId);
   const merged = mergeContext(existing, {
     financialGoal,
     monthlyIncomeRange,
@@ -88,7 +90,22 @@ export async function putProfileContextForOnboarding(request: Request, env: Env)
     onboardingStep
   });
 
-  const onboardingCompletedAt = merged.financialGoal && merged.riskProfileEffective ? new Date().toISOString() : null;
+  const canComplete =
+    Boolean(merged.financialGoal)
+    && Boolean(merged.riskProfileEffective)
+    && Boolean(merged.monthlyIncomeRange)
+    && Boolean(merged.investmentHorizon)
+    && hasAnyPlatform(merged.platformsUsed);
+
+  const onboardingCompletedAt =
+    hasCompletedOnboarding ? existing.onboarding_completed_at
+      : (onboardingStep === 'confirm' && canComplete ? new Date().toISOString() : null);
+
+  if (onboardingStep === 'confirm' && !canComplete) {
+    return fail(env.API_VERSION, 'context_incomplete', 'Contexto incompleto. Revise antes de concluir.', 400, {
+      missing: missingContextKeys(merged)
+    });
+  }
 
   await upsertProfileContext(env, {
     contextId: existing?.id || buildEntityId('ctx'),
@@ -103,7 +120,7 @@ export async function putProfileContextForOnboarding(request: Request, env: Env)
     investmentHorizon: merged.investmentHorizon,
     platformsUsedJson: JSON.stringify(merged.platformsUsed),
     displayPreferencesJson: JSON.stringify(merged.displayPreferences),
-    onboardingStep,
+    onboardingStep: storedStep,
     onboardingCompletedAt
   });
 
@@ -204,26 +221,24 @@ function buildOnboardingState(input: any) {
   const completedSteps = [] as string[];
   if (input.financialGoal) completedSteps.push('goal');
   if (input.riskProfileEffective) completedSteps.push('risk_quiz');
-  if (input.monthlyIncomeRange || input.investmentHorizon) completedSteps.push('income_horizon');
+  if (input.monthlyIncomeRange && input.investmentHorizon) completedSteps.push('income_horizon');
   if (hasAnyPlatform(input.platformsUsed)) completedSteps.push('platforms');
 
   const missing = [] as string[];
   if (!input.financialGoal) missing.push('financialGoal');
   if (!input.riskProfileEffective) missing.push('riskProfileEffective');
+  if (!input.monthlyIncomeRange) missing.push('monthlyIncomeRange');
+  if (!input.investmentHorizon) missing.push('investmentHorizon');
+  if (!hasAnyPlatform(input.platformsUsed)) missing.push('platformsUsed');
 
   return {
     currentStep: input.onboardingStep || 'goal',
-    completed: missing.length === 0,
+    completed: Boolean(input.onboardingCompletedAt),
     completedAt: input.onboardingCompletedAt || null,
-    homeUnlocked: missing.length === 0,
+    homeUnlocked: Boolean(input.onboardingCompletedAt),
     completedSteps,
     missing
   };
-}
-
-function normalizeStep(value: unknown): string {
-  const raw = normalizeText(value);
-  return raw || 'goal';
 }
 
 function normalizeText(value: unknown): string {
@@ -254,6 +269,16 @@ function normalizeDisplayPreferences(value: unknown): Record<string, unknown> {
 
 function hasAnyPlatform(value: { platformIds: string[]; otherPlatforms: string[] }): boolean {
   return value.platformIds.length > 0 || value.otherPlatforms.length > 0;
+}
+
+function missingContextKeys(value: any): string[] {
+  const missing: string[] = [];
+  if (!value.financialGoal) missing.push('financialGoal');
+  if (!value.riskProfileEffective) missing.push('riskProfileEffective');
+  if (!value.monthlyIncomeRange) missing.push('monthlyIncomeRange');
+  if (!value.investmentHorizon) missing.push('investmentHorizon');
+  if (!hasAnyPlatform(value.platformsUsed)) missing.push('platformsUsed');
+  return missing;
 }
 
 function parseJson(value: unknown, fallback: any) {

@@ -834,7 +834,7 @@ components:
         - type: object
           required: [step, context]
           properties:
-            step: { type: string, description: goal|risk_quiz|income_horizon|platforms }
+            step: { type: string, description: goal|risk_quiz|income_horizon|platforms|review|confirm }
             context: { type: object, additionalProperties: true }
         - type: object
           additionalProperties: true
