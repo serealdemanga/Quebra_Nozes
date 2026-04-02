@@ -11,6 +11,7 @@ Ler a carteira por categoria e por ativo sem confusão.
 - resumo da carteira
 - grupos por categoria
 - holding tile
+- concentracao por ativo e por instituicao (view model, sem layout)
 - filtros básicos
 - acesso ao detalhe do ativo
 
