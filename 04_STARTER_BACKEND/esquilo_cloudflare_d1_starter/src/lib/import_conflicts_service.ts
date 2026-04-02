@@ -1,7 +1,7 @@
 import type { Env } from '../types/env';
 import { ok, fail } from './http';
 import { hashToken } from './auth_crypto';
-import { findImportSessionStateByTokenHash, findImportById, findImportRows } from '../repositories/import_repository';
+import { findImportSessionStateByTokenHash, findOwnedImportById, findImportRows } from '../repositories/import_repository';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
 
@@ -9,8 +9,8 @@ export async function getImportConflictsData(request: Request, env: Env, params:
   const session = await requireImportSession(request, env);
   if (session instanceof Response) return session;
 
-  const importRecord = await findImportById(env, params.importId);
-  if (!importRecord || importRecord.user_id !== session.userId) {
+  const importRecord = await findOwnedImportById(env, session.userId, params.importId);
+  if (!importRecord) {
     return fail(env.API_VERSION, 'import_not_found', 'Importação não encontrada.', 404);
   }
 
