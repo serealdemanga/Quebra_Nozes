@@ -1,6 +1,7 @@
 import type { AppDataSources } from '../data_sources';
 import type {
   ApiAnalysisEnvelope,
+  ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
@@ -20,6 +21,11 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
   const baseUrl = options.baseUrl.replace(/\/+$/, '');
 
   return {
+    dashboard: {
+      async getDashboardHome(): Promise<ApiDashboardHomeEnvelope> {
+        return await fetchJson<ApiDashboardHomeEnvelope>(fetchImpl, `${baseUrl}/v1/dashboard/home`);
+      }
+    },
     analysis: {
       async getAnalysis(): Promise<ApiAnalysisEnvelope> {
         return await fetchJson<ApiAnalysisEnvelope>(fetchImpl, `${baseUrl}/v1/analysis`);
