@@ -3,34 +3,87 @@
 ## Route
 `GET /v1/portfolio`
 
-## Response shape
+Query params:
+
+- `performance=all|best|worst` (opcional)
+
+## Envelope HTTP
+
+Sucesso:
+
+```json
+{ "ok": true, "meta": { "requestId": "uuid", "timestamp": "2026-04-02T00:00:00.000Z", "version": "v1" }, "data": {} }
+```
+
+Erro:
+
+```json
+{ "ok": false, "meta": { "requestId": "uuid", "timestamp": "2026-04-02T00:00:00.000Z", "version": "v1" }, "error": { "code": "unauthorized", "message": "Sessao nao encontrada." } }
+```
+
+Headers:
+
+- `x-request-id` (sempre)
+- `x-error-code` (apenas em erro)
+
+## Response shape (data)
+
+O payload da Carteira trabalha por estado (`screenState`):
+
+- `redirect_onboarding`
+- `empty`
+- `ready`
+
 ```json
 {
-  "meta": {
-    "requestId": "req_123",
-    "timestamp": "2026-03-31T01:00:00Z",
-    "version": "v1"
+  "screenState": "ready",
+  "redirectTo": "/onboarding",
+  "portfolioId": "pfl_123",
+  "summary": {
+    "totalEquity": 120000,
+    "totalInvested": 100000,
+    "totalProfitLoss": 20000,
+    "totalProfitLossPct": 20,
+    "statusLabel": "Posicoes ativas"
   },
-  "data": {
-    "summary": {
-      "totalEquity": 120000,
-      "categories": 3,
-      "positions": 12
-    },
-    "groups": [
-      {
-        "categoryCode": "STOCK",
-        "categoryName": "Ações",
-        "totalValue": 50000,
-        "items": []
-      }
-    ],
-    "orders": []
-  }
+  "emptyState": { "title": "string", "body": "string", "ctaLabel": "string", "target": "/import" },
+  "groups": [
+    {
+      "categoryKey": "acoes",
+      "categoryLabel": "Acoes",
+      "totalInvested": 50000,
+      "totalCurrent": 60000,
+      "totalProfitLoss": 10000,
+      "totalProfitLossPct": 20,
+      "holdings": [
+        {
+          "id": "pos_123",
+          "assetId": "ast_123",
+          "code": "ITSA4",
+          "name": "Itausa",
+          "categoryKey": "acoes",
+          "categoryLabel": "Acoes",
+          "platformId": "plt_xp",
+          "platformName": "XP Investimentos",
+          "quantity": 10,
+          "averagePrice": 13.5,
+          "currentPrice": 14.5,
+          "currentValue": 145,
+          "investedAmount": 135,
+          "performanceValue": 10,
+          "performancePct": 7.4,
+          "allocationPct": 1.2,
+          "quotationStatus": "priced"
+        }
+      ]
+    }
+  ],
+  "filters": { "performance": "all" },
+  "orders": []
 }
 ```
 
 ## Rules
-- carteira é lida por categoria e por relevância
-- lista deve funcionar com mocks e com backend real sem mudar a UI
-- itens podem ter `performancePct` nulo se faltarem dados
+
+- a Carteira deve ser navegavel por relevancia (ordem) e por categoria (grouping).
+- `performancePct` pode ser `null` quando `investedAmount` for 0.
