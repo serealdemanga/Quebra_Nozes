@@ -10,6 +10,28 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkImportStart'
+        '400':
+          description: Requisicao invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
   /v1/imports/{importId}/preview:
     get:
       summary: Ler preview da importação
@@ -22,6 +44,34 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkImportPreview'
+        '400':
+          description: Requisicao invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
   /v1/imports/{importId}/engine-status:
     get:
       summary: Ler status operacional do motor de extração
@@ -34,6 +84,34 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkImportEngineStatus'
+        '400':
+          description: Requisicao invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
   /v1/imports/{importId}/detail:
     get:
       summary: Ler detalhe operacional do processamento da importação
@@ -46,6 +124,34 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkImportDetail'
+        '400':
+          description: Requisicao invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
   /v1/imports/{importId}/commit:
     post:
       summary: Commitar importação consistente
@@ -58,6 +164,34 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkImportCommit'
+        '400':
+          description: Requisicao invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
   /v1/imports/templates/custom:
     get:
       summary: Baixar template próprio CSV
@@ -72,6 +206,70 @@ paths:
           description: OK
 components:
   schemas:
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp, version]
+      properties:
+        requestId: { type: string }
+        timestamp: { type: string }
+        version: { type: string }
+        sourceWarning: { type: string, nullable: true }
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true, nullable: true }
+    ApiEnvelopeOk:
+      type: object
+      required: [ok, meta, data]
+      properties:
+        ok: { type: boolean, const: true }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+        data: { type: object }
+    ApiEnvelopeError:
+      type: object
+      required: [ok, meta, error]
+      properties:
+        ok: { type: boolean, const: false }
+        meta: { $ref: '#/components/schemas/ResponseMeta' }
+        error: { $ref: '#/components/schemas/ApiError' }
+    ApiOkImportStart:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportStartData'
+    ApiOkImportPreview:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportPreviewData'
+    ApiOkImportEngineStatus:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportEngineStatusData'
+    ApiOkImportDetail:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportDetailData'
+    ApiOkImportCommit:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportCommitData'
     ImportStartData:
       type: object
       properties:
