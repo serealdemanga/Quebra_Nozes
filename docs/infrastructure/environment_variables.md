@@ -53,3 +53,12 @@ GEMINI_API_KEY=
 
 ## Rule
 If a variable is required by a module, it must be declared here and in .env.example.
+
+## Observacao (Cloudflare Worker)
+
+No runtime atual (Cloudflare Worker), variaveis podem vir de:
+
+- `wrangler.toml` (`[vars]` e `env.<name>.vars`)
+- secrets via `wrangler secret put` por ambiente
+
+IDs e nomes de D1/R2 sao configuracao do `wrangler.toml`, nao `.env`.

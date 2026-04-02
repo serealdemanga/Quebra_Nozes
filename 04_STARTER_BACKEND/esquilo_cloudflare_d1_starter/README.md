@@ -41,11 +41,52 @@ O que ainda falta endurecer:
 
 ## Como usar
 
-1. Criar o banco D1
-2. Aplicar `schema.sql`
-3. Ajustar `wrangler.toml`
-4. Rodar localmente
-5. Implementar os repositórios reais por rota
+1. Criar os bancos D1 (local/hml/prd) e preencher os `database_id` no `wrangler.toml`
+2. Aplicar o schema oficial: `../../database/d1/schema.sql`
+3. Aplicar seeds (opcional): `../../database/seeds/seed_base.sql`
+4. Subir localmente com o ambiente local
+5. Fazer deploy em hml/prd com ambiente explicito
+
+## Ambientes (wrangler)
+
+Regra:
+
+- sempre use `--env local|hml|production`
+- isso evita rodar com configuracao default apontando para recursos errados
+
+### Local (dev)
+
+```bash
+npm run dev
+```
+
+### HML
+
+```bash
+npm run deploy:hml
+```
+
+### Producao
+
+```bash
+npm run deploy:prod
+```
+
+## Bindings e secrets
+
+- D1: configurado por ambiente em `wrangler.toml` (`DB`)
+- R2: configurado em hml/prd como `IMPORTS_BUCKET` (ainda pode estar sem uso no runtime atual)
+- Secrets (exemplos):
+  - `APPS_SCRIPT_RECOVERY_SECRET`
+  - `OPENAI_API_KEY`
+  - `GEMINI_API_KEY`
+
+Sugestao de comando (por ambiente):
+
+```bash
+npx wrangler secret put APPS_SCRIPT_RECOVERY_SECRET --env hml
+npx wrangler secret put APPS_SCRIPT_RECOVERY_SECRET --env production
+```
 
 ## Sugestão de ordem
 
@@ -62,7 +103,7 @@ O que ainda falta endurecer:
 
 ```bash
 npm install
-npx wrangler d1 create esquilo-invest
-npx wrangler d1 execute esquilo-invest --local --file=schema.sql
+npx wrangler d1 create esquilo-invest-local
+npx wrangler d1 execute esquilo-invest-local --env local --file=../../database/d1/schema.sql --remote
 npm run dev
 ```
