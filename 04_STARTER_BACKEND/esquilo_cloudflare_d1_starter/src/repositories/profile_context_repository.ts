@@ -1,4 +1,5 @@
 import type { Env } from '../types/env';
+import { d1 } from '../lib/d1';
 
 export interface ProfileContextRow {
   id: string;
@@ -36,7 +37,7 @@ export interface UpsertProfileContextInput {
 }
 
 export async function findProfileContextByUserId(env: Env, userId: string): Promise<ProfileContextRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<ProfileContextRow>(
     `SELECT
        id,
        user_id,
@@ -55,12 +56,13 @@ export async function findProfileContextByUserId(env: Env, userId: string): Prom
        onboarding_completed_at
      FROM user_financial_context
      WHERE user_id = ?
-     LIMIT 1`
-  ).bind(userId).first<ProfileContextRow>();
+     LIMIT 1`,
+    [userId]
+  );
 }
 
 export async function upsertProfileContext(env: Env, input: UpsertProfileContextInput): Promise<void> {
-  await env.DB.prepare(
+  await d1(env).run(
     `INSERT INTO user_financial_context (
       id,
       user_id,
@@ -94,22 +96,23 @@ export async function upsertProfileContext(env: Env, input: UpsertProfileContext
       display_preferences_json = excluded.display_preferences_json,
       onboarding_step = excluded.onboarding_step,
       onboarding_completed_at = excluded.onboarding_completed_at,
-      updated_at = CURRENT_TIMESTAMP`
-  ).bind(
-    input.contextId,
-    input.userId,
-    input.financialGoal || null,
-    input.monthlyIncomeRange || null,
-    input.monthlyInvestmentTarget,
-    input.availableToInvest,
-    input.riskProfileEffective || null,
-    input.riskProfileSelfDeclared || null,
-    input.riskProfileQuizResult || null,
-    input.riskProfileEffective || null,
-    input.investmentHorizon || null,
-    input.platformsUsedJson || null,
-    input.displayPreferencesJson || null,
-    input.onboardingStep || null,
-    input.onboardingCompletedAt
-  ).run();
+      updated_at = CURRENT_TIMESTAMP`,
+    [
+      input.contextId,
+      input.userId,
+      input.financialGoal || null,
+      input.monthlyIncomeRange || null,
+      input.monthlyInvestmentTarget,
+      input.availableToInvest,
+      input.riskProfileEffective || null,
+      input.riskProfileSelfDeclared || null,
+      input.riskProfileQuizResult || null,
+      input.riskProfileEffective || null,
+      input.investmentHorizon || null,
+      input.platformsUsedJson || null,
+      input.displayPreferencesJson || null,
+      input.onboardingStep || null,
+      input.onboardingCompletedAt
+    ]
+  );
 }

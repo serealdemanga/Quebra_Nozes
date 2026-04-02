@@ -1,4 +1,5 @@
 import type { Env } from '../types/env';
+import { d1 } from '../lib/d1';
 
 export interface HoldingDetailSessionState {
   userId: string;
@@ -50,7 +51,7 @@ export interface LatestAnalysisRow {
 }
 
 export async function findHoldingSessionStateByTokenHash(env: Env, tokenHash: string): Promise<HoldingDetailSessionState | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<HoldingDetailSessionState>(
     `SELECT
        s.user_id AS userId,
        p.id AS portfolioId,
@@ -67,12 +68,13 @@ export async function findHoldingSessionStateByTokenHash(env: Env, tokenHash: st
      WHERE s.session_token_hash = ?
        AND s.revoked_at IS NULL
        AND s.expires_at > CURRENT_TIMESTAMP
-     LIMIT 1`
-  ).bind(tokenHash).first<HoldingDetailSessionState>();
+     LIMIT 1`,
+    [tokenHash]
+  );
 }
 
 export async function findHoldingDetailById(env: Env, portfolioId: string, holdingId: string): Promise<HoldingDetailRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<HoldingDetailRow>(
     `SELECT
        pp.id,
        pp.portfolio_id,
@@ -101,12 +103,13 @@ export async function findHoldingDetailById(env: Env, portfolioId: string, holdi
      WHERE pp.portfolio_id = ?
        AND pp.id = ?
        AND pp.status = 'active'
-     LIMIT 1`
-  ).bind(portfolioId, holdingId).first<HoldingDetailRow>();
+     LIMIT 1`,
+    [portfolioId, holdingId]
+  );
 }
 
 export async function findCategoryAggregate(env: Env, portfolioId: string, categoryKey: string): Promise<CategoryAggregateRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<CategoryAggregateRow>(
     `SELECT
        COALESCE(NULLIF(LOWER(TRIM(pp.category_label)), ''), LOWER(TRIM(at.code)), 'outros') AS category_key,
        COALESCE(NULLIF(pp.category_label, ''), at.name, at.code, 'Outros') AS category_label,
@@ -120,21 +123,23 @@ export async function findCategoryAggregate(env: Env, portfolioId: string, categ
        AND pp.status = 'active'
      GROUP BY category_key, category_label
      HAVING category_key = ?
-     LIMIT 1`
-  ).bind(portfolioId, categoryKey).first<CategoryAggregateRow>();
+     LIMIT 1`,
+    [portfolioId, categoryKey]
+  );
 }
 
 export async function findPortfolioAggregate(env: Env, portfolioId: string): Promise<PortfolioAggregateRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<PortfolioAggregateRow>(
     `SELECT SUM(current_amount) AS total_current
      FROM portfolio_positions
      WHERE portfolio_id = ?
-       AND status = 'active'`
-  ).bind(portfolioId).first<PortfolioAggregateRow>();
+       AND status = 'active'`,
+    [portfolioId]
+  );
 }
 
 export async function findLatestPortfolioAnalysis(env: Env, portfolioId: string): Promise<LatestAnalysisRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<LatestAnalysisRow>(
     `SELECT
        pa.id,
        pa.score_status,
@@ -144,6 +149,7 @@ export async function findLatestPortfolioAnalysis(env: Env, portfolioId: string)
      FROM portfolio_analyses pa
      WHERE pa.portfolio_id = ?
      ORDER BY pa.generated_at DESC
-     LIMIT 1`
-  ).bind(portfolioId).first<LatestAnalysisRow>();
+     LIMIT 1`,
+    [portfolioId]
+  );
 }

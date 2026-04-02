@@ -1,4 +1,5 @@
 import type { Env } from '../types/env';
+import { d1 } from '../lib/d1';
 
 export interface DashboardSessionState {
   userId: string;
@@ -40,7 +41,7 @@ export interface InsightRow {
 }
 
 export async function findDashboardSessionStateByTokenHash(env: Env, tokenHash: string): Promise<DashboardSessionState | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<DashboardSessionState>(
     `SELECT
        s.user_id AS userId,
        p.id AS portfolioId,
@@ -57,12 +58,13 @@ export async function findDashboardSessionStateByTokenHash(env: Env, tokenHash: 
      WHERE s.session_token_hash = ?
        AND s.revoked_at IS NULL
        AND s.expires_at > CURRENT_TIMESTAMP
-     LIMIT 1`
-  ).bind(tokenHash).first<DashboardSessionState>();
+     LIMIT 1`,
+    [tokenHash]
+  );
 }
 
 export async function findLatestSnapshotByPortfolioId(env: Env, portfolioId: string): Promise<SnapshotRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<SnapshotRow>(
     `SELECT
        id,
        portfolio_id,
@@ -75,12 +77,13 @@ export async function findLatestSnapshotByPortfolioId(env: Env, portfolioId: str
      FROM portfolio_snapshots
      WHERE portfolio_id = ?
      ORDER BY reference_date DESC, created_at DESC
-     LIMIT 1`
-  ).bind(portfolioId).first<SnapshotRow>();
+     LIMIT 1`,
+    [portfolioId]
+  );
 }
 
 export async function findDistributionBySnapshotId(env: Env, snapshotId: string): Promise<DistributionRow[]> {
-  const result = await env.DB.prepare(
+  return await d1(env).all<DistributionRow>(
     `SELECT
        at.code AS category_code,
        at.name AS category_name,
@@ -90,13 +93,13 @@ export async function findDistributionBySnapshotId(env: Env, snapshotId: string)
      JOIN asset_types at ON at.id = a.asset_type_id
      WHERE sp.snapshot_id = ?
      GROUP BY at.code, at.name
-     ORDER BY total_value DESC`
-  ).bind(snapshotId).all<DistributionRow>();
-  return result.results || [];
+     ORDER BY total_value DESC`,
+    [snapshotId]
+  );
 }
 
 export async function findLatestAnalysisBySnapshotId(env: Env, snapshotId: string): Promise<AnalysisRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<AnalysisRow>(
     `SELECT
        id,
        score_value,
@@ -108,19 +111,20 @@ export async function findLatestAnalysisBySnapshotId(env: Env, snapshotId: strin
      FROM portfolio_analyses
      WHERE snapshot_id = ?
      ORDER BY generated_at DESC
-     LIMIT 1`
-  ).bind(snapshotId).first<AnalysisRow>();
+     LIMIT 1`,
+    [snapshotId]
+  );
 }
 
 export async function findInsightsByAnalysisId(env: Env, analysisId: string): Promise<InsightRow[]> {
-  const result = await env.DB.prepare(
+  return await d1(env).all<InsightRow>(
     `SELECT
        insight_type,
        title,
        message
      FROM analysis_insights
      WHERE analysis_id = ?
-     ORDER BY priority ASC, created_at ASC`
-  ).bind(analysisId).all<InsightRow>();
-  return result.results || [];
+     ORDER BY priority ASC, created_at ASC`,
+    [analysisId]
+  );
 }

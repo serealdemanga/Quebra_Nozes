@@ -1,4 +1,5 @@
 import type { Env } from '../types/env';
+import { d1 } from '../lib/d1';
 
 export interface AnalysisSessionState {
   userId: string;
@@ -29,7 +30,7 @@ export interface AnalysisInsightRow {
 }
 
 export async function findAnalysisSessionStateByTokenHash(env: Env, tokenHash: string): Promise<AnalysisSessionState | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<AnalysisSessionState>(
     `SELECT
        s.user_id AS userId,
        p.id AS portfolioId,
@@ -46,12 +47,13 @@ export async function findAnalysisSessionStateByTokenHash(env: Env, tokenHash: s
      WHERE s.session_token_hash = ?
        AND s.revoked_at IS NULL
        AND s.expires_at > CURRENT_TIMESTAMP
-     LIMIT 1`
-  ).bind(tokenHash).first<AnalysisSessionState>();
+     LIMIT 1`,
+    [tokenHash]
+  );
 }
 
 export async function findLatestPortfolioAnalysis(env: Env, portfolioId: string): Promise<AnalysisRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<AnalysisRow>(
     `SELECT
        id,
        portfolio_id,
@@ -68,12 +70,13 @@ export async function findLatestPortfolioAnalysis(env: Env, portfolioId: string)
      FROM portfolio_analyses
      WHERE portfolio_id = ?
      ORDER BY generated_at DESC
-     LIMIT 1`
-  ).bind(portfolioId).first<AnalysisRow>();
+     LIMIT 1`,
+    [portfolioId]
+  );
 }
 
 export async function findInsightsByAnalysisId(env: Env, analysisId: string): Promise<AnalysisInsightRow[]> {
-  const result = await env.DB.prepare(
+  return await d1(env).all<AnalysisInsightRow>(
     `SELECT
        insight_type,
        title,
@@ -81,7 +84,7 @@ export async function findInsightsByAnalysisId(env: Env, analysisId: string): Pr
        priority
      FROM analysis_insights
      WHERE analysis_id = ?
-     ORDER BY priority ASC, created_at ASC`
-  ).bind(analysisId).all<AnalysisInsightRow>();
-  return result.results || [];
+     ORDER BY priority ASC, created_at ASC`,
+    [analysisId]
+  );
 }

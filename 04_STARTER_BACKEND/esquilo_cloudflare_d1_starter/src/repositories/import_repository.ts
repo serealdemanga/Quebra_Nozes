@@ -1,4 +1,6 @@
 import type { Env } from '../types/env';
+import type { Env } from '../types/env';
+import { d1 } from '../lib/d1';
 
 export interface ImportSessionState {
   userId: string;
@@ -43,7 +45,7 @@ export interface DuplicateCandidateRow {
 }
 
 export async function findImportSessionStateByTokenHash(env: Env, tokenHash: string): Promise<ImportSessionState | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<ImportSessionState>(
     `SELECT
        s.user_id AS userId,
        p.id AS portfolioId,
@@ -60,8 +62,9 @@ export async function findImportSessionStateByTokenHash(env: Env, tokenHash: str
      WHERE s.session_token_hash = ?
        AND s.revoked_at IS NULL
        AND s.expires_at > CURRENT_TIMESTAMP
-     LIMIT 1`
-  ).bind(tokenHash).first<ImportSessionState>();
+     LIMIT 1`,
+    [tokenHash]
+  );
 }
 
 export async function createImportRecord(env: Env, input: {
@@ -75,21 +78,12 @@ export async function createImportRecord(env: Env, input: {
   invalidRows: number;
   duplicateRows: number;
 }): Promise<void> {
-  await env.DB.prepare(
+  await d1(env).run(
     `INSERT INTO imports (
       id, user_id, portfolio_id, status, origin, total_rows, valid_rows, invalid_rows, duplicate_rows, created_at, started_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
-  ).bind(
-    input.importId,
-    input.userId,
-    input.portfolioId,
-    input.status,
-    input.origin,
-    input.totalRows,
-    input.validRows,
-    input.invalidRows,
-    input.duplicateRows
-  ).run();
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    [input.importId, input.userId, input.portfolioId, input.status, input.origin, input.totalRows, input.validRows, input.invalidRows, input.duplicateRows]
+  );
 }
 
 export async function updateImportRecord(env: Env, input: {
@@ -101,7 +95,7 @@ export async function updateImportRecord(env: Env, input: {
   duplicateRows: number;
   finishedAt?: boolean;
 }): Promise<void> {
-  await env.DB.prepare(
+  await d1(env).run(
     `UPDATE imports
      SET status = ?,
          total_rows = ?,
@@ -109,16 +103,9 @@ export async function updateImportRecord(env: Env, input: {
          invalid_rows = ?,
          duplicate_rows = ?,
          finished_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE finished_at END
-     WHERE id = ?`
-  ).bind(
-    input.status,
-    input.totalRows,
-    input.validRows,
-    input.invalidRows,
-    input.duplicateRows,
-    input.finishedAt ? 1 : 0,
-    input.importId
-  ).run();
+     WHERE id = ?`,
+    [input.status, input.totalRows, input.validRows, input.invalidRows, input.duplicateRows, input.finishedAt ? 1 : 0, input.importId]
+  );
 }
 
 export async function replaceImportRows(env: Env, importId: string, rows: Array<{
@@ -129,18 +116,19 @@ export async function replaceImportRows(env: Env, importId: string, rows: Array<
   resolutionStatus: string;
   errorMessage: string | null;
 }>): Promise<void> {
-  await env.DB.prepare(`DELETE FROM import_rows WHERE import_id = ?`).bind(importId).run();
+  await d1(env).run(`DELETE FROM import_rows WHERE import_id = ?`, [importId]);
   for (const row of rows) {
-    await env.DB.prepare(
+    await d1(env).run(
       `INSERT INTO import_rows (
         id, import_id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
-    ).bind(row.id, importId, row.rowNumber, row.sourcePayloadJson, row.normalizedPayloadJson, row.resolutionStatus, row.errorMessage).run();
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      [row.id, importId, row.rowNumber, row.sourcePayloadJson, row.normalizedPayloadJson, row.resolutionStatus, row.errorMessage]
+    );
   }
 }
 
 export async function findImportById(env: Env, importId: string): Promise<ImportRecordRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<ImportRecordRow>(
     `SELECT id,
             user_id,
             portfolio_id,
@@ -158,12 +146,13 @@ export async function findImportById(env: Env, importId: string): Promise<Import
             finished_at
      FROM imports
      WHERE id = ?
-     LIMIT 1`
-  ).bind(importId).first<ImportRecordRow>();
+     LIMIT 1`,
+    [importId]
+  );
 }
 
 export async function findOwnedImportById(env: Env, userId: string, importId: string): Promise<ImportRecordRow | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<ImportRecordRow>(
     `SELECT id,
             user_id,
             portfolio_id,
@@ -182,12 +171,20 @@ export async function findOwnedImportById(env: Env, userId: string, importId: st
      FROM imports
      WHERE id = ?
        AND user_id = ?
-     LIMIT 1`
-  ).bind(importId, userId).first<ImportRecordRow>();
+     LIMIT 1`,
+    [importId, userId]
+  );
 }
 
 export async function findLatestSnapshotByOwnedImportId(env: Env, userId: string, importId: string) {
-  return await env.DB.prepare(
+  return await d1(env).first<{
+    id: string;
+    reference_date: string;
+    total_equity: number | null;
+    total_invested: number | null;
+    total_profit_loss: number | null;
+    total_profit_loss_pct: number | null;
+  }>(
     `SELECT ps.id,
             ps.reference_date,
             ps.total_equity,
@@ -200,29 +197,23 @@ export async function findLatestSnapshotByOwnedImportId(env: Env, userId: string
       AND i.user_id = ?
      WHERE ps.import_id = ?
      ORDER BY ps.created_at DESC
-     LIMIT 1`
-  ).bind(userId, importId).first<{
-    id: string;
-    reference_date: string;
-    total_equity: number | null;
-    total_invested: number | null;
-    total_profit_loss: number | null;
-    total_profit_loss_pct: number | null;
-  }>();
+     LIMIT 1`,
+    [userId, importId]
+  );
 }
 
 export async function findImportRows(env: Env, importId: string): Promise<ImportPreviewRow[]> {
-  const result = await env.DB.prepare(
+  return await d1(env).all<ImportPreviewRow>(
     `SELECT id, row_number, source_payload_json, normalized_payload_json, resolution_status, error_message
      FROM import_rows
      WHERE import_id = ?
-     ORDER BY row_number ASC`
-  ).bind(importId).all<ImportPreviewRow>();
-  return result.results || [];
+     ORDER BY row_number ASC`,
+    [importId]
+  );
 }
 
 export async function findManualDuplicateCandidates(env: Env, portfolioId: string, normalizedName: string, code: string): Promise<DuplicateCandidateRow[]> {
-  const result = await env.DB.prepare(
+  return await d1(env).all<DuplicateCandidateRow>(
     `SELECT
        pp.asset_id,
        a.code AS asset_code,
@@ -237,31 +228,34 @@ export async function findManualDuplicateCandidates(env: Env, portfolioId: strin
        AND (
          a.normalized_name = ?
          OR (? <> '' AND a.code = ?)
-       )`
-  ).bind(portfolioId, normalizedName, code, code).all<DuplicateCandidateRow>();
-  return result.results || [];
+       )`,
+    [portfolioId, normalizedName, code, code]
+  );
 }
 
 export async function findAssetTypeByCode(env: Env, code: string): Promise<{ id: string; code: string; name: string } | null> {
-  return await env.DB.prepare(
-    `SELECT id, code, name FROM asset_types WHERE code = ? LIMIT 1`
-  ).bind(code).first<{ id: string; code: string; name: string }>();
+  return await d1(env).first<{ id: string; code: string; name: string }>(
+    `SELECT id, code, name FROM asset_types WHERE code = ? LIMIT 1`,
+    [code]
+  );
 }
 
 export async function findAssetByNormalizedNameOrCode(env: Env, normalizedName: string, code: string): Promise<{ id: string; code: string | null; name: string } | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<{ id: string; code: string | null; name: string }>(
     `SELECT id, code, name
      FROM assets
      WHERE normalized_name = ? OR (? <> '' AND code = ?)
-     LIMIT 1`
-  ).bind(normalizedName, code, code).first<{ id: string; code: string | null; name: string }>();
+     LIMIT 1`,
+    [normalizedName, code, code]
+  );
 }
 
 export async function createAsset(env: Env, input: { assetId: string; assetTypeId: string; code: string; name: string; normalizedName: string }): Promise<void> {
-  await env.DB.prepare(
+  await d1(env).run(
     `INSERT INTO assets (id, asset_type_id, code, name, normalized_name, is_custom, created_at)
-     VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)`
-  ).bind(input.assetId, input.assetTypeId, input.code || null, input.name, input.normalizedName).run();
+     VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)`,
+    [input.assetId, input.assetTypeId, input.code || null, input.name, input.normalizedName]
+  );
 }
 
 export async function createPortfolioPosition(env: Env, input: {
@@ -277,23 +271,24 @@ export async function createPortfolioPosition(env: Env, input: {
   categoryLabel: string;
   notes: string;
 }): Promise<void> {
-  await env.DB.prepare(
+  await d1(env).run(
     `INSERT INTO portfolio_positions (
       id, portfolio_id, asset_id, source_kind, status, quantity, average_price, current_price, invested_amount, current_amount, category_label, notes, created_at, updated_at
-     ) VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
-  ).bind(
-    input.positionId,
-    input.portfolioId,
-    input.assetId,
-    input.sourceKind,
-    input.quantity,
-    input.averagePrice,
-    input.currentPrice,
-    input.investedAmount,
-    input.currentAmount,
-    input.categoryLabel,
-    input.notes || null
-  ).run();
+     ) VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    [
+      input.positionId,
+      input.portfolioId,
+      input.assetId,
+      input.sourceKind,
+      input.quantity,
+      input.averagePrice,
+      input.currentPrice,
+      input.investedAmount,
+      input.currentAmount,
+      input.categoryLabel,
+      input.notes || null
+    ]
+  );
 }
 
 export async function createPortfolioSnapshot(env: Env, input: {
@@ -306,20 +301,12 @@ export async function createPortfolioSnapshot(env: Env, input: {
   totalProfitLoss: number;
   totalProfitLossPct: number;
 }): Promise<void> {
-  await env.DB.prepare(
+  await d1(env).run(
     `INSERT INTO portfolio_snapshots (
       id, portfolio_id, import_id, reference_date, total_equity, total_invested, total_profit_loss, total_profit_loss_pct, created_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
-  ).bind(
-    input.snapshotId,
-    input.portfolioId,
-    input.importId,
-    input.referenceDate,
-    input.totalEquity,
-    input.totalInvested,
-    input.totalProfitLoss,
-    input.totalProfitLossPct
-  ).run();
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    [input.snapshotId, input.portfolioId, input.importId, input.referenceDate, input.totalEquity, input.totalInvested, input.totalProfitLoss, input.totalProfitLossPct]
+  );
 }
 
 export async function createSnapshotPosition(env: Env, input: {
@@ -330,9 +317,10 @@ export async function createSnapshotPosition(env: Env, input: {
   unitPrice: number | null;
   currentValue: number;
 }): Promise<void> {
-  await env.DB.prepare(
+  await d1(env).run(
     `INSERT INTO portfolio_snapshot_positions (
       id, snapshot_id, asset_id, quantity, unit_price, current_value, created_at
-     ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
-  ).bind(input.snapshotPositionId, input.snapshotId, input.assetId, input.quantity, input.unitPrice, input.currentValue).run();
+     ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    [input.snapshotPositionId, input.snapshotId, input.assetId, input.quantity, input.unitPrice, input.currentValue]
+  );
 }
