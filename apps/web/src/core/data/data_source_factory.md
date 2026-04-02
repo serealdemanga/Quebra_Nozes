@@ -23,8 +23,8 @@ A tela recebe um provider pronto.
 
 ## Exemplo de decisão
 - `local` -> JSON local
-- `hml` -> mock remoto ou provider híbrido
-- `prd` -> HTTP real
+- `hml` -> JSON mock (basePath separado) ou provider híbrido
+- `prd` -> HTTP real (backend novo)
 
 ## Meta
 Deixar o front plug and play, sem gambiarra de ambiente espalhada.
