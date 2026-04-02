@@ -4,6 +4,7 @@ import { buildEntityId, hashToken } from './auth_crypto';
 import { recordOperationalEvent } from './operational_events_service';
 import { findSessionStateByTokenHash } from '../repositories/auth_session_repository';
 import { findProfileContextByUserId, upsertProfileContext } from '../repositories/profile_context_repository';
+import { getExternalReferencesServiceStatus } from './external_references_service';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
 const VALID_ONBOARDING_STEPS = ['goal', 'risk_quiz', 'income_horizon', 'platforms'];
@@ -15,6 +16,7 @@ export async function getProfileContextForOnboarding(request: Request, env: Env)
 
   const context = await findProfileContextByUserId(env, session.userId);
   const normalized = normalizeStoredContext(context);
+  const externalStatus = await getExternalReferencesServiceStatus(env);
 
   return ok(env.API_VERSION, {
     userId: session.userId,
@@ -27,7 +29,7 @@ export async function getProfileContextForOnboarding(request: Request, env: Env)
       apiVersion: env.API_VERSION,
       services: {
         d1: 'ok',
-        externalReferences: 'unknown'
+        externalReferences: externalStatus
       }
     }
   });

@@ -278,3 +278,22 @@ CREATE TABLE IF NOT EXISTS operational_events (
 CREATE INDEX IF NOT EXISTS idx_operational_events_user_id ON operational_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_operational_events_portfolio_id ON operational_events(portfolio_id);
 CREATE INDEX IF NOT EXISTS idx_operational_events_occurred_at ON operational_events(occurred_at);
+
+-- Complementary external references (must never be required for core flows).
+-- Cache keys are stable strings (e.g. "quote:stock:ITSA4:BVMF").
+CREATE TABLE IF NOT EXISTS external_reference_cache (
+  cache_key TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,
+  source TEXT NOT NULL,
+  value_json TEXT NOT NULL,
+  fetched_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'ok',
+  error_message TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_external_reference_cache_kind ON external_reference_cache(kind);
+CREATE INDEX IF NOT EXISTS idx_external_reference_cache_expires_at ON external_reference_cache(expires_at);
+CREATE INDEX IF NOT EXISTS idx_external_reference_cache_status ON external_reference_cache(status);

@@ -15,8 +15,8 @@
     "status": "ok",
     "appEnv": "local|hml|prd",
     "services": {
-      "database": "ok",
-      "analysis": "ok"
+      "d1": "ok",
+      "externalReferences": "disabled|degraded|ok"
     }
   }
 }
