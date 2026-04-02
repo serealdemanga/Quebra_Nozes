@@ -1,6 +1,9 @@
 import type { ApiHoldingDetailEnvelope, HoldingDetailData, HoldingDetailDataReady } from '../../core/data/contracts';
 import type { HoldingDetailDataSource } from '../../core/data/data_sources';
 import { createRouter, type Router } from '../../core/router';
+import type { OperationFeedback } from '../../core/ops/load_state';
+import { loading } from '../../core/ops/load_state';
+import { toErrorFeedback } from '../../core/ops/error_catalog';
 
 export type HoldingDetailViewModel =
   | { kind: 'redirect_onboarding'; redirectTo: string }
@@ -20,6 +23,8 @@ export type HoldingDetailViewModel =
 export interface HoldingDetailControllerResult {
   envelope: ApiHoldingDetailEnvelope;
   viewModel: HoldingDetailViewModel;
+  loadingFeedback: OperationFeedback;
+  errorFeedback?: OperationFeedback;
 }
 
 export interface HoldingDetailController {
@@ -35,22 +40,29 @@ export interface HoldingDetailController {
 export function createHoldingDetailController(input: { holdingDetail: HoldingDetailDataSource; router?: Router }): HoldingDetailController {
   const ds = input.holdingDetail;
   const router = input.router ?? createRouter();
+  const loadingFeedback = loading('Carregando detalhe', 'Buscando leitura e recomendacao do ativo.');
 
   return {
     async load(params) {
       const envelope = await ds.getHoldingDetail(params);
       if (!envelope.ok) {
-        return { envelope, viewModel: { kind: 'error', code: envelope.error.code, message: envelope.error.message } };
+        return {
+          envelope,
+          viewModel: { kind: 'error', code: envelope.error.code, message: envelope.error.message },
+          loadingFeedback,
+          errorFeedback: toErrorFeedback(envelope.error, { area: 'holding_detail' })
+        };
       }
 
       const data = envelope.data as HoldingDetailData;
       if ('screenState' in data && data.screenState === 'redirect_onboarding') {
-        return { envelope, viewModel: { kind: 'redirect_onboarding', redirectTo: data.redirectTo || '/onboarding' } };
+        return { envelope, viewModel: { kind: 'redirect_onboarding', redirectTo: data.redirectTo || '/onboarding' }, loadingFeedback };
       }
 
       const ready = data as HoldingDetailDataReady;
       return {
         envelope,
+        loadingFeedback,
         viewModel: {
           kind: 'ready',
           holding: ready.holding,

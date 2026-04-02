@@ -4,6 +4,7 @@ import { createRouter, tryParseRoute, type Router } from '../../core/router';
 import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view_models/empty_state';
 import type { OperationFeedback } from '../../core/ops/load_state';
 import { loading } from '../../core/ops/load_state';
+import { toErrorFeedback } from '../../core/ops/error_catalog';
 
 export type AnalysisViewModel =
   | { kind: 'redirect_onboarding'; redirectTo: string }
@@ -29,6 +30,7 @@ export interface AnalysisControllerResult {
   envelope: ApiAnalysisEnvelope;
   viewModel: AnalysisViewModel;
   loadingFeedback: OperationFeedback;
+  errorFeedback?: OperationFeedback;
 }
 
 export interface AnalysisController {
@@ -47,7 +49,14 @@ export function createAnalysisController(input: { analysis: AnalysisDataSource; 
   return {
     async load() {
       const envelope = await analysis.getAnalysis();
-      if (!envelope.ok) return { envelope, viewModel: { kind: 'error', code: envelope.error.code, message: envelope.error.message }, loadingFeedback };
+      if (!envelope.ok) {
+        return {
+          envelope,
+          viewModel: { kind: 'error', code: envelope.error.code, message: envelope.error.message },
+          loadingFeedback,
+          errorFeedback: toErrorFeedback(envelope.error, { area: 'analysis' })
+        };
+      }
 
       const data = envelope.data as AnalysisData;
       if ('screenState' in data && data.screenState === 'redirect_onboarding') {

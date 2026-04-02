@@ -14,6 +14,7 @@ import { createRouter, type Router } from '../../core/router';
 import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view_models/empty_state';
 import type { OperationFeedback } from '../../core/ops/load_state';
 import { loading } from '../../core/ops/load_state';
+import { toErrorFeedback } from '../../core/ops/error_catalog';
 
 export type HistoryViewModel =
   | { kind: 'redirect_onboarding'; redirectTo: string }
@@ -35,6 +36,7 @@ export interface HistoryControllerResult {
   timeline: ApiHistoryTimelineEnvelope;
   viewModel: HistoryViewModel;
   loadingFeedback: OperationFeedback;
+  errorFeedback?: OperationFeedback;
 }
 
 export interface HistoryController {
@@ -57,8 +59,24 @@ export function createHistoryController(input: { history: HistoryDataSource; rou
         history.getHistoryTimeline(opts)
       ]);
 
-      if (!snapshots.ok) return { snapshots, timeline, viewModel: { kind: 'error', code: snapshots.error.code, message: snapshots.error.message }, loadingFeedback };
-      if (!timeline.ok) return { snapshots, timeline, viewModel: { kind: 'error', code: timeline.error.code, message: timeline.error.message }, loadingFeedback };
+      if (!snapshots.ok) {
+        return {
+          snapshots,
+          timeline,
+          viewModel: { kind: 'error', code: snapshots.error.code, message: snapshots.error.message },
+          loadingFeedback,
+          errorFeedback: toErrorFeedback(snapshots.error, { area: 'history' })
+        };
+      }
+      if (!timeline.ok) {
+        return {
+          snapshots,
+          timeline,
+          viewModel: { kind: 'error', code: timeline.error.code, message: timeline.error.message },
+          loadingFeedback,
+          errorFeedback: toErrorFeedback(timeline.error, { area: 'history' })
+        };
+      }
 
       const sData = snapshots.data as HistorySnapshotsData;
       const tData = timeline.data as HistoryTimelineData;

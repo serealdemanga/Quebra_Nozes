@@ -11,6 +11,7 @@ import { createRouter, type Router } from '../../core/router';
 import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view_models/empty_state';
 import type { OperationFeedback } from '../../core/ops/load_state';
 import { loading } from '../../core/ops/load_state';
+import { toErrorFeedback } from '../../core/ops/error_catalog';
 
 export type PortfolioLocalFilters = {
   categoryKey?: string;
@@ -69,6 +70,7 @@ export interface PortfolioControllerResult {
   envelope: ApiPortfolioEnvelope;
   viewModel: PortfolioViewModel;
   loadingFeedback: OperationFeedback;
+  errorFeedback?: OperationFeedback;
 }
 
 export interface PortfolioController {
@@ -94,7 +96,8 @@ export function createPortfolioController(input: { portfolio: PortfolioDataSourc
         return {
           envelope,
           viewModel: { kind: 'error', code: envelope.error.code, message: envelope.error.message },
-          loadingFeedback
+          loadingFeedback,
+          errorFeedback: toErrorFeedback(envelope.error, { area: 'portfolio' })
         };
       }
 
