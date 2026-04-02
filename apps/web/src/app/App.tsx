@@ -6,6 +6,7 @@ import type { DataSourceMode } from '../core/data/data_source_factory';
 import { SplashScreen } from '../features/splash/SplashScreen';
 import { OnboardingScreen } from '../features/onboarding/OnboardingScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
+import { PortfolioScreen } from '../features/portfolio/PortfolioScreen';
 
 function getEnv(): AppEnv {
   const raw = String(import.meta.env.VITE_APP_ENV ?? 'local');
@@ -77,6 +78,16 @@ export function App(): JSX.Element {
         dataSources={dataSources}
         onGoToOnboarding={() => navigate('/onboarding')}
         onGoToPortfolio={() => navigate('/portfolio')}
+      />
+    );
+  }
+
+  if (state.route.id === 'portfolio') {
+    return (
+      <PortfolioScreen
+        dataSources={dataSources}
+        onBack={() => navigate('/home')}
+        onOpenHolding={({ portfolioId, holdingId }) => navigate(`/portfolio/${encodeURIComponent(portfolioId)}/holdings/${encodeURIComponent(holdingId)}`)}
       />
     );
   }
