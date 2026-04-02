@@ -4,12 +4,27 @@ import { createRouter, type Router } from '../../core/router';
 import type { OperationFeedback } from '../../core/ops/load_state';
 import { loading } from '../../core/ops/load_state';
 import { toErrorFeedback } from '../../core/ops/error_catalog';
-import { bannerFromMissingExternalLink, bannerFromQuotationStatus, type ExternalDataBanner } from '../../core/view_models/external_data';
+import { bannerFromMissingExternalLink, bannerFromQuotationStatus, bannerFromSourceWarning, type ExternalDataBanner } from '../../core/view_models/external_data';
+
+export type HoldingAttentionSignal = {
+  code: 'missing_quote' | 'high_concentration' | 'negative_performance' | 'no_risk_guardrails' | 'external_source_warning';
+  title: string;
+  body: string;
+};
+
+export type HoldingSummaryViewModel = {
+  headline: string;
+  subline: string;
+  roleMessage: string;
+  metrics: Array<{ key: 'currentValue' | 'allocationPct' | 'performancePct' | 'quantity'; label: string; value: number | null }>;
+};
 
 export type HoldingDetailViewModel =
   | { kind: 'redirect_onboarding'; redirectTo: string }
   | {
       kind: 'ready';
+      summary: HoldingSummaryViewModel;
+      attentionSignals: HoldingAttentionSignal[];
       holding: HoldingDetailDataReady['holding'];
       ranking: HoldingDetailDataReady['ranking'];
       recommendation: HoldingDetailDataReady['recommendation'];
@@ -62,15 +77,17 @@ export function createHoldingDetailController(input: { holdingDetail: HoldingDet
       }
 
       const ready = data as HoldingDetailDataReady;
-      const externalDataBanner =
-        bannerFromQuotationStatus({ quotationStatus: ready.holding.quotationStatus }) ??
-        bannerFromMissingExternalLink(ready.externalLink);
+      const externalDataBanner = inferExternalBanner(envelope, ready);
+      const summary = buildSummary(ready);
+      const attentionSignals = buildAttentionSignals(envelope, ready);
       return {
         envelope,
         loadingFeedback,
         externalDataBanner,
         viewModel: {
           kind: 'ready',
+          summary,
+          attentionSignals,
           holding: ready.holding,
           ranking: ready.ranking,
           recommendation: ready.recommendation,
@@ -83,4 +100,99 @@ export function createHoldingDetailController(input: { holdingDetail: HoldingDet
       };
     }
   };
+}
+
+function inferExternalBanner(envelope: ApiHoldingDetailEnvelope, ready: HoldingDetailDataReady): ExternalDataBanner | null {
+  return (
+    bannerFromSourceWarning(envelope.meta.sourceWarning) ??
+    bannerFromQuotationStatus({ quotationStatus: ready.holding.quotationStatus }) ??
+    bannerFromMissingExternalLink(ready.externalLink)
+  );
+}
+
+function buildSummary(ready: HoldingDetailDataReady): HoldingSummaryViewModel {
+  const holding = ready.holding;
+  const headline = `${holding.code || holding.name}`;
+  const subline = `${holding.categoryLabel || holding.assetTypeCode || 'Investimento'} • ${holding.platformName || 'Plataforma nao informada'}`;
+  const roleMessage = inferRoleMessage(holding);
+
+  return {
+    headline,
+    subline,
+    roleMessage,
+    metrics: [
+      { key: 'currentValue', label: 'Valor atual', value: holding.currentValue ?? null },
+      { key: 'allocationPct', label: 'Peso na carteira (%)', value: holding.allocationPct ?? null },
+      { key: 'performancePct', label: 'Performance (%)', value: holding.performancePct ?? null },
+      { key: 'quantity', label: 'Quantidade', value: holding.quantity ?? null }
+    ]
+  };
+}
+
+function inferRoleMessage(holding: HoldingDetailDataReady['holding']): string {
+  const allocation = holding.allocationPct ?? 0;
+  const performance = holding.performancePct;
+  const hasQuote = holding.quotationStatus === 'priced';
+
+  if (!hasQuote) {
+    return 'Sem cotacao atual, a leitura de relevancia e performance fica incompleta. Priorize corrigir a origem do dado antes de decidir.';
+  }
+  if (allocation >= 20) {
+    if (performance != null && performance < -10) return 'Peso alto e performance negativa: este ativo pode estar distorcendo o resultado da carteira.';
+    if (performance != null && performance > 15) return 'Peso alto com ganho acumulado: faz sentido avaliar protecao de ganho e diversificacao.';
+    return 'Peso alto na carteira: vale revisar se a exposicao esta intencional e coerente com seu perfil.';
+  }
+  if (allocation >= 8) {
+    if (performance != null && performance < -10) return 'Peso relevante e performance negativa: monitore de perto e compare com sua estrategia.';
+    return 'Posicao relevante: este ativo tem impacto real no resultado e merece acompanhamento regular.';
+  }
+  return performance != null && performance < -10 ? 'Posicao pequena, mas em queda: revise se faz sentido manter.' : 'Posicao menor: tende a ter impacto limitado no curto prazo, mas ainda contribui para diversificacao.';
+}
+
+function buildAttentionSignals(envelope: ApiHoldingDetailEnvelope, ready: HoldingDetailDataReady): HoldingAttentionSignal[] {
+  const holding = ready.holding;
+  const signals: HoldingAttentionSignal[] = [];
+
+  if (envelope.meta.sourceWarning) {
+    signals.push({
+      code: 'external_source_warning',
+      title: 'Dado externo complementar',
+      body: envelope.meta.sourceWarning
+    });
+  }
+
+  if (holding.quotationStatus !== 'priced') {
+    signals.push({
+      code: 'missing_quote',
+      title: 'Cotacao indisponivel',
+      body: 'Sem cotacao atual, o valor e a performance podem estar incompletos. A leitura principal continua valida, mas a decisao fica prejudicada.'
+    });
+  }
+
+  if ((holding.allocationPct ?? 0) >= 20) {
+    signals.push({
+      code: 'high_concentration',
+      title: 'Concentracao alta',
+      body: 'Este investimento concentra uma parte grande da carteira. Se nao for intencional, pode aumentar risco e dependencia.'
+    });
+  }
+
+  if (holding.performancePct != null && holding.performancePct <= -10) {
+    signals.push({
+      code: 'negative_performance',
+      title: 'Performance negativa relevante',
+      body: 'O ativo esta com queda material em relacao ao preco medio. Considere revisar tese e peso na carteira.'
+    });
+  }
+
+  const hasGuardrails = holding.stopLoss != null || holding.targetPrice != null;
+  if ((holding.allocationPct ?? 0) >= 15 && !hasGuardrails) {
+    signals.push({
+      code: 'no_risk_guardrails',
+      title: 'Sem guardrails de risco',
+      body: 'Para uma posicao relevante, pode fazer sentido definir limite de perda (stop) ou alvo para orientar decisao sem emocional.'
+    });
+  }
+
+  return signals.slice(0, 5);
 }

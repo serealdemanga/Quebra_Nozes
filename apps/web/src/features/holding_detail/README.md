@@ -20,3 +20,7 @@ A tela pode variar blocos com base em `holding.assetTypeCode` (ex.: `FUND` vs `P
 
 ## Implementacao (sem layout)
 `holding_detail_controller.ts` centraliza leitura do contrato e targets de navegacao.
+
+Blocos de view model (US036/US038):
+- `summary`: cabecalho + papel na carteira + metricas chave (sem inventar contrato)
+- `attentionSignals`: sinais de atencao derivados de dados ja existentes (cotacao, peso, performance, guardrails)
