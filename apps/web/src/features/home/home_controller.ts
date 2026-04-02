@@ -1,6 +1,8 @@
 import type { ApiDashboardHomeEnvelope, DashboardHomeData, DashboardHomeEmptyData, ScreenStateRedirect } from '../../core/data/contracts';
 import type { DashboardDataSource } from '../../core/data/data_sources';
 import { tryParseRoute, type AppRoute } from '../../core/router';
+import type { OperationFeedback } from '../../core/ops/load_state';
+import { loading } from '../../core/ops/load_state';
 
 export interface HomeNavigationTargets {
   primaryAction?: { label: string; pathname: string; route: AppRoute };
@@ -12,6 +14,7 @@ export interface HomeNavigationTargets {
 export interface HomeControllerResult {
   envelope: ApiDashboardHomeEnvelope;
   nav: HomeNavigationTargets;
+  loadingFeedback: OperationFeedback;
 }
 
 export interface HomeController {
@@ -25,14 +28,15 @@ export interface HomeController {
  */
 export function createHomeController(input: { dashboard: DashboardDataSource }): HomeController {
   const dashboard = input.dashboard;
+  const loadingFeedback = loading('Carregando Home', 'Consolidando carteira e recomendacao.');
 
   return {
     async load() {
       const envelope = await dashboard.getDashboardHome();
-      if (!envelope.ok) return { envelope, nav: {} };
+      if (!envelope.ok) return { envelope, nav: {}, loadingFeedback };
 
       const nav = resolveNav(envelope.data);
-      return { envelope, nav };
+      return { envelope, nav, loadingFeedback };
     }
   };
 }

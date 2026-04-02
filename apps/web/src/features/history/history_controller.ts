@@ -12,6 +12,8 @@ import type {
 import type { HistoryDataSource } from '../../core/data/data_sources';
 import { createRouter, type Router } from '../../core/router';
 import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view_models/empty_state';
+import type { OperationFeedback } from '../../core/ops/load_state';
+import { loading } from '../../core/ops/load_state';
 
 export type HistoryViewModel =
   | { kind: 'redirect_onboarding'; redirectTo: string }
@@ -32,6 +34,7 @@ export interface HistoryControllerResult {
   snapshots: ApiHistorySnapshotsEnvelope;
   timeline: ApiHistoryTimelineEnvelope;
   viewModel: HistoryViewModel;
+  loadingFeedback: OperationFeedback;
 }
 
 export interface HistoryController {
@@ -45,6 +48,7 @@ export interface HistoryController {
 export function createHistoryController(input: { history: HistoryDataSource; router?: Router }): HistoryController {
   const history = input.history;
   const router = input.router ?? createRouter();
+  const loadingFeedback = loading('Carregando Historico', 'Buscando snapshots e eventos.');
 
   return {
     async load(opts) {
@@ -53,18 +57,18 @@ export function createHistoryController(input: { history: HistoryDataSource; rou
         history.getHistoryTimeline(opts)
       ]);
 
-      if (!snapshots.ok) return { snapshots, timeline, viewModel: { kind: 'error', code: snapshots.error.code, message: snapshots.error.message } };
-      if (!timeline.ok) return { snapshots, timeline, viewModel: { kind: 'error', code: timeline.error.code, message: timeline.error.message } };
+      if (!snapshots.ok) return { snapshots, timeline, viewModel: { kind: 'error', code: snapshots.error.code, message: snapshots.error.message }, loadingFeedback };
+      if (!timeline.ok) return { snapshots, timeline, viewModel: { kind: 'error', code: timeline.error.code, message: timeline.error.message }, loadingFeedback };
 
       const sData = snapshots.data as HistorySnapshotsData;
       const tData = timeline.data as HistoryTimelineData;
 
       if ('screenState' in sData && sData.screenState === 'redirect_onboarding') {
-        return { snapshots, timeline, viewModel: { kind: 'redirect_onboarding', redirectTo: sData.redirectTo || '/onboarding' } };
+        return { snapshots, timeline, viewModel: { kind: 'redirect_onboarding', redirectTo: sData.redirectTo || '/onboarding' }, loadingFeedback };
       }
 
       if ('screenState' in tData && tData.screenState === 'redirect_onboarding') {
-        return { snapshots, timeline, viewModel: { kind: 'redirect_onboarding', redirectTo: tData.redirectTo || '/onboarding' } };
+        return { snapshots, timeline, viewModel: { kind: 'redirect_onboarding', redirectTo: tData.redirectTo || '/onboarding' }, loadingFeedback };
       }
 
       if (sData.screenState === 'empty' || tData.screenState === 'empty') {
@@ -72,7 +76,7 @@ export function createHistoryController(input: { history: HistoryDataSource; rou
           ? (sData as HistorySnapshotsEmptyData).emptyState
           : (tData as HistoryTimelineEmptyData).emptyState);
         const portfolioId = sData.portfolioId;
-        return { snapshots, timeline, viewModel: { kind: 'empty', portfolioId, emptyState: toEmptyStateViewModel(emptyState) } };
+        return { snapshots, timeline, viewModel: { kind: 'empty', portfolioId, emptyState: toEmptyStateViewModel(emptyState) }, loadingFeedback };
       }
 
       const sReady = sData as HistorySnapshotsReadyData;
@@ -80,6 +84,7 @@ export function createHistoryController(input: { history: HistoryDataSource; rou
       return {
         snapshots,
         timeline,
+        loadingFeedback,
         viewModel: {
           kind: 'ready',
           portfolioId: sReady.portfolioId,
