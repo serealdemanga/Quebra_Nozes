@@ -53,3 +53,27 @@ Este é o mapa principal da documentação do `Quebra_Nozes`.
 - papel claro por pasta
 - nada de documento gigante que mistura tudo
 - índice curto + arquivos separados
+
+## Trilha executavel (backend novo)
+
+Objetivo: reduzir ambiguidade e retrabalho. Esta trilha é a fonte de verdade de como o backend deve ser operado e evoluido agora.
+
+Fontes oficiais desta fase:
+
+- runtime executavel (transicao): `04_STARTER_BACKEND/esquilo_cloudflare_d1_starter`
+- destino estrutural (backend novo): `services/api`
+- schema oficial D1: `database/d1/schema.sql`
+- seeds: `database/seeds/*`
+- contratos (por enquanto como docs, nao como pacote): `packages/contracts/*`
+
+Ordem recomendada de execucao (para nao quebrar o sistema):
+
+1. Arquitetura e fronteira de transicao: `docs/10_target_architecture/` (evita “backend paralelo”).
+2. Dados: schema D1 (`database/d1/schema.sql`) antes de qualquer seed.
+3. Operacao: `docs/infrastructure/` (runbook, envs, secrets) antes de tentar deploy.
+4. Base do backend: roteamento/envelope HTTP + camada D1 + eventos operacionais.
+5. Seeds: cenarios que permitem validar rotas/telas sem depender de prod.
+
+Decisao importante (para evitar retrabalho):
+
+- `packages/contracts` **nao vira package TypeScript agora**. O repo ainda nao esta como monorepo/workspaces e `apps/web`/`apps/mobile` ainda nao sao projetos Node. Vamos converter para package quando houver consumidores reais.
