@@ -24,3 +24,6 @@ A tela pode variar blocos com base em `holding.assetTypeCode` (ex.: `FUND` vs `P
 Blocos de view model (US036/US038):
 - `summary`: cabecalho + papel na carteira + metricas chave (sem inventar contrato)
 - `attentionSignals`: sinais de atencao derivados de dados ja existentes (cotacao, peso, performance, guardrails)
+
+Blocos (US037):
+- `positiveSignals`: sinais positivos objetivos (cotacao, performance, guardrails, peso) para equilibrar a leitura
