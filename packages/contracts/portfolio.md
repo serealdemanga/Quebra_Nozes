@@ -46,7 +46,7 @@ O payload da Carteira trabalha por estado (`screenState`):
     "totalProfitLossPct": 20,
     "statusLabel": "Posicoes ativas"
   },
-  "emptyState": { "title": "string", "body": "string", "ctaLabel": "string", "target": "/import" },
+  "emptyState": { "title": "string", "body": "string", "ctaLabel": "string", "target": "/imports/entry" },
   "groups": [
     {
       "categoryKey": "acoes",
