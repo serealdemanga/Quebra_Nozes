@@ -1,4 +1,5 @@
 import type { Env } from '../types/env';
+import { d1 } from '../lib/d1';
 
 export interface ImportsCenterSessionState {
   userId: string;
@@ -23,7 +24,7 @@ export interface ImportCenterRow {
 }
 
 export async function findImportsCenterSessionStateByTokenHash(env: Env, tokenHash: string): Promise<ImportsCenterSessionState | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<ImportsCenterSessionState>(
     `SELECT
        s.user_id AS userId,
        p.id AS portfolioId,
@@ -40,12 +41,13 @@ export async function findImportsCenterSessionStateByTokenHash(env: Env, tokenHa
      WHERE s.session_token_hash = ?
        AND s.revoked_at IS NULL
        AND s.expires_at > CURRENT_TIMESTAMP
-     LIMIT 1`
-  ).bind(tokenHash).first<ImportsCenterSessionState>();
+     LIMIT 1`,
+    [tokenHash]
+  );
 }
 
 export async function findImportsCenterRows(env: Env, userId: string): Promise<ImportCenterRow[]> {
-  const result = await env.DB.prepare(
+  return await d1(env).all<ImportCenterRow>(
     `SELECT
        i.id,
        i.origin,
@@ -63,7 +65,7 @@ export async function findImportsCenterRows(env: Env, userId: string): Promise<I
      FROM imports i
      LEFT JOIN portfolio_snapshots ps ON ps.import_id = i.id
      WHERE i.user_id = ?
-     ORDER BY i.created_at DESC`
-  ).bind(userId).all<ImportCenterRow>();
-  return result.results || [];
+     ORDER BY i.created_at DESC`,
+    [userId]
+  );
 }

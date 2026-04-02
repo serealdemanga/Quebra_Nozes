@@ -1,4 +1,5 @@
 import type { Env } from '../types/env';
+import { d1 } from '../lib/d1';
 
 export interface HistorySessionState {
   userId: string;
@@ -25,7 +26,7 @@ export interface SnapshotAnalysisBadgeRow {
 }
 
 export async function findHistorySessionStateByTokenHash(env: Env, tokenHash: string): Promise<HistorySessionState | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<HistorySessionState>(
     `SELECT
        s.user_id AS userId,
        p.id AS portfolioId,
@@ -42,12 +43,13 @@ export async function findHistorySessionStateByTokenHash(env: Env, tokenHash: st
      WHERE s.session_token_hash = ?
        AND s.revoked_at IS NULL
        AND s.expires_at > CURRENT_TIMESTAMP
-     LIMIT 1`
-  ).bind(tokenHash).first<HistorySessionState>();
+     LIMIT 1`,
+    [tokenHash]
+  );
 }
 
 export async function findPortfolioSnapshots(env: Env, portfolioId: string): Promise<SnapshotHistoryRow[]> {
-  const result = await env.DB.prepare(
+  return await d1(env).all<SnapshotHistoryRow>(
     `SELECT
        id,
        portfolio_id,
@@ -59,13 +61,13 @@ export async function findPortfolioSnapshots(env: Env, portfolioId: string): Pro
        created_at
      FROM portfolio_snapshots
      WHERE portfolio_id = ?
-     ORDER BY reference_date DESC, created_at DESC`
-  ).bind(portfolioId).all<SnapshotHistoryRow>();
-  return result.results || [];
+     ORDER BY reference_date DESC, created_at DESC`,
+    [portfolioId]
+  );
 }
 
 export async function findLatestAnalysisBadgesByPortfolio(env: Env, portfolioId: string): Promise<SnapshotAnalysisBadgeRow[]> {
-  const result = await env.DB.prepare(
+  return await d1(env).all<SnapshotAnalysisBadgeRow>(
     `SELECT
        pa.snapshot_id,
        pa.score_status,
@@ -80,7 +82,7 @@ export async function findLatestAnalysisBadgesByPortfolio(env: Env, portfolioId:
      ) latest
        ON latest.snapshot_id = pa.snapshot_id
       AND latest.latest_generated_at = pa.generated_at
-     WHERE pa.portfolio_id = ?`
-  ).bind(portfolioId, portfolioId).all<SnapshotAnalysisBadgeRow>();
-  return result.results || [];
+     WHERE pa.portfolio_id = ?`,
+    [portfolioId, portfolioId]
+  );
 }

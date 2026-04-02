@@ -1,4 +1,5 @@
 import type { Env } from '../types/env';
+import { d1 } from '../lib/d1';
 
 export interface PortfolioSessionState {
   userId: string;
@@ -26,7 +27,7 @@ export interface PortfolioPositionRow {
 }
 
 export async function findPortfolioSessionStateByTokenHash(env: Env, tokenHash: string): Promise<PortfolioSessionState | null> {
-  return await env.DB.prepare(
+  return await d1(env).first<PortfolioSessionState>(
     `SELECT
        s.user_id AS userId,
        p.id AS portfolioId,
@@ -43,12 +44,13 @@ export async function findPortfolioSessionStateByTokenHash(env: Env, tokenHash: 
      WHERE s.session_token_hash = ?
        AND s.revoked_at IS NULL
        AND s.expires_at > CURRENT_TIMESTAMP
-     LIMIT 1`
-  ).bind(tokenHash).first<PortfolioSessionState>();
+     LIMIT 1`,
+    [tokenHash]
+  );
 }
 
 export async function findActivePortfolioPositions(env: Env, portfolioId: string): Promise<PortfolioPositionRow[]> {
-  const result = await env.DB.prepare(
+  return await d1(env).all<PortfolioPositionRow>(
     `SELECT
        pp.id,
        pp.portfolio_id,
@@ -72,7 +74,7 @@ export async function findActivePortfolioPositions(env: Env, portfolioId: string
      LEFT JOIN platforms p ON p.id = pp.platform_id
      WHERE pp.portfolio_id = ?
        AND pp.status = 'active'
-     ORDER BY pp.current_amount DESC, a.name ASC`
-  ).bind(portfolioId).all<PortfolioPositionRow>();
-  return result.results || [];
+     ORDER BY pp.current_amount DESC, a.name ASC`,
+    [portfolioId]
+  );
 }
