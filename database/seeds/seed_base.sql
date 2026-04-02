@@ -69,6 +69,7 @@ INSERT INTO portfolio_positions (
 INSERT INTO portfolio_snapshots (
   id, portfolio_id, import_id, reference_date, total_equity, total_invested, total_profit_loss, total_profit_loss_pct
 ) VALUES
+('snp_bal_0', 'pfl_seed_balanced', NULL, '2026-02-28', 20350.00, 20100.00, 250.00, 1.24),
 ('snp_bal_1', 'pfl_seed_balanced', NULL, '2026-03-31', 21276.84, 20742.58, 534.26, 2.58);
 
 INSERT INTO portfolio_snapshot_positions (id, snapshot_id, asset_id, quantity, unit_price, current_value) VALUES
@@ -101,6 +102,9 @@ INSERT INTO analysis_insights (id, analysis_id, insight_type, title, message, pr
 
 INSERT INTO operational_events (id, user_id, portfolio_id, event_type, event_status, message) VALUES
 ('evt_bal_1', 'usr_seed_balanced', 'pfl_seed_balanced', 'seed_created', 'ok', 'Cenario balanced criado.');
+
+INSERT INTO operational_events (id, user_id, portfolio_id, event_type, event_status, message, occurred_at) VALUES
+('evt_bal_2', 'usr_seed_balanced', 'pfl_seed_balanced', 'snapshot_created', 'ok', 'Snapshot inicial gerado.', '2026-03-01T00:00:00.000Z');
 
 -- Cenario 2: carteira concentrada (edge case de concentracao)
 INSERT INTO users (id, cpf, email, password_hash, display_name, status) VALUES
