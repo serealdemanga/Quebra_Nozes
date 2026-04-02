@@ -22,6 +22,9 @@
 - `GET /v1/imports/{importId}/preview`
 - `POST /v1/imports/{importId}/commit`
 
+## Operacao (interno)
+- `GET /v1/ops/events` (protegida por cookie; lista trilha operacional do usuario)
+
 ## Regra
 Implementar na ordem do menor risco para o maior.
 Cada tela só avança quando contrato, backend e dado mínimo estiverem coerentes.

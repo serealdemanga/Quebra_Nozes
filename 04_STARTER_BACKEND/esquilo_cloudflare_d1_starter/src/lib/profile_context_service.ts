@@ -1,6 +1,7 @@
 import type { Env } from '../types/env';
 import { ok, fail, readJson } from './http';
 import { buildEntityId, hashToken } from './auth_crypto';
+import { recordOperationalEvent } from './operational_events_service';
 import { findSessionStateByTokenHash } from '../repositories/auth_session_repository';
 import { findProfileContextByUserId, upsertProfileContext } from '../repositories/profile_context_repository';
 
@@ -102,6 +103,15 @@ export async function putProfileContextForOnboarding(request: Request, env: Env)
     displayPreferencesJson: JSON.stringify(merged.displayPreferences),
     onboardingStep,
     onboardingCompletedAt
+  });
+
+  await recordOperationalEvent(env, {
+    userId: session.userId,
+    portfolioId: session.portfolioId || null,
+    eventType: 'profile_context_upsert',
+    status: 'ok',
+    message: 'Contexto financeiro atualizado.',
+    details: { onboardingStep }
   });
 
   return ok(env.API_VERSION, {
