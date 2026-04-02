@@ -21,6 +21,7 @@ export async function recordOperationalEvent(env: Env, input: {
     message: input.message ?? null
   });
 
+
   try {
     await insertOperationalEvent(env, {
       eventId: buildEntityId('evt'),
