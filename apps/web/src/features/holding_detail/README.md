@@ -27,3 +27,6 @@ Blocos de view model (US036/US038):
 
 Blocos (US037):
 - `positiveSignals`: sinais positivos objetivos (cotacao, performance, guardrails, peso) para equilibrar a leitura
+
+US041:
+- `summary.roleMessage` considera `assetTypeCode=PENSION` para explicar papel estrategico da previdencia sem depender de UI/layout
