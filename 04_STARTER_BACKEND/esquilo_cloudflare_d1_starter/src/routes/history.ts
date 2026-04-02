@@ -1,10 +1,11 @@
 import type { Env } from '../types/env';
-import { ok } from '../lib/http';
+import { getHistorySnapshotsData } from '../lib/history_service';
+import { getImportsCenterData } from '../lib/imports_center_service';
 
-export async function getSnapshots(_request: Request, env: Env): Promise<Response> {
-  return ok(env.API_VERSION, {
-    portfolioId: 'primary',
-    snapshots: [],
-    events: []
-  });
+export async function getSnapshots(request: Request, env: Env): Promise<Response> {
+  return await getHistorySnapshotsData(request, env);
+}
+
+export async function getImportsCenter(request: Request, env: Env): Promise<Response> {
+  return await getImportsCenterData(request, env);
 }

@@ -3,62 +3,16 @@ info:
   title: Quebra_Nozes API
   version: 0.1.0
   description: API inicial do projeto novo do Esquilo Invest.
-servers:
-  - url: https://api.example.com
-    description: producao
-  - url: https://hml-api.example.com
-    description: homologacao
 paths:
-  /v1/health:
-    get:
-      summary: Health check da aplicacao
-      responses:
-        '200':
-          description: OK
-  /v1/profile/context:
-    get:
-      summary: Ler contexto do usuario
-      responses:
-        '200':
-          description: OK
-    put:
-      summary: Atualizar contexto do usuario
-      responses:
-        '200':
-          description: OK
-  /v1/dashboard/home:
-    get:
-      summary: Ler home da carteira
-      responses:
-        '200':
-          description: OK
-  /v1/portfolio:
-    get:
-      summary: Ler carteira consolidada
-      responses:
-        '200':
-          description: OK
-  /v1/history/snapshots:
-    get:
-      summary: Ler snapshots da carteira
-      responses:
-        '200':
-          description: OK
-  /v1/analysis:
-    get:
-      summary: Ler analise consolidada
-      responses:
-        '200':
-          description: OK
   /v1/imports/start:
     post:
-      summary: Iniciar importacao
+      summary: Iniciar importação manual, CSV ou documento assistido
       responses:
         '200':
           description: OK
   /v1/imports/{importId}/preview:
     get:
-      summary: Ler preview da importacao
+      summary: Ler preview da importação
       parameters:
         - in: path
           name: importId
@@ -70,7 +24,7 @@ paths:
           description: OK
   /v1/imports/{importId}/commit:
     post:
-      summary: Confirmar importacao
+      summary: Commitar importação consistente
       parameters:
         - in: path
           name: importId
@@ -80,3 +34,40 @@ paths:
       responses:
         '200':
           description: OK
+  /v1/imports/templates/custom:
+    get:
+      summary: Baixar template próprio CSV
+      responses:
+        '200':
+          description: OK
+  /v1/imports/templates/b3:
+    get:
+      summary: Baixar modelo CSV de referência B3
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    ImportStartData:
+      type: object
+      properties:
+        importId: { type: string }
+        status: { type: string }
+        nextStep: { type: string }
+        importable: { type: boolean }
+    ImportPreviewData:
+      type: object
+      properties:
+        importId: { type: string }
+        status: { type: string }
+        origin: { type: string }
+        readyToCommit: { type: boolean }
+        importable: { type: boolean }
+    ImportCommitData:
+      type: object
+      properties:
+        importId: { type: string }
+        status: { type: string }
+        createdSnapshotId: { type: string }
+        affectedPositions: { type: number }
+        nextStep: { type: string }

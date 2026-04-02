@@ -13,17 +13,20 @@ Define all environment variables required to run the system locally and in produ
 ### Core
 - NODE_ENV=development | production
 - APP_PORT=3000
+- API_VERSION=v1
+- APP_ENV=local | hml | production
 
 ### Database
 - D1_DATABASE_ID
 - D1_DATABASE_NAME
 
+### Auth / Recovery
+- APPS_SCRIPT_RECOVERY_URL
+- APPS_SCRIPT_RECOVERY_SECRET
+
 ### Telegram
 - TELEGRAM_BOT_TOKEN
 - TELEGRAM_DEFAULT_CHAT_ID
-
-### Email
-- APPSCRIPT_EMAIL_WEBHOOK_URL
 
 ### AI
 - OPENAI_API_KEY
@@ -33,14 +36,17 @@ Define all environment variables required to run the system locally and in produ
 
 NODE_ENV=development
 APP_PORT=3000
+API_VERSION=v1
+APP_ENV=local
 
 D1_DATABASE_ID=your_database_id
 D1_DATABASE_NAME=esquilo
 
+APPS_SCRIPT_RECOVERY_URL=
+APPS_SCRIPT_RECOVERY_SECRET=
+
 TELEGRAM_BOT_TOKEN=your_token
 TELEGRAM_DEFAULT_CHAT_ID=
-
-APPSCRIPT_EMAIL_WEBHOOK_URL=
 
 OPENAI_API_KEY=
 GEMINI_API_KEY=
