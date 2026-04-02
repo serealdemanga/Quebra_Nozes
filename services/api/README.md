@@ -43,6 +43,18 @@ Headers de correlacao:
 - `x-request-id` (sempre)
 - `x-error-code` (apenas em erro)
 
+## Envelope HTTP (oficial)
+
+O backend responde sempre em JSON no formato:
+
+- sucesso: `{ ok: true, meta: { requestId, timestamp, version }, data }`
+- erro: `{ ok: false, meta: { requestId, timestamp, version }, error: { code, message, details? } }`
+
+Headers de correlacao:
+
+- `x-request-id` (sempre)
+- `x-error-code` (apenas em erro)
+
 Responsabilidades esperadas:
 - health
 - profile/context
