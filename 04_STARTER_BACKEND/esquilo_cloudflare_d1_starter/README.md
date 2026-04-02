@@ -1,6 +1,27 @@
 # Esquilo Invest - Cloudflare Worker + D1 Starter
 
-Starter inicial para a nova versão do backend do Esquilo Invest em **Cloudflare Workers + D1**.
+Base executavel oficial da fase de transicao do backend novo em **Cloudflare Workers + D1**.
+
+## Papel desta pasta na arquitetura
+
+Esta pasta nao e mais lida como demo descartavel.
+
+Ela e hoje:
+
+- a base executavel oficial da fase atual
+- o lugar onde as rotas novas precisam funcionar de verdade
+
+Ela nao e:
+
+- a casa final da arquitetura
+- a fonte oficial de schema
+- a fonte oficial de contrato compartilhado
+
+As fontes oficiais fora desta pasta sao:
+
+- contrato HTTP: `../../services/api/openapi.yaml`
+- schema do dominio: `../../database/d1/schema.sql`
+- contratos compartilhados: `../../packages/contracts/`
 
 ## O que tem aqui
 
@@ -22,13 +43,20 @@ Starter inicial para a nova versão do backend do Esquilo Invest em **Cloudflare
 
 ## Observação importante
 
-Isso é um **starter de verdade**, mas ainda não é backend completo de produção.
+Isso e um **starter de verdade**, mas ainda nao e backend completo de producao.
 Ele já organiza:
 - contratos
 - envelopes de resposta
 - validação básica de rotas
 - estrutura de arquivo
 - base SQL
+
+Regra da fase:
+
+- implementar aqui o que precisa rodar agora
+- decidir contrato em `services/api`
+- decidir schema em `database/d1`
+- evitar que os arquivos locais desta pasta virem uma nova fonte paralela de verdade
 
 O que ainda falta endurecer:
 - autenticação real
