@@ -1,11 +1,13 @@
 import React from "react";
 import { createBrowserRouter } from "react-router-dom";
-import { AppShell } from "@/app/shell/AppShell";
+import { AuthedAppShell } from "@/app/shell/AuthedAppShell";
 import { HomePage } from "@/pages/HomePage";
 import { PortfolioPage } from "@/pages/PortfolioPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { SplashPage } from "@/pages/SplashPage";
 import { StartPage } from "@/pages/StartPage";
+import { LoginPage } from "@/pages/LoginPage";
+import { RegisterPage } from "@/pages/RegisterPage";
 import { HoldingDetailPage } from "@/pages/HoldingDetailPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
@@ -29,13 +31,23 @@ export const router = createBrowserRouter([
     errorElement: <NotFoundPage />,
   },
   {
+    path: "/login",
+    element: <LoginPage />,
+    errorElement: <NotFoundPage />,
+  },
+  {
+    path: "/register",
+    element: <RegisterPage />,
+    errorElement: <NotFoundPage />,
+  },
+  {
     path: "/start",
     element: <StartPage />,
     errorElement: <NotFoundPage />,
   },
   {
     path: "/app",
-    element: <AppShell />,
+    element: <AuthedAppShell />,
     children: [
       { path: "home", element: <HomePage /> },
       { path: "onboarding", element: <OnboardingPage /> },

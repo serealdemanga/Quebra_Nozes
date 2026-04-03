@@ -5,7 +5,7 @@ import { useAppStore } from "@/core/state/app_store";
 import { Logo } from "@/components/brand/Logo";
 import { Icon, type IconName } from "@/components/brand/Icon";
 
-export function AppShell() {
+export function AppShell({ children }: { children?: React.ReactNode }) {
   const store = useAppStore();
   const location = useLocation();
 
@@ -44,7 +44,7 @@ export function AppShell() {
       </header>
 
       <main className="mx-auto w-full max-w-5xl px-4 py-6">
-        <Outlet />
+        {children ?? <Outlet />}
       </main>
     </div>
   );

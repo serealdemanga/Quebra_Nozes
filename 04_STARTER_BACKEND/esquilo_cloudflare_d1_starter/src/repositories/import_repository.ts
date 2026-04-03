@@ -73,6 +73,8 @@ export async function createImportRecord(env: Env, input: {
   portfolioId: string;
   status: string;
   origin: string;
+  fileName?: string | null;
+  mimeType?: string | null;
   totalRows: number;
   validRows: number;
   invalidRows: number;
@@ -80,9 +82,21 @@ export async function createImportRecord(env: Env, input: {
 }): Promise<void> {
   await d1(env).run(
     `INSERT INTO imports (
-      id, user_id, portfolio_id, status, origin, total_rows, valid_rows, invalid_rows, duplicate_rows, created_at, started_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-    [input.importId, input.userId, input.portfolioId, input.status, input.origin, input.totalRows, input.validRows, input.invalidRows, input.duplicateRows]
+      id, user_id, portfolio_id, status, origin, file_name, mime_type, total_rows, valid_rows, invalid_rows, duplicate_rows, created_at, started_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    [
+      input.importId,
+      input.userId,
+      input.portfolioId,
+      input.status,
+      input.origin,
+      input.fileName ?? null,
+      input.mimeType ?? null,
+      input.totalRows,
+      input.validRows,
+      input.invalidRows,
+      input.duplicateRows
+    ]
   );
 }
 

@@ -41,10 +41,10 @@ export function SplashPage() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button asChild>
-              <Link to="/start">Começar</Link>
+              <Link to="/login">Entrar</Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link to="/app/profile">Definir meu contexto</Link>
+              <Link to="/register">Criar conta</Link>
             </Button>
           </div>
         </section>

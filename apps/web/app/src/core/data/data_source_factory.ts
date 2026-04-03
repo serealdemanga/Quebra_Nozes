@@ -32,16 +32,16 @@ export function createDataSources(input: DataSourceFactoryInput): AppDataSources
     });
   }
 
-  if (!input.httpBaseUrl) {
-    throw new Error('httpBaseUrl is required when mode=http');
-  }
-
-  return createHttpDataSources({ baseUrl: input.httpBaseUrl });
+  // Release 0.1: http por default. Quando nao houver baseUrl, usamos mesma origem (Cloudflare Pages + Worker no mesmo host).
+  const baseUrl = typeof input.httpBaseUrl === 'string' ? input.httpBaseUrl : '';
+  return createHttpDataSources({ baseUrl });
 }
 
 function resolveMode(appEnv: AppEnv, mode: DataSourceMode | undefined): Exclude<DataSourceMode, 'auto'> {
   if (!mode || mode === 'auto') {
-    return appEnv === 'prd' ? 'http' : 'mock_local';
+    // Somente usa mock quando explicitamente pedido (VITE_DATA_SOURCE_MODE=mock_*).
+    // Isso garante que o webapp nao rode "funcional fake" por padrao.
+    return 'http';
   }
 
   return mode;

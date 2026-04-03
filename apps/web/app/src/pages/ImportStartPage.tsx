@@ -8,14 +8,13 @@ import { ErrorState } from "@/components/system/SystemState";
 export function ImportStartPage() {
   const ds = useDataSources();
   const nav = useNavigate();
-  const [mode, setMode] = React.useState<"CUSTOM_TEMPLATE" | "B3_CSV">("CUSTOM_TEMPLATE");
   const [csvContent, setCsvContent] = React.useState("");
+  const [fileName, setFileName] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
   const templateCustomUrl = apiBaseUrl ? `${apiBaseUrl}/v1/imports/templates/custom` : "/v1/imports/templates/custom";
-  const templateB3Url = apiBaseUrl ? `${apiBaseUrl}/v1/imports/templates/b3` : "/v1/imports/templates/b3";
 
   async function onStart() {
     setLoading(true);
@@ -23,8 +22,11 @@ export function ImportStartPage() {
     try {
       const res = await ds.imports.startImport({
         payload: {
-          origin: mode,
-          csvContent: csvContent.trim() ? csvContent : mode === "B3_CSV" ? defaultB3Csv() : defaultCustomTemplateCsv(),
+          // Release 0.1: um unico layout oficial.
+          origin: "CUSTOM_TEMPLATE",
+          csvContent: csvContent.trim() ? csvContent : defaultCustomTemplateCsv(),
+          fileName,
+          mimeType: "text/csv",
         },
       });
       if (!res.ok) {
@@ -60,43 +62,51 @@ export function ImportStartPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Escolha o formato</CardTitle>
+          <CardTitle>Upload do CSV</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "CUSTOM_TEMPLATE" ? "default" : "secondary"}
-              onClick={() => setMode("CUSTOM_TEMPLATE")}
-              disabled={loading}
-            >
-              Template próprio
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "B3_CSV" ? "default" : "secondary"}
-              onClick={() => setMode("B3_CSV")}
-              disabled={loading}
-            >
-              CSV da B3
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
             <Button asChild type="button" size="sm" variant="secondary" disabled={loading}>
-              <a href={mode === "B3_CSV" ? templateB3Url : templateCustomUrl} target="_blank" rel="noreferrer">
-                Baixar template
+              <a href={templateCustomUrl} target="_blank" rel="noreferrer">
+                Baixar template oficial
               </a>
             </Button>
+            <p className="ty-caption text-text-secondary">
+              Layout: <code>tipo,codigo,nome,quantidade,valor_investido,valor_atual,categoria,observacoes</code>
+            </p>
+          </div>
+
+          <div className="mt-4 space-y-1">
+            <label className="ty-label text-text-secondary">Selecione o arquivo CSV</label>
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              disabled={loading}
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                setFileName(f.name);
+                try {
+                  const text = await f.text();
+                  setCsvContent(text);
+                } catch {
+                  setError("Não consegui ler esse arquivo. Tente novamente.");
+                }
+              }}
+            />
+            {fileName ? (
+              <p className="ty-caption text-text-secondary">Arquivo: {fileName}</p>
+            ) : null}
           </div>
 
           <label className="mt-4 block ty-label text-text-secondary">
-            Cole o conteúdo CSV completo (com cabeçalho)
+            Conteúdo CSV (auto-preenchido após upload)
           </label>
           <textarea
             className="mt-2 h-40 w-full rounded-md border border-border-default bg-bg-primary p-3 ty-body"
             value={csvContent}
             onChange={(e) => setCsvContent(e.target.value)}
-            placeholder={mode === "B3_CSV" ? placeholderB3Csv() : placeholderCustomTemplateCsv()}
+            placeholder={placeholderCustomTemplateCsv()}
           />
           <div className="mt-4 flex gap-2">
             <Button onClick={onStart} disabled={loading}>
@@ -142,17 +152,6 @@ function defaultCustomTemplateCsv() {
   ].join("\n");
 }
 
-function defaultB3Csv() {
-  return [
-    "codigo,produto,quantidade,preco_medio,valor_atual",
-    "PETR4,Petrobras PN,100,32.00,3510.00",
-  ].join("\n");
-}
-
 function placeholderCustomTemplateCsv() {
   return "Cole o CSV do template proprio aqui. Ex:\\n" + defaultCustomTemplateCsv();
-}
-
-function placeholderB3Csv() {
-  return "Cole o CSV da B3 aqui. Ex:\\n" + defaultB3Csv();
 }

@@ -182,13 +182,24 @@ async function startCustomTemplateImport(request: Request, env: Env, payload?: R
   if (session instanceof Response) return session;
   const body = payload || await readJson<Record<string, unknown>>(request).catch(() => ({}));
   const csvContent = typeof body.csvContent === 'string' ? body.csvContent : '';
+  const fileName = normalizeText(body.fileName);
+  const mimeType = normalizeText(body.mimeType);
   if (!csvContent.trim()) return fail(env.API_VERSION, 'missing_csv_content', 'Envie o conteúdo CSV do template próprio.', 400);
   const parsed = parseCsv(csvContent);
   if (!parsed.headers.length) return fail(env.API_VERSION, 'invalid_csv', 'CSV vazio ou inválido.', 400);
   const headerError = validateTemplateHeaders(parsed.headers);
   if (headerError) return fail(env.API_VERSION, 'invalid_template_headers', headerError, 400);
   if (!parsed.rows.length) return fail(env.API_VERSION, 'missing_template_rows', 'O template não possui linhas de ativos.', 400);
-  return await persistNormalizedImport(env, session, ORIGIN_CUSTOM_TEMPLATE, { entries: parsed.rows.map((row, index) => { const raw = mapTemplateRowToRawEntry(row); return { raw, rowNumber: index + 1, parsed: normalizeManualEntry(raw, index + 1), fieldSources: {}, fieldConfidences: {}, warnings: [] }; }), documentMeta: null, importable: true });
+  return await persistNormalizedImport(env, session, ORIGIN_CUSTOM_TEMPLATE, {
+    entries: parsed.rows.map((row, index) => {
+      const raw = mapTemplateRowToRawEntry(row);
+      return { raw, rowNumber: index + 1, parsed: normalizeManualEntry(raw, index + 1), fieldSources: {}, fieldConfidences: {}, warnings: [] };
+    }),
+    documentMeta: fileName || mimeType ? { fileName, mimeType } : null,
+    importable: true,
+    fileName: fileName || null,
+    mimeType: mimeType || null
+  });
 }
 
 async function startB3CsvImport(request: Request, env: Env, payload?: Record<string, unknown>): Promise<Response> {
@@ -196,6 +207,8 @@ async function startB3CsvImport(request: Request, env: Env, payload?: Record<str
   if (session instanceof Response) return session;
   const body = payload || await readJson<Record<string, unknown>>(request).catch(() => ({}));
   const csvContent = typeof body.csvContent === 'string' ? body.csvContent : '';
+  const fileName = normalizeText(body.fileName);
+  const mimeType = normalizeText(body.mimeType);
   if (!csvContent.trim()) return fail(env.API_VERSION, 'missing_csv_content', 'Envie o conteúdo CSV da B3.', 400);
   const parsed = parseCsv(csvContent);
   if (!parsed.headers.length) return fail(env.API_VERSION, 'invalid_csv', 'CSV B3 vazio ou inválido.', 400);
@@ -203,7 +216,16 @@ async function startB3CsvImport(request: Request, env: Env, payload?: Record<str
   const headerError = validateB3Headers(headerMap);
   if (headerError) return fail(env.API_VERSION, 'invalid_b3_headers', headerError, 400);
   if (!parsed.rows.length) return fail(env.API_VERSION, 'missing_b3_rows', 'O CSV da B3 não possui linhas de posição.', 400);
-  return await persistNormalizedImport(env, session, ORIGIN_B3_CSV, { entries: parsed.rows.map((row, index) => { const raw = mapB3RowToRawEntry(row, headerMap); return { raw, rowNumber: index + 1, parsed: normalizeManualEntry(raw, index + 1), fieldSources: {}, fieldConfidences: {}, warnings: [] }; }), documentMeta: null, importable: true });
+  return await persistNormalizedImport(env, session, ORIGIN_B3_CSV, {
+    entries: parsed.rows.map((row, index) => {
+      const raw = mapB3RowToRawEntry(row, headerMap);
+      return { raw, rowNumber: index + 1, parsed: normalizeManualEntry(raw, index + 1), fieldSources: {}, fieldConfidences: {}, warnings: [] };
+    }),
+    documentMeta: fileName || mimeType ? { fileName, mimeType } : null,
+    importable: true,
+    fileName: fileName || null,
+    mimeType: mimeType || null
+  });
 }
 
 async function startDocumentAiImport(request: Request, env: Env, payload?: Record<string, unknown>): Promise<Response> {
@@ -224,11 +246,41 @@ async function startDocumentAiImport(request: Request, env: Env, payload?: Recor
   return await persistNormalizedImport(env, session, ORIGIN_DOCUMENT_AI_PARSE, { entries: extractedEntries.map((entry, index) => { const row = typeof entry === 'object' && entry !== null ? entry as Record<string, unknown> : {}; const raw = { tipo: row.sourceKind, codigo: row.code, nome: row.name, quantidade: row.quantity, valor_investido: row.investedAmount, valor_atual: row.currentAmount, categoria: row.categoryLabel, observacoes: row.notes }; return { raw, rowNumber: index + 1, parsed: normalizeManualEntry(raw, index + 1), fieldSources: normalizeFieldMap(row.sourceTrace, 'source'), fieldConfidences: normalizeFieldMap(row.sourceTrace, 'confidence'), warnings: Array.isArray(row.warnings) ? row.warnings.map((item) => String(item)) : [] }; }), documentMeta: { fileName, mimeType, documentType, parserMode, confidence: documentConfidence }, importable });
 }
 
-async function persistNormalizedImport(env: Env, session: { userId: string; portfolioId: string }, origin: string, input: { entries: Array<{ raw: unknown; rowNumber: number; parsed: ReturnType<typeof normalizeManualEntry>; fieldSources: Record<string, unknown>; fieldConfidences: Record<string, unknown>; warnings: string[] }>; documentMeta: Record<string, unknown> | null; importable: boolean; }): Promise<Response> {
+async function persistNormalizedImport(
+  env: Env,
+  session: { userId: string; portfolioId: string },
+  origin: string,
+  input: {
+    entries: Array<{
+      raw: unknown;
+      rowNumber: number;
+      parsed: ReturnType<typeof normalizeManualEntry>;
+      fieldSources: Record<string, unknown>;
+      fieldConfidences: Record<string, unknown>;
+      warnings: string[];
+    }>;
+    documentMeta: Record<string, unknown> | null;
+    importable: boolean;
+    fileName?: string | null;
+    mimeType?: string | null;
+  }
+): Promise<Response> {
   const previewRows = await buildPreviewRows(env, session.portfolioId, input.entries.map((entry) => ({ id: buildEntityId('imr'), rowNumber: entry.rowNumber, sourcePayloadJson: JSON.stringify(entry.raw), normalizedPayloadJson: JSON.stringify({ sourceKind: entry.parsed.sourceKind, code: entry.parsed.code, name: entry.parsed.name, normalizedName: entry.parsed.normalizedName, quantity: entry.parsed.quantity, investedAmount: entry.parsed.investedAmount, currentAmount: entry.parsed.currentAmount, averagePrice: entry.parsed.averagePrice, currentPrice: entry.parsed.currentPrice, categoryLabel: entry.parsed.categoryLabel, notes: entry.parsed.notes, fieldSources: entry.fieldSources, fieldConfidences: entry.fieldConfidences, warnings: entry.warnings, documentMeta: input.documentMeta, importable: input.importable }), parsed: entry.parsed, fieldSources: entry.fieldSources, fieldConfidences: entry.fieldConfidences, warnings: entry.warnings })), input.importable);
   const importId = buildEntityId('imp');
   const status = previewRows.totals.invalidRows === 0 && previewRows.totals.duplicateRows === 0 ? 'PREVIEW_READY' : 'PROCESSING';
-  await createImportRecord(env, { importId, userId: session.userId, portfolioId: session.portfolioId, status, origin, totalRows: previewRows.totals.totalRows, validRows: previewRows.totals.validRows, invalidRows: previewRows.totals.invalidRows, duplicateRows: previewRows.totals.duplicateRows });
+  await createImportRecord(env, {
+    importId,
+    userId: session.userId,
+    portfolioId: session.portfolioId,
+    status,
+    origin,
+    fileName: input.fileName ?? null,
+    mimeType: input.mimeType ?? null,
+    totalRows: previewRows.totals.totalRows,
+    validRows: previewRows.totals.validRows,
+    invalidRows: previewRows.totals.invalidRows,
+    duplicateRows: previewRows.totals.duplicateRows
+  });
   await replaceImportRows(env, importId, previewRows.rows.map((row) => ({ id: row.id, rowNumber: row.rowNumber, sourcePayloadJson: row.sourcePayloadJson, normalizedPayloadJson: row.normalizedPayloadJson, resolutionStatus: row.resolutionStatus, errorMessage: row.errorMessage })));
 
   await recordOperationalEvent(env, {

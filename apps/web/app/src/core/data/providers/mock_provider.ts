@@ -1,5 +1,11 @@
 import type { AppDataSources } from "../data_sources";
 import type {
+  ApiAuthLoginEnvelope,
+  ApiAuthLogoutEnvelope,
+  ApiAuthRegisterEnvelope,
+  ApiAuthSessionEnvelope,
+  AuthLoginRequest,
+  AuthRegisterRequest,
   ApiAnalysisEnvelope,
   ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
@@ -34,6 +40,36 @@ export function createMockDataSources(options: MockProviderOptions): AppDataSour
   const isHml = basePath.includes("/mock/hml");
 
   return {
+    auth: {
+      async register(_input: AuthRegisterRequest): Promise<ApiAuthRegisterEnvelope> {
+        return {
+          ok: false,
+          meta: { requestId: "mock", timestamp: new Date().toISOString(), version: "v1" },
+          error: { code: "mock_disabled", message: "Auth real exigida. Desative mocks e conecte na API." },
+        };
+      },
+      async login(_input: AuthLoginRequest): Promise<ApiAuthLoginEnvelope> {
+        return {
+          ok: false,
+          meta: { requestId: "mock", timestamp: new Date().toISOString(), version: "v1" },
+          error: { code: "mock_disabled", message: "Auth real exigida. Desative mocks e conecte na API." },
+        };
+      },
+      async getSession(): Promise<ApiAuthSessionEnvelope> {
+        return {
+          ok: true,
+          meta: { requestId: "mock", timestamp: new Date().toISOString(), version: "v1" },
+          data: { authenticated: false, nextStep: "/login" },
+        };
+      },
+      async logout(): Promise<ApiAuthLogoutEnvelope> {
+        return {
+          ok: true,
+          meta: { requestId: "mock", timestamp: new Date().toISOString(), version: "v1" },
+          data: { authenticated: false, status: "logged_out", nextStep: "/login" },
+        };
+      },
+    },
     dashboard: {
       async getDashboardHome(): Promise<ApiDashboardHomeEnvelope> {
         return await loader.load<ApiDashboardHomeEnvelope>(`${basePath}/dashboard_home.json`);

@@ -1,4 +1,10 @@
 import type {
+  ApiAuthLoginEnvelope,
+  ApiAuthLogoutEnvelope,
+  ApiAuthRegisterEnvelope,
+  ApiAuthSessionEnvelope,
+  AuthLoginRequest,
+  AuthRegisterRequest,
   ApiAnalysisEnvelope,
   ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
@@ -19,6 +25,13 @@ import type {
   ApiImportResolveDuplicateEnvelope,
   ImportResolveDuplicateRequest,
 } from "./contracts";
+
+export interface AuthDataSource {
+  register(input: AuthRegisterRequest): Promise<ApiAuthRegisterEnvelope>;
+  login(input: AuthLoginRequest): Promise<ApiAuthLoginEnvelope>;
+  getSession(): Promise<ApiAuthSessionEnvelope>;
+  logout(): Promise<ApiAuthLogoutEnvelope>;
+}
 
 export interface AnalysisDataSource {
   getAnalysis(): Promise<ApiAnalysisEnvelope>;
@@ -62,6 +75,7 @@ export interface ImportsDataSource {
 }
 
 export interface AppDataSources {
+  auth: AuthDataSource;
   dashboard: DashboardDataSource;
   health: HealthDataSource;
   analysis: AnalysisDataSource;

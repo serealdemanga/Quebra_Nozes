@@ -139,7 +139,7 @@ export type ProfileContextGetData = {
 
 export type ProfileContextPutData = Omit<ProfileContextGetData, "backendHealth">;
 
-export type ProfileContextStep = "goal" | "risk_quiz" | "income_horizon" | "platforms" | "confirm";
+export type ProfileContextStep = "goal" | "risk_quiz" | "income_horizon" | "platforms";
 
 export type ProfileContextPutRequest = {
   context?: Partial<ProfileContextPayload>;
@@ -148,6 +148,58 @@ export type ProfileContextPutRequest = {
 
 export type ApiProfileContextGetEnvelope = ApiEnvelope<ProfileContextGetData>;
 export type ApiProfileContextPutEnvelope = ApiEnvelope<ProfileContextPutData>;
+
+// ===== Auth =====
+
+export type AuthRegisterRequest = {
+  cpf: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  displayName: string;
+  rememberDevice?: boolean;
+};
+
+export type AuthRegisterData = {
+  user: { id: string; cpf: string; email: string; displayName: string; emailVerified: boolean };
+  portfolio: { id: string; isPrimary: boolean };
+  session: { id: string; rememberDevice: boolean; lockoutPolicy: { maxFailedAttempts: number; lockMinutes: number } };
+  nextStep: string;
+};
+
+export type ApiAuthRegisterEnvelope = ApiEnvelope<AuthRegisterData>;
+
+export type AuthLoginRequest = {
+  identifier: string;
+  password: string;
+  rememberDevice?: boolean;
+};
+
+export type AuthLoginData = {
+  authenticated: boolean;
+  userId: string;
+  portfolioId: string | null;
+  rememberDevice: boolean;
+  emailVerified: boolean;
+  nextStep: string;
+  lockoutPolicy: { maxFailedAttempts: number; lockMinutes: number };
+};
+
+export type ApiAuthLoginEnvelope = ApiEnvelope<AuthLoginData>;
+
+export type AuthSessionData =
+  | { authenticated: false; nextStep: string }
+  | { authenticated: true; userId: string; portfolioId: string | null; emailVerified: boolean; nextStep: string };
+
+export type ApiAuthSessionEnvelope = ApiEnvelope<AuthSessionData>;
+
+export type AuthLogoutData = {
+  authenticated: false;
+  status: string;
+  nextStep: string;
+};
+
+export type ApiAuthLogoutEnvelope = ApiEnvelope<AuthLogoutData>;
 
 // ===== Portfolio =====
 

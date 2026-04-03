@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
@@ -8,6 +8,7 @@ import { ErrorState, InsufficientDataState, LoadingState } from "@/components/sy
 
 export function OnboardingPage() {
   const ds = useDataSources();
+  const nav = useNavigate();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<ProfileContextStep>("goal");
@@ -52,6 +53,10 @@ export function OnboardingPage() {
         setError(res.error.message);
       } else {
         await load();
+        // Se o backend liberou a home, seguimos automaticamente.
+        if (res.data.onboarding.homeUnlocked) {
+          nav("/app/home", { replace: true });
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao salvar.");
@@ -147,6 +152,15 @@ export function OnboardingPage() {
                 />
               ) : null}
 
+              {step === "risk_quiz" ? (
+                <RiskStep
+                  value={context.riskProfileQuizResult}
+                  onChange={(v) =>
+                    setContext((c) => (c ? { ...c, riskProfileQuizResult: v, riskProfileEffective: v } : c))
+                  }
+                />
+              ) : null}
+
               {step === "income_horizon" ? (
                 <IncomeStep
                   incomeRange={context.monthlyIncomeRange}
@@ -173,10 +187,6 @@ export function OnboardingPage() {
                 />
               ) : null}
 
-              {step === "confirm" ? (
-                <ConfirmStep context={context} />
-              ) : null}
-
               <div className="mt-4 flex flex-wrap gap-2">
                 {step !== "goal" ? (
                   <Button
@@ -192,7 +202,7 @@ export function OnboardingPage() {
                   onClick={() => save(nextStep(step))}
                   disabled={saving}
                 >
-                  {saving ? "Salvando…" : step === "confirm" ? "Concluir" : "Continuar"}
+                  {saving ? "Salvando…" : step === "platforms" ? "Concluir" : "Continuar"}
                 </Button>
                 <Button asChild variant="secondary">
                   <Link to="/app/home">Pular por agora</Link>
@@ -208,22 +218,23 @@ export function OnboardingPage() {
 
 function stepTitle(step: ProfileContextStep) {
   if (step === "goal") return "Seu objetivo";
+  if (step === "risk_quiz") return "Seu perfil de risco";
   if (step === "income_horizon") return "Renda e horizonte";
   if (step === "platforms") return "Onde você investe";
-  return "Confirmação";
+  return "Onboarding";
 }
 
 function nextStep(step: ProfileContextStep): ProfileContextStep {
-  if (step === "goal") return "income_horizon";
+  if (step === "goal") return "risk_quiz";
+  if (step === "risk_quiz") return "income_horizon";
   if (step === "income_horizon") return "platforms";
-  if (step === "platforms") return "confirm";
-  return "confirm";
+  return "platforms";
 }
 
 function prevStep(step: ProfileContextStep): ProfileContextStep {
-  if (step === "confirm") return "platforms";
   if (step === "platforms") return "income_horizon";
   if (step === "income_horizon") return "goal";
+  if (step === "risk_quiz") return "goal";
   return "goal";
 }
 
@@ -257,6 +268,43 @@ function GoalStep({
           </Button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function RiskStep({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (v: string | null) => void;
+}) {
+  const options = [
+    { key: "conservador", label: "Conservador" },
+    { key: "moderado", label: "Moderado" },
+    { key: "arrojado", label: "Arrojado" },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <p className="ty-body text-text-secondary">
+        Qual perfil mais combina com você hoje?
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {options.map((o) => (
+          <Button
+            key={o.key}
+            type="button"
+            variant={value === o.key ? "default" : "secondary"}
+            onClick={() => onChange(o.key)}
+          >
+            {o.label}
+          </Button>
+        ))}
+      </div>
+      <p className="ty-caption text-text-secondary">
+        Isso não executa ordens. Só calibra a orientação.
+      </p>
     </div>
   );
 }
@@ -345,19 +393,4 @@ function PlatformsStep({
   );
 }
 
-function ConfirmStep({ context }: { context: ProfileContextPayload }) {
-  return (
-    <div className="space-y-2">
-      <p className="ty-body text-text-secondary">
-        Tudo certo. Você pode ajustar depois no Perfil.
-      </p>
-      <div className="rounded-md border border-border-default bg-bg-surface p-3">
-        <p className="ty-caption text-text-secondary">Resumo</p>
-        <p className="ty-body">
-          Objetivo: {context.financialGoal ?? "—"} • Renda: {context.monthlyIncomeRange ?? "—"} • Horizonte:{" "}
-          {context.investmentHorizon ?? "—"}
-        </p>
-      </div>
-    </div>
-  );
-}
+// ConfirmStep removido: o backend nao aceita step=confirm (release 0.1).

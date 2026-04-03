@@ -14,35 +14,35 @@ export function StartPage() {
     async function run() {
       try {
         const ds = getDataSources();
-        const res = await ds.profile.getProfileContext();
+        const res = await ds.auth.getSession();
 
         if (!cancelled) {
           if (res.ok) {
-            store.setState((s) => ({
-              ...s,
-              session: {
-                status: "identified",
-                identity: { userId: res.data.userId },
-              },
-            }));
-
-            // Sem fricção: se o onboarding ainda não liberou a Home, vai direto para ele.
-            if (!res.data.onboarding.homeUnlocked) {
-              nav("/app/onboarding", { replace: true });
+            if (!res.data.authenticated) {
+              nav("/login", { replace: true });
               return;
             }
 
-            nav("/app/home", { replace: true });
+            store.setState((s) => ({
+              ...s,
+              session: {
+                status: "authenticated",
+                identity: { userId: (res.data as any).userId },
+              },
+            }));
+
+            // Fonte de verdade: backend decide se vai para /home ou /onboarding.
+            nav(normalizeAppTarget((res.data as any).nextStep || "/home"), { replace: true });
             return;
           }
         }
       } catch {
-        // Sem fricção: não bloqueia o usuário por falha de rede; abre Home e a UI mostra vazio/erro depois.
+        // Release 0.1: falha aqui bloqueia, porque nao existe modo anonimo.
       }
 
       if (!cancelled) {
         setStatus("error");
-        nav("/app/home", { replace: true });
+        nav("/login", { replace: true });
       }
     }
 
@@ -60,9 +60,15 @@ export function StartPage() {
           {status === "loading" ? "Preparando seu panorama" : "Abrindo…"}
         </h1>
         <p className="ty-body text-text-secondary">
-          Sem cadastro pesado. Você entra e vê valor primeiro.
+          Validando sua sessão para liberar o app.
         </p>
       </div>
     </div>
   );
+}
+
+function normalizeAppTarget(target: string) {
+  if (!target.startsWith("/")) return `/app/${target}`;
+  if (target.startsWith("/app/")) return target;
+  return `/app${target}`;
 }

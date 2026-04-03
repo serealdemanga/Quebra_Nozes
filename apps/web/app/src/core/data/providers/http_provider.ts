@@ -1,5 +1,11 @@
 import type { AppDataSources } from "../data_sources";
 import type {
+  ApiAuthLoginEnvelope,
+  ApiAuthLogoutEnvelope,
+  ApiAuthRegisterEnvelope,
+  ApiAuthSessionEnvelope,
+  AuthLoginRequest,
+  AuthRegisterRequest,
   ApiAnalysisEnvelope,
   ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
@@ -31,6 +37,30 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
   const baseUrl = options.baseUrl.replace(/\/+$/, "");
 
   return {
+    auth: {
+      async register(input: AuthRegisterRequest): Promise<ApiAuthRegisterEnvelope> {
+        return await fetchJson<ApiAuthRegisterEnvelope>(fetchImpl, `${baseUrl}/v1/auth/register`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(input),
+        });
+      },
+      async login(input: AuthLoginRequest): Promise<ApiAuthLoginEnvelope> {
+        return await fetchJson<ApiAuthLoginEnvelope>(fetchImpl, `${baseUrl}/v1/auth/login`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(input),
+        });
+      },
+      async getSession(): Promise<ApiAuthSessionEnvelope> {
+        return await fetchJson<ApiAuthSessionEnvelope>(fetchImpl, `${baseUrl}/v1/auth/session`);
+      },
+      async logout(): Promise<ApiAuthLogoutEnvelope> {
+        return await fetchJson<ApiAuthLogoutEnvelope>(fetchImpl, `${baseUrl}/v1/auth/logout`, {
+          method: "POST",
+        });
+      },
+    },
     dashboard: {
       async getDashboardHome(): Promise<ApiDashboardHomeEnvelope> {
         return await fetchJson<ApiDashboardHomeEnvelope>(fetchImpl, `${baseUrl}/v1/dashboard/home`);
