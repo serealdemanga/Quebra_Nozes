@@ -142,6 +142,11 @@ export function HomePage() {
                         </li>
                       ))}
                     </ul>
+                    <div className="mt-4">
+                      <Button asChild variant="secondary">
+                        <Link to="/app/portfolio">Abrir carteira</Link>
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
