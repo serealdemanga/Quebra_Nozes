@@ -26,7 +26,12 @@ export function StartPage() {
               },
             }));
 
-            // Sem fricção: se algo estiver incompleto, a própria Home/Profile guiam o próximo passo.
+            // Sem fricção: se o onboarding ainda não liberou a Home, vai direto para ele.
+            if (!res.data.onboarding.homeUnlocked) {
+              nav("/app/onboarding", { replace: true });
+              return;
+            }
+
             nav("/app/home", { replace: true });
             return;
           }
@@ -61,4 +66,3 @@ export function StartPage() {
     </div>
   );
 }
-
