@@ -5,9 +5,7 @@ import { ShellLayout } from '../../app/ShellLayout';
 
 export interface HomeScreenProps {
   dataSources: AppDataSources;
-  onGoToOnboarding(): void;
-  onGoToPortfolio(): void;
-  onGoToRadar(): void;
+  onGoToTarget(path: string): void;
 }
 
 export function HomeScreen(props: HomeScreenProps): JSX.Element {
@@ -43,12 +41,10 @@ export function HomeScreen(props: HomeScreenProps): JSX.Element {
       title="Home"
       activeRouteId="home"
       onNavigate={(href) => {
-        if (href === '/portfolio') props.onGoToPortfolio();
-        else if (href === '/radar') props.onGoToRadar();
-        else if (href === '/profile') props.onGoToOnboarding();
+        props.onGoToTarget(href);
       }}
       rightSlot={
-        <button className="btn btnGhost" onClick={props.onGoToOnboarding}>
+        <button className="btn btnGhost" onClick={() => props.onGoToTarget('/profile')}>
           Editar contexto
         </button>
       }
@@ -63,13 +59,13 @@ export function HomeScreen(props: HomeScreenProps): JSX.Element {
               <div style={{ color: 'var(--c-slate)' }}>{state.message}</div>
             </div>
           ) : (
-            <HomeContent data={state.data} onGoToPortfolio={props.onGoToPortfolio} onGoToRadar={props.onGoToRadar} />
+            <HomeContent data={state.data} onGoToTarget={props.onGoToTarget} />
           )}
     </ShellLayout>
   );
 }
 
-function HomeContent(props: { data: DashboardHomeData; onGoToPortfolio(): void; onGoToRadar(): void }): JSX.Element {
+function HomeContent(props: { data: DashboardHomeData; onGoToTarget(path: string): void }): JSX.Element {
   const d = props.data;
 
   if (d.screenState === 'redirect_onboarding') {
@@ -77,6 +73,11 @@ function HomeContent(props: { data: DashboardHomeData; onGoToPortfolio(): void; 
       <div className="card" style={{ padding: 16 }}>
         <div style={{ fontWeight: 900, marginBottom: 6 }}>Antes de tudo</div>
         <div style={{ color: 'var(--c-slate)' }}>Vamos completar seu contexto para personalizar a leitura.</div>
+        <div style={{ marginTop: 12 }}>
+          <button className="btn btnPrimary" onClick={() => props.onGoToTarget(d.redirectTo)}>
+            Completar contexto
+          </button>
+        </div>
       </div>
     );
   }
@@ -87,7 +88,7 @@ function HomeContent(props: { data: DashboardHomeData; onGoToPortfolio(): void; 
         <div style={{ fontWeight: 900, marginBottom: 6 }}>{d.emptyState.title}</div>
         <div style={{ color: 'var(--c-slate)' }}>{d.emptyState.body}</div>
         <div style={{ marginTop: 12 }}>
-          <button className="btn btnPrimary" onClick={props.onGoToPortfolio}>
+          <button className="btn btnPrimary" onClick={() => props.onGoToTarget(d.emptyState.target)}>
             {d.emptyState.ctaLabel}
           </button>
         </div>
@@ -106,7 +107,7 @@ function HomeContent(props: { data: DashboardHomeData; onGoToPortfolio(): void; 
           <Kpi label="Disponivel" value={formatMoney(d.hero.totalEquity * 0.02)} />
         </div>
         <div style={{ marginTop: 12 }}>
-          <button className="btn btnGhost" onClick={props.onGoToRadar}>
+          <button className="btn btnGhost" onClick={() => props.onGoToTarget('/radar')}>
             Abrir score
           </button>
         </div>
@@ -123,7 +124,7 @@ function HomeContent(props: { data: DashboardHomeData; onGoToPortfolio(): void; 
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: -0.2 }}>{d.primaryAction.title}</div>
         <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.5 }}>{d.primaryAction.body}</div>
         <div style={{ marginTop: 12 }}>
-          <button className="btn btnPrimary" onClick={props.onGoToPortfolio}>
+          <button className="btn btnPrimary" onClick={() => props.onGoToTarget(d.primaryAction.target)}>
             {d.primaryAction.ctaLabel}
           </button>
         </div>
