@@ -3,6 +3,7 @@
 ## Route
 `GET /v1/history/snapshots`
 `GET /v1/history/imports`
+`GET /v1/history/timeline`
 
 ## Envelope HTTP
 
@@ -113,6 +114,46 @@ Ready:
 ```
 
 Observacao: eventos operacionais nao aparecem nesta rota hoje; a trilha operacional fica em `GET /v1/ops/events`.
+
+## Timeline (data)
+
+Linha do tempo unificada de snapshots e eventos operacionais.
+
+Estados:
+
+- `redirect_onboarding`
+- `empty`
+- `ready`
+
+Ready:
+
+```json
+{
+  "screenState": "ready",
+  "portfolioId": "pfl_123",
+  "summary": { "totalItems": 3, "totalSnapshots": 2, "totalEvents": 1, "latestOccurredAt": "2026-04-02T00:00:00.000Z" },
+  "items": [
+    {
+      "kind": "snapshot",
+      "id": "snp_123",
+      "occurredAt": "2026-04-02T00:00:00.000Z",
+      "referenceDate": "2026-04-02",
+      "createdAt": "2026-04-02T00:00:00.000Z",
+      "totals": { "totalEquity": 120000, "totalInvested": 100000, "totalProfitLoss": 20000, "totalProfitLossPct": 20 },
+      "recommendation": { "status": "saudavel", "primaryProblem": "string", "primaryAction": "string" }
+    },
+    {
+      "kind": "event",
+      "id": "evt_123",
+      "occurredAt": "2026-04-01T00:00:00.000Z",
+      "portfolioId": "pfl_123",
+      "type": "import_commit",
+      "status": "ok",
+      "message": "string"
+    }
+  ]
+}
+```
 
 ## Rules
 
