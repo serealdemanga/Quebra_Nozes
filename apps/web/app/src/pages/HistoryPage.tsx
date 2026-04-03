@@ -37,12 +37,19 @@ export function HistoryPage() {
 
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <p className="ty-caption text-text-secondary">Histórico</p>
-        <h1 className="ty-h1 font-display">Sua trajetória</h1>
-        <p className="ty-body text-text-secondary">
-          O que mudou, quando mudou, e o que isso significa.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-1">
+          <p className="ty-caption text-text-secondary">Histórico</p>
+          <h1 className="ty-h1 font-display">Sua trajetória</h1>
+          <p className="ty-body text-text-secondary">
+            O que mudou, quando mudou, e o que isso significa.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="secondary" size="sm">
+            <Link to="/app/history/imports">Importações</Link>
+          </Button>
+        </div>
       </header>
 
       {sp.get("snapshotId") ? (

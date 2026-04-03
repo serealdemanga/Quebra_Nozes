@@ -5,6 +5,7 @@ import type {
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
   ApiHistoryTimelineEnvelope,
+  ApiHistoryImportsEnvelope,
   ApiProfileContextGetEnvelope,
   ApiProfileContextPutEnvelope,
   ProfileContextPutRequest,
@@ -29,6 +30,7 @@ export interface HealthDataSource {
 export interface HistoryDataSource {
   getHistorySnapshots(input?: { limit?: number }): Promise<ApiHistorySnapshotsEnvelope>;
   getHistoryTimeline(input?: { limit?: number }): Promise<ApiHistoryTimelineEnvelope>;
+  getHistoryImports(input?: { limit?: number }): Promise<ApiHistoryImportsEnvelope>;
 }
 
 export interface PortfolioDataSource {

@@ -12,6 +12,7 @@ import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ImportStartPage } from "@/pages/ImportStartPage";
 import { ImportPreviewPage } from "@/pages/ImportPreviewPage";
 import { HistoryPage } from "@/pages/HistoryPage";
+import { HistoryImportsPage } from "@/pages/HistoryImportsPage";
 import { RadarPage } from "@/pages/RadarPage";
 import { ScorePage } from "@/pages/ScorePage";
 import { AlertsPage } from "@/pages/AlertsPage";
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
       // Compat com targets antigos dos contratos/backend
       { path: "imports/entry", element: <ImportStartPage /> },
       { path: "history", element: <HistoryPage /> },
+      { path: "history/imports", element: <HistoryImportsPage /> },
       // Compat com backend nextStep do commit do import (/history/snapshots)
       { path: "history/snapshots", element: <HistoryPage /> },
       { path: "radar", element: <RadarPage /> },

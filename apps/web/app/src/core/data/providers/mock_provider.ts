@@ -6,6 +6,7 @@ import type {
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
   ApiHistoryTimelineEnvelope,
+  ApiHistoryImportsEnvelope,
   ApiProfileContextGetEnvelope,
   ApiProfileContextPutEnvelope,
   ProfileContextPutRequest,
@@ -49,6 +50,9 @@ export function createMockDataSources(options: MockProviderOptions): AppDataSour
       },
       async getHistoryTimeline(): Promise<ApiHistoryTimelineEnvelope> {
         return await loader.load<ApiHistoryTimelineEnvelope>(`${basePath}/history_timeline.json`);
+      },
+      async getHistoryImports(): Promise<ApiHistoryImportsEnvelope> {
+        return await loader.load<ApiHistoryImportsEnvelope>(`${basePath}/history_imports.json`);
       },
     },
     portfolio: {

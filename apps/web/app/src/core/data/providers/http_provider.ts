@@ -6,6 +6,7 @@ import type {
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
   ApiHistoryTimelineEnvelope,
+  ApiHistoryImportsEnvelope,
   ApiProfileContextGetEnvelope,
   ApiProfileContextPutEnvelope,
   ProfileContextPutRequest,
@@ -50,6 +51,11 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
         const url = new URL(`${baseUrl}/v1/history/timeline`);
         if (input?.limit != null) url.searchParams.set("limit", String(input.limit));
         return await fetchJson<ApiHistoryTimelineEnvelope>(fetchImpl, url.toString());
+      },
+      async getHistoryImports(input?: { limit?: number }): Promise<ApiHistoryImportsEnvelope> {
+        const url = new URL(`${baseUrl}/v1/history/imports`);
+        if (input?.limit != null) url.searchParams.set("limit", String(input.limit));
+        return await fetchJson<ApiHistoryImportsEnvelope>(fetchImpl, url.toString());
       },
     },
     portfolio: {

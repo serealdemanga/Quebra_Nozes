@@ -331,6 +331,50 @@ export type HistoryTimelineReadyData = {
 export type HistoryTimelineData = ScreenStateRedirect | HistoryTimelineEmptyData | HistoryTimelineReadyData;
 export type ApiHistoryTimelineEnvelope = ApiEnvelope<HistoryTimelineData>;
 
+// ===== History imports center =====
+
+export type HistoryImportsEmptyData = {
+  screenState: "empty";
+  portfolioId: string;
+  emptyState: EmptyState;
+  summary: {
+    totalImports: number;
+    pendingImports: number;
+    completedImports: number;
+    failedImports: number;
+  };
+  imports: Array<never>;
+};
+
+export type HistoryImportsReadyData = {
+  screenState: "ready";
+  portfolioId: string;
+  summary: {
+    totalImports: number;
+    pendingImports: number;
+    completedImports: number;
+    failedImports: number;
+  };
+  imports: Array<{
+    id: string;
+    origin: string;
+    originLabel: string;
+    status: string;
+    statusLabel: string;
+    fileName: string | null;
+    mimeType: string | null;
+    totals: ImportTotals;
+    createdAt: string;
+    updatedAt: string;
+    snapshot: null | { id: string; referenceDate: string | null; target: string };
+    primaryAction: { code: string; title: string; target: string };
+    secondaryAction: null | { code: string; title: string; target: string };
+  }>;
+};
+
+export type HistoryImportsData = ScreenStateRedirect | HistoryImportsEmptyData | HistoryImportsReadyData;
+export type ApiHistoryImportsEnvelope = ApiEnvelope<HistoryImportsData>;
+
 // ===== Imports =====
 
 export type ImportTotals = {
