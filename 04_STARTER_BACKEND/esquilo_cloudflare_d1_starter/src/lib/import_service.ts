@@ -4,13 +4,30 @@ import { buildEntityId, hashToken } from './auth_crypto';
 import { recordOperationalEvent } from './operational_events_service';
 import { generateDeterministicAnalysisForSnapshot } from './analysis_generation_service';
 import { findImportSessionStateByTokenHash, createImportRecord, updateImportRecord, replaceImportRows, findOwnedImportById, findImportRows, findManualDuplicateCandidates, findAssetTypeByCode, findAssetByNormalizedNameOrCode, createAsset, createPortfolioPosition, createPortfolioSnapshot, createSnapshotPosition } from '../repositories/import_repository';
+import {
+  B3_REQUIRED_HEADERS,
+  TEMPLATE_HEADERS,
+  VALID_SOURCE_KINDS,
+  buildHeaderMap,
+  inferB3SourceKind,
+  mapB3RowToRawEntry,
+  mapCategoryLabel,
+  mapTemplateRowToRawEntry,
+  normalizeNumber,
+  normalizeSourceKind,
+  normalizeText,
+  parseCsv,
+  validateB3Headers,
+  validateTemplateHeaders
+} from './import_parsing';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
 // Release 0.1: um unico layout CSV v1 (template proprio).
 const ORIGIN_CUSTOM_TEMPLATE = 'CUSTOM_TEMPLATE';
 const ORIGIN_CSV_V1 = 'CSV_V1';
-const VALID_SOURCE_KINDS = ['ACOES', 'FUNDOS', 'PREVIDENCIA'];
-const TEMPLATE_HEADERS = ['tipo', 'codigo', 'nome', 'quantidade', 'valor_investido', 'valor_atual', 'categoria', 'observacoes'];
+const ORIGIN_B3_CSV = 'B3_CSV';
+const ORIGIN_DOCUMENT_AI_PARSE = 'DOCUMENT_AI_PARSE';
+const IMPORTABLE_DOCUMENT_TYPES = ['portfolio_statement', 'account_statement'];
 const COMMIT_ALLOWED_STATUSES = ['NORMALIZED', 'RESOLVED_REPLACE', 'RESOLVED_CONSOLIDATE', 'IGNORED'];
 
 export async function startImport(request: Request, env: Env): Promise<Response> {
@@ -462,20 +479,7 @@ function mapNormalizedToEditablePayload(normalized: Record<string, any>, source:
 function mapEditableKeyToNormalizedKey(key: string): string { if (key === 'tipo' || key === 'sourceKind') return 'sourceKind'; if (key === 'codigo' || key === 'code') return 'code'; if (key === 'nome' || key === 'name') return 'name'; if (key === 'quantidade' || key === 'quantity') return 'quantity'; if (key === 'valor_investido' || key === 'investedAmount') return 'investedAmount'; if (key === 'valor_atual' || key === 'currentAmount') return 'currentAmount'; if (key === 'categoria' || key === 'categoryLabel') return 'categoryLabel'; if (key === 'observacoes' || key === 'notes') return 'notes'; return ''; }
 function normalizeManualEntry(value: unknown, rowNumber: number) { const source = typeof value === 'object' && value !== null ? value as Record<string, unknown> : {}; const sourceKind = normalizeSourceKind(source.sourceKind ?? source.tipo); const code = normalizeText(source.code ?? source.codigo).toUpperCase(); const name = normalizeText(source.name ?? source.nome ?? source.produto); const normalizedName = normalizeName(name || code); const quantity = normalizeNumber(source.quantity ?? source.quantidade); const explicitInvestedAmount = normalizeNumber(source.investedAmount ?? source.valor_investido); const averagePriceFromSource = normalizeNumber(source.preco_medio); const investedAmount = explicitInvestedAmount > 0 ? explicitInvestedAmount : quantity > 0 ? averagePriceFromSource * quantity : 0; const currentAmount = normalizeNumber(source.currentAmount ?? source.valor_atual); const averagePrice = quantity > 0 ? investedAmount / quantity : averagePriceFromSource; const currentPrice = quantity > 0 ? currentAmount / quantity : null; const categoryLabel = normalizeText(source.categoryLabel ?? source.categoria) || mapCategoryLabel(sourceKind); const notes = normalizeText(source.notes ?? source.observacoes); const errors: string[] = []; if (!sourceKind) errors.push(`Linha ${rowNumber}: tipo inválido.`); if (!name && !code) errors.push(`Linha ${rowNumber}: informe nome ou código.`); if (quantity <= 0) errors.push(`Linha ${rowNumber}: quantidade deve ser maior que zero.`); if (investedAmount <= 0) errors.push(`Linha ${rowNumber}: valor investido deve ser maior que zero.`); if (currentAmount < 0) errors.push(`Linha ${rowNumber}: valor atual não pode ser negativo.`); return { sourceKind, code, name: name || code, normalizedName, quantity, investedAmount, currentAmount, averagePrice, currentPrice, categoryLabel, notes, errors }; }
 function normalizeFieldMap(sourceTrace: unknown, mode: 'source' | 'confidence'): Record<string, unknown> { if (typeof sourceTrace !== 'object' || sourceTrace === null) return {}; const trace = sourceTrace as Record<string, unknown>; const fieldMap = trace.fieldMap; if (typeof fieldMap !== 'object' || fieldMap === null) return {}; const result: Record<string, unknown> = {}; for (const [key, value] of Object.entries(fieldMap as Record<string, unknown>)) { if (typeof value === 'object' && value !== null) { const record = value as Record<string, unknown>; result[key] = record[mode] ?? (mode === 'source' ? 'manual' : 0); } } return result; }
-function parseCsv(csvContent: string): { headers: string[]; rows: string[][] } { const lines = csvContent.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim() !== ''); if (!lines.length) return { headers: [], rows: [] }; const rows = lines.map(parseCsvLine); return { headers: rows[0].map((item) => item.trim()), rows: rows.slice(1) }; }
-function parseCsvLine(line: string): string[] { const result: string[] = []; let current = ''; let inQuotes = false; for (let i = 0; i < line.length; i += 1) { const char = line[i]; if (char === '"') { if (inQuotes && line[i + 1] === '"') { current += '"'; i += 1; } else { inQuotes = !inQuotes; } } else if (char === ',' && !inQuotes) { result.push(current); current = ''; } else { current += char; } } result.push(current); return result; }
-function validateTemplateHeaders(headers: string[]): string { const normalized = headers.map((item) => item.trim().toLowerCase()); if (normalized.length !== TEMPLATE_HEADERS.length) return `Cabeçalho inválido. Esperado: ${TEMPLATE_HEADERS.join(',')}`; for (let index = 0; index < TEMPLATE_HEADERS.length; index += 1) { if (normalized[index] !== TEMPLATE_HEADERS[index]) return `Cabeçalho inválido. Esperado: ${TEMPLATE_HEADERS.join(',')}`; } return '' }
-function buildHeaderMap(headers: string[]): Record<string, number> { const map: Record<string, number> = {}; headers.forEach((header, index) => { map[header.trim().toLowerCase()] = index; }); return map; }
-function validateB3Headers(headerMap: Record<string, number>): string { const missing = B3_REQUIRED_HEADERS.filter((header) => !(header in headerMap)); return missing.length ? `Layout B3 inválido. Colunas obrigatórias ausentes: ${missing.join(',')}` : ''; }
-function mapTemplateRowToRawEntry(row: string[]): Record<string, unknown> { const values = [...row]; while (values.length < TEMPLATE_HEADERS.length) values.push(''); return { tipo: values[0] || '', codigo: values[1] || '', nome: values[2] || '', quantidade: values[3] || '', valor_investido: values[4] || '', valor_atual: values[5] || '', categoria: values[6] || '', observacoes: values[7] || '' }; }
-function mapB3RowToRawEntry(row: string[], headerMap: Record<string, number>): Record<string, unknown> { const codigo = getCsvValue(row, headerMap, 'codigo'); const produto = getCsvValue(row, headerMap, 'produto'); const quantidade = getCsvValue(row, headerMap, 'quantidade'); const precoMedio = getCsvValue(row, headerMap, 'preco_medio'); const valorAtual = getCsvValue(row, headerMap, 'valor_atual'); const tipo = inferB3SourceKind({ codigo, produto, tipo: getCsvValue(row, headerMap, 'tipo'), categoria: getCsvValue(row, headerMap, 'categoria') }); return { tipo, codigo, nome: produto, quantidade, preco_medio: precoMedio, valor_atual: valorAtual, categoria: mapCategoryLabel(tipo), observacoes: 'Importado de CSV B3' }; }
-function getCsvValue(row: string[], headerMap: Record<string, number>, key: string): string { const index = headerMap[key]; return index == null ? '' : (row[index] || '').trim(); }
-function inferB3SourceKind(input: { codigo: string; produto: string; tipo: string; categoria: string }): string { const explicit = normalizeSourceKind(input.tipo || input.categoria); if (explicit) return explicit; const raw = `${input.codigo} ${input.produto}`.toLowerCase(); if (raw.includes('previd') || raw.includes('vgbl') || raw.includes('pgbl')) return 'PREVIDENCIA'; if (raw.includes('fundo') || raw.includes('fic') || raw.includes('fia') || raw.includes('multimercado') || raw.includes('di ')) return 'FUNDOS'; return 'ACOES'; }
-function normalizeSourceKind(value: unknown): string { const raw = normalizeText(value).toUpperCase(); return VALID_SOURCE_KINDS.includes(raw) ? raw : ''; }
-function normalizeText(value: unknown): string { return typeof value === 'string' ? value.trim() : ''; }
-function normalizeNumber(value: unknown): number { if (typeof value === 'number' && Number.isFinite(value)) return value; if (typeof value === 'string' && value.trim() !== '') { const sanitized = value.replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, ''); const parsed = Number(sanitized); if (!Number.isNaN(parsed)) return parsed; } return 0; }
 function normalizeName(value: string): string { return value.trim().toLowerCase(); }
 function mapSourceKindToAssetTypeCode(sourceKind: string): string { if (sourceKind === 'ACOES') return 'STOCK'; if (sourceKind === 'FUNDOS') return 'FUND'; return 'PENSION'; }
-function mapCategoryLabel(sourceKind: string): string { if (sourceKind === 'ACOES') return 'Ações'; if (sourceKind === 'FUNDOS') return 'Fundos'; return 'Previdência'; }
 function parseJson(value: unknown, fallback: Record<string, any>) { if (typeof value !== 'string' || !value.trim()) return fallback; try { return JSON.parse(value); } catch { return fallback; } }
 function readCookie(cookieHeader: string, cookieName: string): string { const prefix = `${cookieName}=`; const match = cookieHeader.split(';').map((item) => item.trim()).find((item) => item.startsWith(prefix)); return match ? decodeURIComponent(match.slice(prefix.length)) : ''; }

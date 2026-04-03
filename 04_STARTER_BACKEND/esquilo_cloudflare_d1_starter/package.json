@@ -12,11 +12,15 @@
     "deploy:prod": "node scripts/deploy.mjs production",
     "deploy": "npm run deploy:prod",
     "rollback:prod": "node scripts/rollback.mjs production",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260320.0",
     "typescript": "^5.8.2",
-    "wrangler": "^4.8.0"
+    "vitest": "^3.2.4",
+    "wrangler": "^4.8.0",
+    "yaml": "^2.8.1"
   }
 }

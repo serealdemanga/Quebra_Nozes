@@ -2,6 +2,7 @@ import type { Env } from '../types/env';
 import { ok, fail } from './http';
 import { hashToken } from './auth_crypto';
 import { findAnalysisSessionStateByTokenHash, findLatestPortfolioAnalysis, findInsightsByAnalysisId } from '../repositories/analysis_repository';
+import { extractSummaryFromMessaging, splitActionPlan } from './analysis_formatters';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
 
@@ -92,26 +93,6 @@ export async function getAnalysisData(request: Request, env: Env): Promise<Respo
     })),
     generatedAt: analysis.generated_at
   });
-}
-
-function splitActionPlan(value: string | null): string[] {
-  if (!value) return [];
-  return value
-    .split(/\n|;|\.|•/g)
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 8);
-}
-
-function extractSummaryFromMessaging(value: string | null): string {
-  if (!value) return '';
-  try {
-    const parsed = JSON.parse(value) as Record<string, unknown>;
-    const summary = parsed.summary;
-    return typeof summary === 'string' ? summary.trim() : '';
-  } catch {
-    return '';
-  }
 }
 
 function readCookie(cookieHeader: string, cookieName: string): string {
