@@ -1,7 +1,16 @@
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useAppStore } from "@/core/state/app_store";
 
 export function AppShell() {
+  const store = useAppStore();
+  const location = useLocation();
+
+  React.useEffect(() => {
+    store.setState((s) => ({ ...s, route: { path: location.pathname } }));
+  }, [location.pathname, store]);
+
   return (
     <div className="min-h-dvh bg-bg-secondary text-text-primary">
       <header className="sticky top-0 z-10 border-b border-border-default bg-bg-primary">
