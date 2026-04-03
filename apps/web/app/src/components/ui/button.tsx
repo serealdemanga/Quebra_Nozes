@@ -36,6 +36,8 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  isLoading?: boolean;
+  loadingLabel?: string;
 }
 
 export function Button({
@@ -43,13 +45,29 @@ export function Button({
   variant,
   size,
   asChild = false,
+  isLoading = false,
+  loadingLabel,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : "button";
   return (
     <Comp
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={props.disabled || isLoading}
+      aria-busy={isLoading || undefined}
       {...props}
-    />
+    >
+      {isLoading ? (
+        <span className="inline-flex items-center gap-2">
+          <span
+            aria-hidden
+            className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent opacity-80"
+          />
+          <span>{loadingLabel ?? "Carregando"}</span>
+        </span>
+      ) : (
+        props.children
+      )}
+    </Comp>
   );
 }

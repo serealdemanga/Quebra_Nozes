@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/brand/Logo";
 import { useDataSources } from "@/core/data/react";
-import { ErrorState, LoadingState } from "@/components/system/SystemState";
+import { ErrorState } from "@/components/system/SystemState";
 
 export function LoginPage() {
   const ds = useDataSources();
@@ -49,8 +49,6 @@ export function LoginPage() {
             Acesse sua conta para importar, revisar e consolidar sua carteira.
           </p>
         </header>
-
-        {loading ? <LoadingState title="Entrando" body="Validando suas credenciais." /> : null}
 
         {error ? (
           <ErrorState
@@ -104,7 +102,12 @@ export function LoginPage() {
                 Manter sessão
               </label>
 
-              <Button type="submit" disabled={loading || !identifier.trim() || !password}>
+              <Button
+                type="submit"
+                isLoading={loading}
+                loadingLabel="Entrando"
+                disabled={!identifier.trim() || !password}
+              >
                 Entrar
               </Button>
 

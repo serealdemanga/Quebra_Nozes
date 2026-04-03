@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/brand/Logo";
 import { useDataSources } from "@/core/data/react";
-import { ErrorState, LoadingState } from "@/components/system/SystemState";
+import { ErrorState } from "@/components/system/SystemState";
 
 export function RegisterPage() {
   const ds = useDataSources();
@@ -61,8 +61,6 @@ export function RegisterPage() {
             Em poucos passos você já consegue importar e revisar sua carteira.
           </p>
         </header>
-
-        {loading ? <LoadingState title="Criando conta" body="Só um instante." /> : null}
 
         {error ? (
           <ErrorState
@@ -153,7 +151,12 @@ export function RegisterPage() {
                 Manter sessão
               </label>
 
-              <Button type="submit" disabled={loading || !canSubmit}>
+              <Button
+                type="submit"
+                isLoading={loading}
+                loadingLabel="Criando"
+                disabled={!canSubmit}
+              >
                 Criar conta
               </Button>
 
