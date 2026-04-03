@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigation } from "react-router-dom";
 import { useAppStore } from "@/core/state/app_store";
 import { Logo } from "@/components/brand/Logo";
 import { Icon, type IconName } from "@/components/brand/Icon";
@@ -8,6 +8,8 @@ import { Icon, type IconName } from "@/components/brand/Icon";
 export function AppShell({ children }: { children?: React.ReactNode }) {
   const store = useAppStore();
   const location = useLocation();
+  const navigation = useNavigation();
+  const isNavigating = navigation.state !== "idle";
 
   React.useEffect(() => {
     store.setState((s) => ({ ...s, route: { path: location.pathname } }));
@@ -15,12 +17,13 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-bg-secondary text-text-primary">
+      {isNavigating ? <NavigationProgress /> : null}
       <header className="sticky top-0 z-10 border-b border-border-default bg-bg-primary">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <Logo className="h-6 w-auto text-text-primary" />
           </div>
-          <nav className="flex items-center gap-2">
+          <nav className="flex max-w-full items-center gap-1 overflow-x-auto whitespace-nowrap rounded-md px-1 py-1">
             <TopLink to="/app/home" end icon="home" filledIcon="home-filled">
               Home
             </TopLink>
@@ -86,5 +89,13 @@ function TopLink({
         );
       }}
     </NavLink>
+  );
+}
+
+function NavigationProgress() {
+  return (
+    <div className="pointer-events-none fixed left-0 top-0 z-50 h-0.5 w-full overflow-hidden bg-transparent">
+      <div className="h-full w-full animate-nav-progress bg-gradient-to-r from-brand-primary via-text-secondary to-brand-primary" />
+    </div>
   );
 }

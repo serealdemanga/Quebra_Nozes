@@ -96,6 +96,26 @@ export default {
 
         const assetRes = await assets.fetch(request);
         if (assetRes.status !== 404) {
+          // Ajuda performance percebida: cache agressivo em assets com hash.
+          // index.html fica sem cache para permitir atualizacoes rapidas.
+          if (assetRes.ok) {
+            const isHashedAsset = path.startsWith('/assets/') && /\.[a-zA-Z0-9_-]{8,}\.(js|css|map)$/.test(path);
+            if (isHashedAsset) {
+              const next = new Response(assetRes.body, assetRes);
+              next.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+              logHttpRequest(env, {
+                requestId: null,
+                method,
+                path,
+                status: next.status,
+                durationMs: Date.now() - startedAt,
+                errorCode: null,
+                cfRay,
+                ip
+              });
+              return next;
+            }
+          }
           logHttpRequest(env, {
             requestId: null,
             method,

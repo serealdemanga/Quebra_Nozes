@@ -52,7 +52,10 @@ export function AuthedAppShell() {
     return () => {
       cancelled = true;
     };
-  }, [ds, location.pathname, nav, store]);
+    // Intencionalmente nao depende de location.pathname:
+    // revalidar sessao a cada clique degrada muito UX (mais latencia e mais requests).
+    // Se a sessao expirar, as chamadas /v1/* vao retornar 401 e o app redireciona.
+  }, [ds, nav, store]);
 
   if (state.kind === "loading") {
     return (

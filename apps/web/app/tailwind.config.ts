@@ -35,6 +35,15 @@ export default {
       boxShadow: {
         card: "0 8px 24px rgba(11, 18, 24, 0.08)",
       },
+      keyframes: {
+        navProgress: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+      },
+      animation: {
+        "nav-progress": "navProgress 1.1s linear infinite",
+      },
     },
   },
   plugins: [],

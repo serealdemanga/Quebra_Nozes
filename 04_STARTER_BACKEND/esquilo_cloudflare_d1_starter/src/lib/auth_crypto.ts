@@ -3,7 +3,8 @@ const textEncoder = new TextEncoder();
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 // Cloudflare Workers' WebCrypto PBKDF2 has a practical upper bound for iterations.
 // Acima disso, o runtime pode falhar com NotSupportedError.
-const PASSWORD_ITERATIONS = 100000;
+// Balanceado para MVP: reduz latencia percebida no login/registro sem trocar o algoritmo.
+const PASSWORD_ITERATIONS = 60000;
 const PASSWORD_ITERATIONS_MAX_SUPPORTED = 100000;
 const PASSWORD_KEY_LENGTH_BITS = 256;
 
