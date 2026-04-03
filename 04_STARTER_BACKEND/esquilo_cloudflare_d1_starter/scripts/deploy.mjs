@@ -24,6 +24,16 @@ function run(bin, args, options) {
       : process.platform === "win32" && bin === "npx"
         ? "npx.cmd"
         : bin;
+  const pretty = `${cmd} ${args.join(" ")}`;
+  console.log(`[deploy] ${pretty}`);
   const result = spawnSync(cmd, args, { stdio: "inherit", env: process.env, ...options });
-  if ((result.status ?? 1) !== 0) process.exit(result.status ?? 1);
+  if (result.error) {
+    console.error(`[deploy] Falha ao executar: ${pretty}`);
+    console.error(result.error);
+    process.exit(1);
+  }
+  if ((result.status ?? 1) !== 0) {
+    console.error(`[deploy] Exit code != 0: ${pretty} (${result.status ?? 1})`);
+    process.exit(result.status ?? 1);
+  }
 }

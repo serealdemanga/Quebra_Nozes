@@ -6,10 +6,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
 const webDir = path.resolve(repoRoot, "apps", "web", "app");
 
-const result = spawnSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "build"], {
+const cmd = process.platform === "win32" ? "npm.cmd" : "npm";
+const result = spawnSync(cmd, ["run", "build"], {
   cwd: webDir,
   stdio: "inherit",
   env: process.env,
 });
+
+if (result.error) {
+  console.error(`[build:web] Falha ao executar ${cmd} (cwd=${webDir}).`);
+  console.error(result.error);
+  process.exit(1);
+}
 
 process.exit(result.status ?? 1);
