@@ -2,6 +2,8 @@
 
 ## Routes
 - `POST /v1/imports/start`
+- `GET /v1/imports/templates/custom` (CSV template próprio)
+- `GET /v1/imports/templates/b3` (CSV layout B3)
 - `GET /v1/imports/{importId}/preview`
 - `GET /v1/imports/{importId}/engine-status`
 - `GET /v1/imports/{importId}/conflicts`
@@ -31,6 +33,13 @@ Headers:
 
 - `x-request-id` (sempre)
 - `x-error-code` (apenas em erro)
+
+## Templates (download)
+
+As rotas abaixo retornam o CSV como arquivo (sem envelope JSON).
+
+- `GET /v1/imports/templates/custom`: template com cabeçalho `tipo,codigo,nome,quantidade,valor_investido,valor_atual,categoria,observacoes`
+- `GET /v1/imports/templates/b3`: template com cabeçalho `codigo,produto,quantidade,preco_medio,valor_atual`
 
 ## Start response (data)
 ```json
