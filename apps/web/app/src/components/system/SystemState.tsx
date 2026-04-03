@@ -73,8 +73,9 @@ export function ErrorState({
       variant: "secondary",
     });
   }
+  const displayBody = humanizeErrorMessage(body);
   return (
-    <StateCard kicker="Erro" title={title} body={body} actions={actions} />
+    <StateCard kicker="Erro" title={title} body={displayBody} actions={actions} />
   );
 }
 
@@ -173,4 +174,33 @@ export function ConfirmState({
       </div>
     </StateCard>
   );
+}
+
+function humanizeErrorMessage(body: string) {
+  const raw = (body ?? "").trim();
+  if (!raw) return "Tente novamente em instantes.";
+
+  const s = raw.toLowerCase();
+  if (
+    s.includes("typeerror") ||
+    s.includes("failed to fetch") ||
+    s.includes("networkerror") ||
+    s.includes("econn") ||
+    s.includes("timeout") ||
+    s.includes("fetch")
+  ) {
+    return "Não consegui concluir agora. Verifique sua conexão e tente novamente.";
+  }
+  if (s.includes("unauthorized") || s.includes("sessao")) {
+    return "Sua sessão parece ter expirado. Volte e tente novamente.";
+  }
+  if (s.includes("not found") || s.includes("nao encontrado")) {
+    return "Não encontrei esse item. Volte e tente novamente.";
+  }
+  if (s.includes("sql") || s.includes("d1") || s.includes("database")) {
+    return "Falha interna ao buscar dados. Tente novamente em instantes.";
+  }
+
+  // Quando a API já retorna linguagem humana, usamos direto.
+  return raw;
 }
