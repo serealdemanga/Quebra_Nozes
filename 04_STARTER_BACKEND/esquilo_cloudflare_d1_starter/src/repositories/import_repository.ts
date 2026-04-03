@@ -1,5 +1,4 @@
 import type { Env } from '../types/env';
-import type { Env } from '../types/env';
 import { d1 } from '../lib/d1';
 
 export interface ImportSessionState {
@@ -266,8 +265,9 @@ export async function findAssetByNormalizedNameOrCode(env: Env, normalizedName: 
 
 export async function createAsset(env: Env, input: { assetId: string; assetTypeId: string; code: string; name: string; normalizedName: string }): Promise<void> {
   await d1(env).run(
-    `INSERT INTO assets (id, asset_type_id, code, name, normalized_name, is_custom, created_at)
-     VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)`,
+    // Schema Release 0.1: nao existe coluna `is_custom` (evitar mismatch com D1).
+    `INSERT INTO assets (id, asset_type_id, code, name, normalized_name, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
     [input.assetId, input.assetTypeId, input.code || null, input.name, input.normalizedName]
   );
 }
