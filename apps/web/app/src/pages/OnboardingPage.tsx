@@ -13,6 +13,7 @@ export function OnboardingPage() {
   const [step, setStep] = React.useState<ProfileContextStep>("goal");
   const [context, setContext] = React.useState<ProfileContextPayload | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const [started, setStarted] = React.useState(false);
 
   const load = React.useCallback(async () => {
     setError(null);
@@ -26,6 +27,7 @@ export function OnboardingPage() {
       }
       setContext(res.data.context);
       setStep((res.data.onboarding.currentStep as ProfileContextStep) ?? "goal");
+      if (res.data.onboarding.completedSteps?.length) setStarted(true);
       setLoading(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao carregar.");
@@ -66,6 +68,39 @@ export function OnboardingPage() {
           <h1 className="ty-h1 font-display">Preparando</h1>
         </header>
         <LoadingState title="Carregando onboarding" body="Sem burocracia." />
+      </div>
+    );
+  }
+
+  if (!started && step === "goal") {
+    return (
+      <div className="space-y-4">
+        <header className="space-y-1">
+          <p className="ty-caption text-text-secondary">Onboarding</p>
+          <h1 className="ty-h1 font-display">Bem-vindo</h1>
+          <p className="ty-body text-text-secondary">
+            Rápido, leve e sem burocracia. Você ajusta depois no Perfil.
+          </p>
+        </header>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>O que vamos perguntar</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ul className="space-y-2">
+              <li className="ty-body text-text-secondary">Objetivo principal da sua carteira</li>
+              <li className="ty-body text-text-secondary">Renda e horizonte (para calibrar recomendações)</li>
+              <li className="ty-body text-text-secondary">Onde você investe (para evitar sugestões impossíveis)</li>
+            </ul>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => setStarted(true)}>Começar</Button>
+              <Button asChild variant="secondary">
+                <Link to="/app/home">Pular por agora</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -143,6 +178,16 @@ export function OnboardingPage() {
               ) : null}
 
               <div className="mt-4 flex flex-wrap gap-2">
+                {step !== "goal" ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setStep(prevStep(step))}
+                    disabled={saving}
+                  >
+                    Voltar
+                  </Button>
+                ) : null}
                 <Button
                   onClick={() => save(nextStep(step))}
                   disabled={saving}
@@ -173,6 +218,13 @@ function nextStep(step: ProfileContextStep): ProfileContextStep {
   if (step === "income_horizon") return "platforms";
   if (step === "platforms") return "confirm";
   return "confirm";
+}
+
+function prevStep(step: ProfileContextStep): ProfileContextStep {
+  if (step === "confirm") return "platforms";
+  if (step === "platforms") return "income_horizon";
+  if (step === "income_horizon") return "goal";
+  return "goal";
 }
 
 function GoalStep({
