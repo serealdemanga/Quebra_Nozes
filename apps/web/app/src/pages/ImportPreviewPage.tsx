@@ -45,10 +45,18 @@ export function ImportPreviewPage() {
     try {
       const res = await ds.imports.commitImport({ importId });
       if (!res.ok) {
-        setError(res.error.message);
+        setError(
+          res.error.message ||
+            "Não consegui confirmar a importação. Você pode ajustar e tentar de novo.",
+        );
         return;
       }
-      nav(normalizeAppTarget(res.data.nextStep), { replace: true });
+      const next = normalizeAppTarget(res.data.nextStep);
+      const url = new URL(next, window.location.origin);
+      url.searchParams.set("importId", res.data.importId);
+      url.searchParams.set("snapshotId", res.data.createdSnapshotId);
+      url.searchParams.set("affected", String(res.data.affectedPositions));
+      nav(`${url.pathname}${url.search}`, { replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao commit.");
     } finally {
@@ -70,10 +78,12 @@ export function ImportPreviewPage() {
 
       {error ? (
         <ErrorState
-          title="Não consegui carregar o preview"
+          title="Não deu para concluir agora"
           body={error}
-          ctaLabel="Voltar"
+          ctaLabel="Voltar para o import"
           ctaTarget="/app/import"
+          secondaryCtaLabel="Ver perfil"
+          secondaryCtaTarget="/app/profile"
         />
       ) : null}
 

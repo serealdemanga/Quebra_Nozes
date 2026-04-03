@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useDataSources } from "@/core/data/react";
 import type { HistoryTimelineData } from "@/core/data/contracts";
+import { useSearchParams } from "react-router-dom";
 
 export function HistoryPage() {
   const ds = useDataSources();
+  const [sp] = useSearchParams();
   const [data, setData] = React.useState<HistoryTimelineData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -41,6 +43,16 @@ export function HistoryPage() {
           O que mudou, quando mudou, e o que isso significa.
         </p>
       </header>
+
+      {sp.get("snapshotId") ? (
+        <div className="rounded-lg border border-border-default bg-bg-primary p-5 shadow-card">
+          <p className="ty-caption text-text-secondary">Importação concluída</p>
+          <p className="ty-body">
+            Snapshot {sp.get("snapshotId")} criado
+            {sp.get("affected") ? ` • ${sp.get("affected")} posições afetadas` : ""}.
+          </p>
+        </div>
+      ) : null}
 
       {error ? <p className="ty-body text-state-error">{error}</p> : null}
       {!data ? (
@@ -144,4 +156,3 @@ function formatMoney(v: number) {
 function formatDate(iso: string) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(iso));
 }
-
