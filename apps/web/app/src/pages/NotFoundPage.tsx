@@ -19,11 +19,10 @@ export function NotFoundPage() {
         <p className="ty-body text-text-secondary">{message}</p>
         <div>
           <Button asChild>
-            <Link to="/">Voltar para Home</Link>
+            <Link to="/">Voltar ao início</Link>
           </Button>
         </div>
       </div>
     </div>
   );
 }
-

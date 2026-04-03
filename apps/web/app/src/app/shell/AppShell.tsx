@@ -20,11 +20,11 @@ export function AppShell() {
             <span className="ty-caption text-text-secondary">Invest</span>
           </div>
           <nav className="flex items-center gap-2">
-            <TopLink to="/" end>
+            <TopLink to="/app/home" end>
               Home
             </TopLink>
-            <TopLink to="/portfolio">Carteira</TopLink>
-            <TopLink to="/profile">Perfil</TopLink>
+            <TopLink to="/app/portfolio">Carteira</TopLink>
+            <TopLink to="/app/profile">Perfil</TopLink>
           </nav>
         </div>
       </header>

@@ -4,18 +4,22 @@ import { AppShell } from "@/app/shell/AppShell";
 import { HomePage } from "@/pages/HomePage";
 import { PortfolioPage } from "@/pages/PortfolioPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { SplashPage } from "@/pages/SplashPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <AppShell />,
+    element: <SplashPage />,
     errorElement: <NotFoundPage />,
+  },
+  {
+    path: "/app",
+    element: <AppShell />,
     children: [
-      { index: true, element: <HomePage /> },
+      { path: "home", element: <HomePage /> },
       { path: "portfolio", element: <PortfolioPage /> },
       { path: "profile", element: <ProfilePage /> },
     ],
   },
 ]);
-
