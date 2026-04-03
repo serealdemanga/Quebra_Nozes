@@ -19,11 +19,11 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
     <div className="min-h-dvh bg-bg-secondary text-text-primary">
       {isNavigating ? <NavigationProgress /> : null}
       <header className="sticky top-0 z-10 border-b border-border-default bg-bg-primary">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
             <Logo className="h-6 w-auto text-text-primary" />
           </div>
-          <nav className="flex max-w-full items-center gap-1 overflow-x-auto whitespace-nowrap rounded-md px-1 py-1">
+          <nav className="flex max-w-full items-center gap-1 overflow-x-auto whitespace-nowrap rounded-md bg-bg-surface p-1">
             <TopLink to="/app/home" end icon="home" filledIcon="home-filled">
               Home
             </TopLink>
@@ -74,7 +74,7 @@ function TopLink({
         [
           "flex items-center gap-2 rounded-md px-3 py-2 ty-label transition-colors",
           isActive
-            ? "bg-bg-surface text-text-primary"
+            ? "bg-bg-primary text-text-primary shadow-sm"
             : "text-text-secondary hover:bg-bg-surface hover:text-text-primary",
         ].join(" ")
       }
