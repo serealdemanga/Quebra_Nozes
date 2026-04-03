@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useDataSources } from "@/core/data/react";
 import type { ProfileContextPayload } from "@/core/data/contracts";
 import { ErrorState, LoadingState, SuccessState } from "@/components/system/SystemState";
+import { Link } from "react-router-dom";
 
 export function ProfilePage() {
   const ds = useDataSources();
@@ -107,6 +108,10 @@ export function ProfilePage() {
       <header>
         <p className="ty-caption text-text-secondary">Perfil</p>
         <h1 className="ty-h1 font-display">Seu contexto</h1>
+        <p className="ty-body text-text-secondary">
+          Este é o contexto que o produto usa para interpretar sua carteira e
+          evitar recomendações fora da sua realidade.
+        </p>
       </header>
 
       {saved ? (
@@ -117,6 +122,56 @@ export function ProfilePage() {
           ctaTarget="/app/home"
         />
       ) : null}
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Como isso afeta sua leitura</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              <li className="ty-body text-text-secondary">
+                Renda e capacidade de aporte ajudam a priorizar o que importa agora.
+              </li>
+              <li className="ty-body text-text-secondary">
+                Horizonte e objetivo ajudam a calibrar risco e expectativas.
+              </li>
+              <li className="ty-body text-text-secondary">
+                Plataformas usadas evitam “sugestões impossíveis” e melhoram o import.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumo do contexto</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="rounded-md border border-border-default bg-bg-surface p-3">
+              <p className="ty-caption text-text-secondary">Objetivo</p>
+              <p className="ty-body">{context.financialGoal ?? "—"}</p>
+            </div>
+            <div className="rounded-md border border-border-default bg-bg-surface p-3">
+              <p className="ty-caption text-text-secondary">Horizonte</p>
+              <p className="ty-body">{context.investmentHorizon ?? "—"}</p>
+            </div>
+            <div className="rounded-md border border-border-default bg-bg-surface p-3">
+              <p className="ty-caption text-text-secondary">Plataformas</p>
+              <p className="ty-body">
+                {context.platformsUsed?.platformIds?.length
+                  ? context.platformsUsed.platformIds.join(", ")
+                  : "—"}
+              </p>
+            </div>
+            <div className="pt-1">
+              <Button asChild variant="secondary">
+                <Link to="/app/onboarding">Editar onboarding</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>
