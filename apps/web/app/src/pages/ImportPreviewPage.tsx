@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
 import type { ImportPreviewData } from "@/core/data/contracts";
-import { ErrorState, LoadingState } from "@/components/system/SystemState";
+import { ConfirmState, ErrorState, LoadingState } from "@/components/system/SystemState";
 import { useNavigate } from "react-router-dom";
 import type { ImportEngineStatusData } from "@/core/data/contracts";
 
@@ -16,6 +16,7 @@ export function ImportPreviewPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [committing, setCommitting] = React.useState(false);
   const [ops, setOps] = React.useState<ImportEngineStatusData | null>(null);
+  const [confirmCommit, setConfirmCommit] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -168,8 +169,14 @@ export function ImportPreviewPage() {
                 {data.totals.invalidRows} inválidas • {data.totals.duplicateRows} duplicadas
               </p>
               <div className="mt-3">
-                <Button onClick={onCommit} disabled={!data.readyToCommit || committing}>
-                  {committing ? "Confirmando…" : "Confirmar importação"}
+                <Button
+                  onClick={() => {
+                    if (!data.readyToCommit) return;
+                    setConfirmCommit(true);
+                  }}
+                  disabled={!data.readyToCommit || committing}
+                >
+                  Confirmar importação
                 </Button>
                 {!data.readyToCommit ? (
                   <p className="mt-2 ty-caption text-text-secondary">
@@ -177,6 +184,28 @@ export function ImportPreviewPage() {
                   </p>
                 ) : null}
               </div>
+              {data.readyToCommit && confirmCommit ? (
+                <div className="mt-4">
+                  <ConfirmState
+                    title="Confirmar importação"
+                    body="Ao confirmar, sua carteira será atualizada e um snapshot será criado no Histórico."
+                    primaryAction={
+                      <Button onClick={onCommit} disabled={committing}>
+                        {committing ? "Confirmando…" : "Confirmar agora"}
+                      </Button>
+                    }
+                    secondaryAction={
+                      <Button
+                        variant="secondary"
+                        onClick={() => setConfirmCommit(false)}
+                        disabled={committing}
+                      >
+                        Voltar
+                      </Button>
+                    }
+                  />
+                </div>
+              ) : null}
             </CardContent>
           </Card>
 
