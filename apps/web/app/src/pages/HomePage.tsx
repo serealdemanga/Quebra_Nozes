@@ -74,19 +74,77 @@ export function HomePage() {
               </div>
             </div>
 
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="ty-caption text-text-secondary">Score</p>
-                  <p className="ty-h2 font-display">
-                    {data.score.value} <span className="ty-caption text-text-secondary">{data.score.status}</span>
-                  </p>
-                  <p className="ty-body text-text-secondary">{data.score.explanation}</p>
-                </div>
+            {data.sourceWarning ? (
+              <div className="mt-3 rounded-md border border-border-default bg-bg-surface p-3">
+                <p className="ty-caption text-text-secondary">Aviso</p>
+                <p className="ty-body">{data.sourceWarning}</p>
+              </div>
+            ) : null}
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="ty-caption text-text-secondary">Score</p>
+                <p className="ty-h2 font-display">
+                  {data.score.value} <span className="ty-caption text-text-secondary">{data.score.status}</span>
+                </p>
+                <p className="ty-body text-text-secondary">{data.score.explanation}</p>
+              </div>
               <Button asChild>
                 <Link to={normalizeAppTarget(data.primaryAction.target)}>
                   {data.primaryAction.ctaLabel}
                 </Link>
               </Button>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Distribuição</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {data.distribution.map((d) => (
+                      <li
+                        key={d.key}
+                        className="flex items-center justify-between gap-3 rounded-md border border-border-default bg-bg-primary p-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="ty-body">{d.label}</p>
+                          <p className="ty-caption text-text-secondary">
+                            {d.sharePct.toFixed(2)}%
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="ty-tabular">{formatMoney(d.value)}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Insights</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {data.insights.length === 0 ? (
+                    <p className="ty-body text-text-secondary">Sem insights por enquanto.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {data.insights.map((i, idx) => (
+                        <li
+                          key={`${i.kind}-${idx}`}
+                          className="rounded-md border border-border-default bg-bg-primary p-3"
+                        >
+                          <p className="ty-body">{i.title}</p>
+                          <p className="ty-caption text-text-secondary">{i.body}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </>
         )}
