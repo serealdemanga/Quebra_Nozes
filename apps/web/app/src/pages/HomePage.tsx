@@ -93,19 +93,36 @@ export function HomePage() {
               </div>
             ) : null}
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="ty-caption text-text-secondary">Score</p>
-                <p className="ty-h2 font-display">
-                  {data.score.value} <span className="ty-caption text-text-secondary">{data.score.status}</span>
-                </p>
-                <p className="ty-body text-text-secondary">{data.score.explanation}</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="rounded-md border border-border-default bg-bg-surface p-4">
+                <p className="ty-caption text-text-secondary">Principal problema</p>
+                <p className="ty-h3 font-display">{data.primaryProblem.title}</p>
+                <p className="ty-body text-text-secondary">{data.primaryProblem.body}</p>
               </div>
-              <Button asChild>
-                <Link to={normalizeAppTarget(data.primaryAction.target)}>
-                  {data.primaryAction.ctaLabel}
-                </Link>
-              </Button>
+
+              <div className="rounded-md border border-border-default bg-bg-surface p-4">
+                <p className="ty-caption text-text-secondary">Próxima ação</p>
+                <p className="ty-h3 font-display">{data.primaryAction.title}</p>
+                <p className="ty-body text-text-secondary">{data.primaryAction.body}</p>
+                <div className="mt-3">
+                  <Button asChild>
+                    <Link to={normalizeAppTarget(data.primaryAction.target)}>
+                      {data.primaryAction.ctaLabel}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-md border border-border-default bg-bg-surface p-4">
+              <p className="ty-caption text-text-secondary">Score</p>
+              <p className="ty-h2 font-display">
+                {data.score.value}{" "}
+                <span className="ty-caption text-text-secondary">
+                  {data.score.status}
+                </span>
+              </p>
+              <p className="ty-body text-text-secondary">{data.score.explanation}</p>
             </div>
 
             <div className="mt-4 rounded-md border border-border-default bg-bg-surface p-3">
