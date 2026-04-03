@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { AppDataSources } from '../../core/data/data_sources';
-import type { DashboardHomeData } from '../../core/data/contracts';
+import type { DashboardHomeData, DashboardDistributionItem, DashboardInsight } from '../../core/data/contracts';
 import { ShellLayout } from '../../app/ShellLayout';
 
 export interface HomeScreenProps {
@@ -104,7 +104,7 @@ function HomeContent(props: { data: DashboardHomeData; onGoToTarget(path: string
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
           <Kpi label="Patrimonio" value={formatMoney(d.hero.totalEquity)} />
           <Kpi label="Score" value={String(d.score.value)} />
-          <Kpi label="Disponivel" value={formatMoney(d.hero.totalEquity * 0.02)} />
+          <Kpi label="Status" value={d.hero.statusLabel} />
         </div>
         <div style={{ marginTop: 12 }}>
           <button className="btn btnGhost" onClick={() => props.onGoToTarget('/radar')}>
@@ -112,6 +112,9 @@ function HomeContent(props: { data: DashboardHomeData; onGoToTarget(path: string
           </button>
         </div>
       </div>
+
+      <DistributionCard distribution={d.distribution} onGoToTarget={props.onGoToTarget} />
+      <InsightsCard insights={d.insights} />
 
       <div className="card" style={{ padding: 16 }}>
         <div style={{ fontWeight: 900, marginBottom: 6 }}>Problema principal</div>
@@ -142,10 +145,89 @@ function Kpi(props: { label: string; value: string }): JSX.Element {
   );
 }
 
+function DistributionCard(props: { distribution: DashboardDistributionItem[]; onGoToTarget(path: string): void }): JSX.Element {
+  const items = [...(props.distribution ?? [])]
+    .filter((it) => it.label && Number.isFinite(it.sharePct))
+    .sort((a, b) => (b.sharePct ?? 0) - (a.sharePct ?? 0))
+    .slice(0, 6);
+
+  if (!items.length) return <></>;
+
+  return (
+    <section className="card" style={{ padding: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Distribuicao</div>
+          <div style={{ color: 'var(--c-slate)', lineHeight: 1.55 }}>
+            Leitura rapida de concentracao por categoria.
+          </div>
+        </div>
+        <button className="btn btnGhost" onClick={() => props.onGoToTarget('/portfolio')}>
+          Abrir carteira
+        </button>
+      </div>
+
+      <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+        {items.map((it) => (
+          <DistributionRow key={`${it.key}`} it={it} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DistributionRow(props: { it: DashboardDistributionItem }): JSX.Element {
+  const it = props.it;
+  const pct = clampPct(it.sharePct ?? 0);
+  return (
+    <div style={{ padding: 12, borderRadius: 14, border: '1px solid rgba(11,18,24,0.10)', background: 'rgba(255,255,255,0.72)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+        <div style={{ fontWeight: 900 }}>{it.label}</div>
+        <div style={{ fontSize: 12, color: 'var(--c-slate)', fontWeight: 900 }}>{formatPct(pct)}</div>
+      </div>
+      <div style={{ marginTop: 8, height: 10, borderRadius: 999, background: 'rgba(11,18,24,0.08)', overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: 'rgba(245,106,42,0.55)' }} />
+      </div>
+      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--c-slate)' }}>
+        {formatMoney(it.value)} • origem: {it.sourceType}
+      </div>
+    </div>
+  );
+}
+
+function InsightsCard(props: { insights: DashboardInsight[] }): JSX.Element {
+  const items = [...(props.insights ?? [])].slice(0, 4);
+  if (!items.length) return <></>;
+
+  return (
+    <section className="card" style={{ padding: 16 }}>
+      <div style={{ fontWeight: 900, marginBottom: 6 }}>Insights rapidos</div>
+      <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+        {items.map((it, idx) => (
+          <div key={`${idx}-${it.kind}`} style={{ padding: 12, borderRadius: 14, border: '1px solid rgba(11,18,24,0.10)', background: 'rgba(255,255,255,0.72)' }}>
+            <div style={{ fontWeight: 900 }}>{it.title}</div>
+            <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.55 }}>{it.body}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function formatMoney(v: number): string {
   try {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
   } catch {
     return `R$ ${v.toFixed(2)}`;
   }
+}
+
+function formatPct(v: number): string {
+  const n = Math.round(v * 10) / 10;
+  return `${String(n).replace('.', ',')}%`;
+}
+
+function clampPct(v: number): number {
+  if (!Number.isFinite(v)) return 0;
+  return Math.max(0, Math.min(100, v));
 }
