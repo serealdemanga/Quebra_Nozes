@@ -94,6 +94,28 @@ export default {
           return response;
         }
 
+        // Rotas da SPA (React Router) nao devem depender do comportamento do assets.fetch
+        // para caminhos sem extensao (ex: /login, /register, /app/home).
+        // Alguns runtimes retornam redirect 307 para "/" nesses casos, quebrando a navegacao.
+        const accept = request.headers.get('accept') || '';
+        const looksLikeFile = path.includes('.') || path.startsWith('/assets/');
+        if (!looksLikeFile && accept.includes('text/html')) {
+          const indexUrl = new URL(request.url);
+          indexUrl.pathname = '/index.html';
+          const indexRes = await assets.fetch(new Request(indexUrl.toString(), request));
+          logHttpRequest(env, {
+            requestId: null,
+            method,
+            path,
+            status: indexRes.status,
+            durationMs: Date.now() - startedAt,
+            errorCode: null,
+            cfRay,
+            ip
+          });
+          return indexRes;
+        }
+
         const assetRes = await assets.fetch(request);
         if (assetRes.status !== 404) {
           // Ajuda performance percebida: cache agressivo em assets com hash.
@@ -130,7 +152,6 @@ export default {
         }
 
         // Fallback SPA: rotas do React Router devem servir index.html.
-        const accept = request.headers.get('accept') || '';
         if (accept.includes('text/html')) {
           const indexUrl = new URL(request.url);
           indexUrl.pathname = '/index.html';
