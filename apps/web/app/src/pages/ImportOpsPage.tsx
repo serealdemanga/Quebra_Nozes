@@ -72,17 +72,20 @@ export function ImportOpsPage() {
 
       {!data && !error ? (
         <LoadingState title="Carregando status" body="Só um instante." />
-      ) : data && (data as any).screenState === "redirect_onboarding" ? (
+      ) : data && data.screenState === "redirect_onboarding" ? (
         <BlockedState
           title="Falta um passo para destravar"
           body="Complete seu onboarding para acompanhar o processamento da importação."
           ctaLabel="Continuar onboarding"
-          ctaTarget={normalizeAppTarget((data as any).redirectTo)}
+          ctaTarget={normalizeAppTarget(data.redirectTo)}
           secondaryCtaLabel="Ir para o Perfil"
           secondaryCtaTarget="/app/profile"
         />
-      ) : data && (data as any).screenState === "ready" ? (
+      ) : data && data.screenState === "ready" ? (
         <>
+          {/**
+           * A partir daqui, `data` e' do tipo ready (narrowing por screenState).
+           */}
           <Card>
             <CardHeader>
               <CardTitle>Estado</CardTitle>

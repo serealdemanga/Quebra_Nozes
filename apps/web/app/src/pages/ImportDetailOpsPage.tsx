@@ -36,8 +36,7 @@ export function ImportDetailOpsPage() {
     };
   }, [ds, importId]);
 
-  const rows: ImportDetailRow[] =
-    data && (data as any).screenState === "ready" ? (data as any).rows ?? [] : [];
+  const rows: ImportDetailRow[] = data && data.screenState === "ready" ? data.rows ?? [] : [];
 
   const visible = rows.filter((r) => {
     if (mode === "all") return true;
@@ -89,16 +88,16 @@ export function ImportDetailOpsPage() {
 
       {!data && !error ? (
         <LoadingState title="Carregando detalhe" body="Só um instante." />
-      ) : data && (data as any).screenState === "redirect_onboarding" ? (
+      ) : data && data.screenState === "redirect_onboarding" ? (
         <BlockedState
           title="Falta um passo para destravar"
           body="Complete seu onboarding para revisar o detalhe operacional."
           ctaLabel="Continuar onboarding"
-          ctaTarget={normalizeAppTarget((data as any).redirectTo)}
+          ctaTarget={normalizeAppTarget(data.redirectTo)}
           secondaryCtaLabel="Ir para o Perfil"
           secondaryCtaTarget="/app/profile"
         />
-      ) : data && (data as any).screenState === "ready" ? (
+      ) : data && data.screenState === "ready" ? (
         <>
           <Card>
             <CardHeader>
