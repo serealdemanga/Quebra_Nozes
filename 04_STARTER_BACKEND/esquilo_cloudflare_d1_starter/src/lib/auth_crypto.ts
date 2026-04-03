@@ -1,7 +1,10 @@
 const textEncoder = new TextEncoder();
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-const PASSWORD_ITERATIONS = 210000;
+// Cloudflare Workers' WebCrypto PBKDF2 has a practical upper bound for iterations.
+// Acima disso, o runtime pode falhar com NotSupportedError.
+const PASSWORD_ITERATIONS = 100000;
+const PASSWORD_ITERATIONS_MAX_SUPPORTED = 100000;
 const PASSWORD_KEY_LENGTH_BITS = 256;
 
 export async function hashPassword(password: string): Promise<string> {
@@ -23,6 +26,7 @@ export async function verifyPassword(storedHash: string, password: string): Prom
 
   const iterations = Number(iterationValue || 0);
   if (!iterations) return false;
+  if (iterations > PASSWORD_ITERATIONS_MAX_SUPPORTED) return false;
 
   const salt = fromBase64Url(saltValue);
   const expected = fromBase64Url(hashValue);
