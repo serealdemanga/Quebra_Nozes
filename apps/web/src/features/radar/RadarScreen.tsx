@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { AppDataSources } from '../../core/data/data_sources';
-import type { AnalysisData, DashboardHomeData, ProfileContextGetData } from '../../core/data/contracts';
+import type { AnalysisData, DashboardHomeData, HistoryTimelineData, ProfileContextGetData } from '../../core/data/contracts';
 
 export interface RadarScreenProps {
   dataSources: AppDataSources;
@@ -12,7 +12,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
   const [state, setState] = useState<
     | { kind: 'loading' }
     | { kind: 'error'; message: string }
-    | { kind: 'ready'; data: AnalysisData; dashboard: DashboardHomeData | null; profile: ProfileContextGetData | null }
+    | { kind: 'ready'; data: AnalysisData; dashboard: DashboardHomeData | null; profile: ProfileContextGetData | null; timeline: HistoryTimelineData | null }
   >({ kind: 'loading' });
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
     setState({ kind: 'loading' });
     (async () => {
       try {
-        const [analysisRes, dashboardRes, profileRes] = await Promise.all([
+        const [analysisRes, dashboardRes, profileRes, timelineRes] = await Promise.all([
           props.dataSources.analysis.getAnalysis(),
           props.dataSources.dashboard.getDashboardHome().catch((e) => ({
             ok: false,
@@ -31,6 +31,11 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
             ok: false,
             meta: { requestId: 'req_profile_failed', timestamp: new Date().toISOString(), version: 'v1' },
             error: { code: 'profile_failed', message: e instanceof Error ? e.message : 'Falha ao carregar perfil' }
+          })),
+          props.dataSources.history.getHistoryTimeline({ limit: 60 }).catch((e) => ({
+            ok: false,
+            meta: { requestId: 'req_timeline_failed', timestamp: new Date().toISOString(), version: 'v1' },
+            error: { code: 'timeline_failed', message: e instanceof Error ? e.message : 'Falha ao carregar histórico' }
           }))
         ]);
         if (cancelled) return;
@@ -42,7 +47,8 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
           kind: 'ready',
           data: analysisRes.data,
           dashboard: dashboardRes.ok ? dashboardRes.data : null,
-          profile: profileRes.ok ? profileRes.data : null
+          profile: profileRes.ok ? profileRes.data : null,
+          timeline: timelineRes.ok ? timelineRes.data : null
         });
       } catch (e) {
         if (cancelled) return;
@@ -84,7 +90,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
               <div style={{ color: 'var(--c-slate)' }}>{state.message}</div>
             </div>
           ) : (
-            <RadarContent data={state.data} dashboard={state.dashboard} profile={state.profile} onGoToTarget={props.onGoToTarget} />
+            <RadarContent data={state.data} dashboard={state.dashboard} profile={state.profile} timeline={state.timeline} onGoToTarget={props.onGoToTarget} />
           )}
         </main>
       </div>
@@ -92,7 +98,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
   );
 }
 
-function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData | null; profile: ProfileContextGetData | null; onGoToTarget(path: string): void }): JSX.Element {
+function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData | null; profile: ProfileContextGetData | null; timeline: HistoryTimelineData | null; onGoToTarget(path: string): void }): JSX.Element {
   const d = props.data;
 
   if (d.screenState === 'redirect_onboarding') {
@@ -122,6 +128,7 @@ function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData 
   const breakdown = deriveScoreBreakdown(d);
   const structure = deriveStructureImpact(props.dashboard);
   const reality = deriveRealityImpact(props.profile, props.dashboard);
+  const behavior = deriveBehaviorImpact(props.timeline);
   return (
     <>
       <section className="card" style={{ padding: 16 }}>
@@ -200,6 +207,24 @@ function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData 
               <button className="btn btnPrimary" onClick={() => props.onGoToTarget(reality.cta.target)}>
                 {reality.cta.label}
               </button>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {behavior ? (
+        <section className="card" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Comportamento x score</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: -0.2 }}>{behavior.title}</div>
+          <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.55 }}>{behavior.body}</div>
+          {behavior.tips.length ? (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 900, marginBottom: 6 }}>O que depende de voce</div>
+              <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--c-slate)', lineHeight: 1.55 }}>
+                {behavior.tips.map((tip, idx) => (
+                  <li key={idx}>{tip}</li>
+                ))}
+              </ul>
             </div>
           ) : null}
         </section>
@@ -412,4 +437,63 @@ function formatMoney(value: number): string {
   const rounded = Math.round(v);
   // Mantem simples (sem Intl para evitar dependencias e diferencas de runtime).
   return `R$ ${String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+}
+
+function deriveBehaviorImpact(
+  timeline: HistoryTimelineData | null
+): null | { title: string; body: string; tips: string[] } {
+  if (!timeline) return null;
+  if (timeline.screenState !== 'ready') return null;
+
+  const snapshots = (timeline.items || []).filter((item) => item.kind === 'snapshot') as Array<{
+    kind: 'snapshot';
+    occurredAt: string;
+    referenceDate: string;
+  }>;
+
+  if (snapshots.length < 2) {
+    return {
+      title: 'Ainda nao da para medir regularidade',
+      body: 'Sem pelo menos dois snapshots, o produto nao consegue diferenciar evolucao de acaso. Regularidade deixa o score mais confiavel e acionavel.',
+      tips: ['Crie um habito simples: revisar e atualizar a carteira 1x por mes.', 'Use novos aportes para corrigir concentracao sem vender no impulso.']
+    };
+  }
+
+  const last = snapshots[0];
+  const prev = snapshots[1];
+  const gapDays = diffDays(prev.occurredAt, last.occurredAt);
+
+  let title = 'Regularidade moderada';
+  let body = `O ultimo intervalo entre snapshots foi de ~${gapDays} dias. Quanto mais regular, mais o score reflete o que voce faz e menos ruído.`;
+  const tips: string[] = [];
+
+  if (gapDays <= 35) {
+    title = 'Boa regularidade de acompanhamento';
+    body = `O ultimo intervalo entre snapshots foi de ~${gapDays} dias. Isso ajuda o score a acompanhar sua evolucao e melhora a qualidade das recomendacoes.`;
+    tips.push('Mantenha o ciclo mensal: aporte, revisar distribuicao, ajustar o proximo passo.');
+  } else if (gapDays <= 75) {
+    title = 'Regularidade ok, mas pode melhorar';
+    body = `O ultimo intervalo entre snapshots foi de ~${gapDays} dias. Um ritmo mais constante tende a reduzir ansiedade e decisões reativas.`;
+    tips.push('Escolha um dia fixo no mes para revisar e registrar a carteira.');
+  } else {
+    title = 'Baixa regularidade aumenta risco de decisões reativas';
+    body = `O ultimo intervalo entre snapshots foi de ~${gapDays} dias. Quando voce olha pouco, tende a agir no pico da emoção e o score perde utilidade.`;
+    tips.push('Volte para um ciclo mensal mesmo que o aporte seja pequeno.');
+    tips.push('Registre o que mudou e por que (para evitar “mexer por mexer”).');
+  }
+
+  return { title, body, tips: tips.slice(0, 3) };
+}
+
+function diffDays(a: string, b: string): number {
+  const da = safeDate(a);
+  const db = safeDate(b);
+  if (!da || !db) return 0;
+  const ms = Math.abs(db.getTime() - da.getTime());
+  return Math.max(0, Math.round(ms / (1000 * 60 * 60 * 24)));
+}
+
+function safeDate(value: string): Date | null {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
