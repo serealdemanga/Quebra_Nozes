@@ -13,18 +13,19 @@ A factory resolve providers para:
 - dashboard
 - portfolio
 - profile
-- imports
+- holdingDetail
 - history
 - analysis
+- health
 
 ## Regra
 A tela nunca faz `fetch` direto.
 A tela recebe um provider pronto.
 
 ## Exemplo de decisão
-- `local` -> JSON local
-- `hml` -> mock remoto ou provider híbrido
-- `prd` -> HTTP real
+- `local` -> mock JSON (mesmo schema do hml)
+- `hml` -> mock JSON
+- `prd` -> HTTP real (backend novo)
 
 ## Meta
 Deixar o front plug and play, sem gambiarra de ambiente espalhada.

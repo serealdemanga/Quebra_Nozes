@@ -4,8 +4,7 @@
 Centralizar a origem dos dados do app web.
 
 ## Providers previstos
-- local mock
-- hml mock
+- mock (local/hml)
 - http real
 
 ## Regra
@@ -16,9 +15,13 @@ Ela recebe um data source já resolvido.
 - DashboardDataSource
 - PortfolioDataSource
 - ProfileDataSource
-- ImportDataSource
+- HoldingDetailDataSource
 - HistoryDataSource
 - AnalysisDataSource
+- HealthDataSource
 
 ## Meta
 Trocar local -> hml -> prd com o mínimo de atrito.
+
+## Estado atual
+Existe implementação mínima em TypeScript para os data sources principais (mock e HTTP) e uma factory que resolve a fonte por ambiente/override.
