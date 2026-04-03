@@ -1,11 +1,12 @@
 import type { Env } from '../types/env';
-import { generateAiTextWithFallback } from './ai_provider';
+import { generateAiTextWithFallbackDetailed } from './ai_provider';
 import { updateAnalysisMessaging } from '../repositories/analysis_write_repository';
+import { recordOperationalEvent } from './operational_events_service';
 
 export type AiSuggestionState =
   | { status: 'disabled' }
   | { status: 'ready'; text: string; provider: 'openai' | 'gemini'; generatedAt: string }
-  | { status: 'error'; message: string };
+  | { status: 'error'; message: string; diagnostics?: { openai?: string; gemini?: string } };
 
 export async function getOrGenerateAiSuggestion(env: Env, input: {
   analysisId: string;
@@ -33,17 +34,27 @@ export async function getOrGenerateAiSuggestion(env: Env, input: {
   }
 
   const prompt = buildPrompt(input.promptData);
-  const res = await generateAiTextWithFallback(env, { prompt, maxTokens: 280 });
-  if (!res?.text) return { status: 'error', message: 'IA indisponível no momento.' };
+  const { result, diagnostics } = await generateAiTextWithFallbackDetailed(env, { prompt, maxTokens: 280 });
+  if (!result?.text) {
+    await recordOperationalEvent(env, {
+      userId: null,
+      portfolioId: null,
+      eventType: 'ai_suggestion_error',
+      status: 'error',
+      message: 'Falha ao gerar sugestao por IA.',
+      details: { diagnostics }
+    });
+    return { status: 'error', message: 'IA indisponível no momento.', diagnostics };
+  }
 
   const generatedAt = new Date().toISOString();
   const nextMessaging = {
     ...(parsed || {}),
-    aiSuggestion: { text: res.text.trim(), provider: res.provider, generatedAt }
+    aiSuggestion: { text: result.text.trim(), provider: result.provider, generatedAt }
   };
   await updateAnalysisMessaging(env, input.analysisId, JSON.stringify(nextMessaging));
 
-  return { status: 'ready', text: res.text.trim(), provider: res.provider, generatedAt };
+  return { status: 'ready', text: result.text.trim(), provider: result.provider, generatedAt };
 }
 
 function safeJson(value: string | null): Record<string, any> | null {

@@ -1,6 +1,7 @@
 import type { Env } from '../types/env';
 
 export type AiResult = { text: string; provider: 'openai' | 'gemini' };
+export type AiDiagnostics = { openai?: string; gemini?: string };
 
 export async function generateAiTextWithFallback(env: Env, input: {
   prompt: string;
@@ -24,9 +25,43 @@ export async function generateAiTextWithFallback(env: Env, input: {
   return null;
 }
 
+export async function generateAiTextWithFallbackDetailed(env: Env, input: {
+  prompt: string;
+  maxTokens?: number;
+}): Promise<{ result: AiResult | null; diagnostics: AiDiagnostics }> {
+  const prompt = input.prompt.trim();
+  if (!prompt) return { result: null, diagnostics: {} };
+
+  const diagnostics: AiDiagnostics = {};
+
+  const openaiKey = env.OPENAI_API_KEY || '';
+  if (openaiKey) {
+    try {
+      const text = await tryOpenAi(openaiKey, prompt, input.maxTokens ?? 280);
+      if (text) return { result: { text, provider: 'openai' }, diagnostics };
+      diagnostics.openai = 'openai_empty';
+    } catch (error) {
+      diagnostics.openai = toDiag('openai', error);
+    }
+  }
+
+  const geminiKey = env.GEMINI_API_KEY || '';
+  if (geminiKey) {
+    try {
+      const text = await tryGemini(geminiKey, prompt, input.maxTokens ?? 280);
+      if (text) return { result: { text, provider: 'gemini' }, diagnostics };
+      diagnostics.gemini = 'gemini_empty';
+    } catch (error) {
+      diagnostics.gemini = toDiag('gemini', error);
+    }
+  }
+
+  return { result: null, diagnostics };
+}
+
 async function tryOpenAi(apiKey: string, prompt: string, maxTokens: number): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000);
+  const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
     const res = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
@@ -62,7 +97,7 @@ async function tryOpenAi(apiKey: string, prompt: string, maxTokens: number): Pro
 
 async function tryGemini(apiKey: string, prompt: string, maxTokens: number): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000);
+  const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
     const model = 'gemini-1.5-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -84,5 +119,14 @@ async function tryGemini(apiKey: string, prompt: string, maxTokens: number): Pro
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function toDiag(provider: 'openai' | 'gemini', error: unknown): string {
+  if (error instanceof Error) {
+    const msg = String(error.message || '').trim();
+    if (msg) return msg.slice(0, 120);
+    return `${provider}_error`;
+  }
+  return `${provider}_error_${String(error).slice(0, 120)}`;
 }
 
