@@ -10,6 +10,9 @@ import type {
   ApiProfileContextPutEnvelope,
   ProfileContextPutRequest,
   ApiHealthEnvelope,
+  ApiImportStartEnvelope,
+  ApiImportPreviewEnvelope,
+  ApiImportCommitEnvelope,
 } from "../contracts";
 import type { JsonLoader } from "../types";
 
@@ -87,6 +90,26 @@ export function createMockDataSources(options: MockProviderOptions): AppDataSour
         };
       },
     },
+    imports: {
+      async startImport(_input?: { payload?: Record<string, unknown> }): Promise<ApiImportStartEnvelope> {
+        return await loader.load<ApiImportStartEnvelope>(`${basePath}/imports_start.json`);
+      },
+      async getPreview(input: { importId: string }): Promise<ApiImportPreviewEnvelope> {
+        const preview = await loader.load<ApiImportPreviewEnvelope>(`${basePath}/imports_preview.json`);
+        if (!preview.ok) return preview;
+        return {
+          ...preview,
+          data: { ...preview.data, importId: input.importId },
+        };
+      },
+      async commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope> {
+        const commit = await loader.load<ApiImportCommitEnvelope>(`${basePath}/imports_commit.json`);
+        if (!commit.ok) return commit;
+        return {
+          ...commit,
+          data: { ...commit.data, importId: input.importId },
+        };
+      },
+    },
   };
 }
-

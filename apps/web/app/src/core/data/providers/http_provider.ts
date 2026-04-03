@@ -10,6 +10,9 @@ import type {
   ApiProfileContextPutEnvelope,
   ProfileContextPutRequest,
   ApiHealthEnvelope,
+  ApiImportStartEnvelope,
+  ApiImportPreviewEnvelope,
+  ApiImportCommitEnvelope,
 } from "../contracts";
 
 export interface HttpProviderOptions {
@@ -74,6 +77,28 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
         });
       },
     },
+    imports: {
+      async startImport(input?: { payload?: Record<string, unknown> }): Promise<ApiImportStartEnvelope> {
+        return await fetchJson<ApiImportStartEnvelope>(fetchImpl, `${baseUrl}/v1/imports/start`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(input?.payload ?? {}),
+        });
+      },
+      async getPreview(input: { importId: string }): Promise<ApiImportPreviewEnvelope> {
+        return await fetchJson<ApiImportPreviewEnvelope>(
+          fetchImpl,
+          `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/preview`,
+        );
+      },
+      async commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope> {
+        return await fetchJson<ApiImportCommitEnvelope>(
+          fetchImpl,
+          `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/commit`,
+          { method: "POST" },
+        );
+      },
+    },
   };
 }
 
@@ -81,4 +106,3 @@ async function fetchJson<T>(fetchImpl: typeof fetch, url: string, init?: Request
   const response = await fetchImpl(url, { credentials: "include", ...init });
   return (await response.json()) as T;
 }
-

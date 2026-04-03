@@ -9,6 +9,9 @@ import type {
   ApiProfileContextPutEnvelope,
   ProfileContextPutRequest,
   ApiHealthEnvelope,
+  ApiImportStartEnvelope,
+  ApiImportPreviewEnvelope,
+  ApiImportCommitEnvelope,
 } from "./contracts";
 
 export interface AnalysisDataSource {
@@ -41,6 +44,12 @@ export interface ProfileDataSource {
   putProfileContext(input: ProfileContextPutRequest): Promise<ApiProfileContextPutEnvelope>;
 }
 
+export interface ImportsDataSource {
+  startImport(input?: { payload?: Record<string, unknown> }): Promise<ApiImportStartEnvelope>;
+  getPreview(input: { importId: string }): Promise<ApiImportPreviewEnvelope>;
+  commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope>;
+}
+
 export interface AppDataSources {
   dashboard: DashboardDataSource;
   health: HealthDataSource;
@@ -49,5 +58,5 @@ export interface AppDataSources {
   portfolio: PortfolioDataSource;
   holdingDetail: HoldingDetailDataSource;
   profile: ProfileDataSource;
+  imports: ImportsDataSource;
 }
-

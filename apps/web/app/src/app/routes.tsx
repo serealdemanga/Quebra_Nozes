@@ -9,6 +9,8 @@ import { StartPage } from "@/pages/StartPage";
 import { HoldingDetailPage } from "@/pages/HoldingDetailPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { ImportStartPage } from "@/pages/ImportStartPage";
+import { ImportPreviewPage } from "@/pages/ImportPreviewPage";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +29,8 @@ export const router = createBrowserRouter([
     children: [
       { path: "home", element: <HomePage /> },
       { path: "onboarding", element: <OnboardingPage /> },
+      { path: "import", element: <ImportStartPage /> },
+      { path: "import/:importId/preview", element: <ImportPreviewPage /> },
       { path: "portfolio", element: <PortfolioPage /> },
       {
         path: "portfolio/:portfolioId/holdings/:holdingId",

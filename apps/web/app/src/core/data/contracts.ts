@@ -330,3 +330,59 @@ export type HistoryTimelineReadyData = {
 
 export type HistoryTimelineData = ScreenStateRedirect | HistoryTimelineEmptyData | HistoryTimelineReadyData;
 export type ApiHistoryTimelineEnvelope = ApiEnvelope<HistoryTimelineData>;
+
+// ===== Imports =====
+
+export type ImportTotals = {
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  duplicateRows: number;
+};
+
+export type ImportStartData = {
+  importId: string;
+  status: string;
+  nextStep: string;
+  totals: ImportTotals;
+  document: unknown | null;
+  importable: boolean;
+};
+
+export type ApiImportStartEnvelope = ApiEnvelope<ImportStartData>;
+
+export type ImportPreviewRow = {
+  id: string;
+  rowNumber: number;
+  source: Record<string, unknown>;
+  normalized: Record<string, unknown>;
+  resolutionStatus: string;
+  errorMessage: string | null;
+  warnings: string[];
+  fieldSources: Record<string, unknown>;
+  fieldConfidences: Record<string, unknown>;
+  reviewMeta: Record<string, unknown>;
+};
+
+export type ImportPreviewData = {
+  importId: string;
+  status: string;
+  origin: string;
+  totals: ImportTotals;
+  readyToCommit: boolean;
+  document: unknown | null;
+  importable: boolean;
+  rows: ImportPreviewRow[];
+};
+
+export type ApiImportPreviewEnvelope = ApiEnvelope<ImportPreviewData>;
+
+export type ImportCommitData = {
+  importId: string;
+  status: string;
+  createdSnapshotId: string;
+  affectedPositions: number;
+  nextStep: string;
+};
+
+export type ApiImportCommitEnvelope = ApiEnvelope<ImportCommitData>;

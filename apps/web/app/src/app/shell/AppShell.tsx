@@ -21,13 +21,16 @@ export function AppShell() {
             <Logo className="h-6 w-auto text-text-primary" />
           </div>
           <nav className="flex items-center gap-2">
-            <TopLink to="/app/home" end icon="home">
+            <TopLink to="/app/home" end icon="home" filledIcon="home-filled">
               Home
             </TopLink>
-            <TopLink to="/app/portfolio" icon="carteira">
+            <TopLink to="/app/import" icon="importar">
+              Importar
+            </TopLink>
+            <TopLink to="/app/portfolio" icon="carteira" filledIcon="carteira-filled">
               Carteira
             </TopLink>
-            <TopLink to="/app/profile" icon="perfil">
+            <TopLink to="/app/profile" icon="perfil" filledIcon="perfil-filled">
               Perfil
             </TopLink>
           </nav>
@@ -45,11 +48,13 @@ function TopLink({
   to,
   end,
   icon,
+  filledIcon,
   children,
 }: {
   to: string;
   end?: boolean;
-  icon: "home" | "carteira" | "perfil";
+  icon: IconName;
+  filledIcon?: IconName;
   children: React.ReactNode;
 }) {
   return (
@@ -66,7 +71,7 @@ function TopLink({
       }
     >
       {({ isActive }) => {
-        const iconName = (isActive ? `${icon}-filled` : icon) as IconName;
+        const iconName = isActive ? (filledIcon ?? icon) : icon;
         return (
           <>
             <Icon name={iconName} className="text-[18px]" />
