@@ -36,6 +36,8 @@ export async function getOrGenerateAiSuggestion(env: Env, input: {
   const prompt = buildPrompt(input.promptData);
   const { result, diagnostics } = await generateAiTextWithFallbackDetailed(env, { prompt, maxTokens: 280 });
   if (!result?.text) {
+    const diagText = `${diagnostics.openai || ''} ${diagnostics.gemini || ''}`.toLowerCase();
+    const isQuota = diagText.includes('http_429') || diagText.includes('quota') || diagText.includes('billing');
     await recordOperationalEvent(env, {
       userId: null,
       portfolioId: null,
@@ -44,7 +46,11 @@ export async function getOrGenerateAiSuggestion(env: Env, input: {
       message: 'Falha ao gerar sugestao por IA.',
       details: { diagnostics }
     });
-    return { status: 'error', message: 'IA indisponível no momento.', diagnostics };
+    return {
+      status: 'error',
+      message: isQuota ? 'IA indisponível (quota/billing). Verifique limites do provedor.' : 'IA indisponível no momento.',
+      diagnostics
+    };
   }
 
   const generatedAt = new Date().toISOString();
