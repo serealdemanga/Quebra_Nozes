@@ -104,7 +104,9 @@ export function OnboardingScreen(props: OnboardingScreenProps): JSX.Element {
       if (!ok) return;
     }
     if (current.id === 'risk_quiz') {
-      const ok = await saveStep('risk_quiz', { riskProfileSelfDeclared: context.riskProfileSelfDeclared });
+      // Backend valida `riskProfileQuizResult` nesta etapa; mantemos selfDeclared em paralelo para futuras leituras.
+      const v = context.riskProfileSelfDeclared;
+      const ok = await saveStep('risk_quiz', { riskProfileSelfDeclared: v, riskProfileQuizResult: v });
       if (!ok) return;
     }
     if (current.id === 'platforms') {
@@ -112,8 +114,7 @@ export function OnboardingScreen(props: OnboardingScreenProps): JSX.Element {
       if (!ok) return;
     }
     if (current.id === 'confirm') {
-      const ok = await saveStep('confirm', {});
-      if (!ok) return;
+      // Backend nao tem etapa `confirm` hoje; aqui e so uma revisao final sem roundtrip.
       props.onDone();
       return;
     }
