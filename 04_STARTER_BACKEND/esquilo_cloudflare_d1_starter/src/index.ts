@@ -99,9 +99,12 @@ export default {
         // Alguns runtimes retornam redirect 307 para "/" nesses casos, quebrando a navegacao.
         const accept = request.headers.get('accept') || '';
         const looksLikeFile = path.includes('.') || path.startsWith('/assets/');
+        // Importante: no binding `assets` do Workers, `GET /index.html` pode responder
+        // com redirect 307 para `/`. Para evitar isso (e suportar deep-linking),
+        // servimos a SPA sempre a partir de `/`.
         if (!looksLikeFile && accept.includes('text/html')) {
           const indexUrl = new URL(request.url);
-          indexUrl.pathname = '/index.html';
+          indexUrl.pathname = '/';
           const indexRes = await assets.fetch(new Request(indexUrl.toString(), request));
           logHttpRequest(env, {
             requestId: null,
@@ -154,7 +157,7 @@ export default {
         // Fallback SPA: rotas do React Router devem servir index.html.
         if (accept.includes('text/html')) {
           const indexUrl = new URL(request.url);
-          indexUrl.pathname = '/index.html';
+          indexUrl.pathname = '/';
           const indexRes = await assets.fetch(new Request(indexUrl.toString(), request));
           logHttpRequest(env, {
             requestId: null,
