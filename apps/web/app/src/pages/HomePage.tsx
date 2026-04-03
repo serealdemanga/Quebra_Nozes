@@ -69,6 +69,18 @@ export function HomePage() {
           />
         ) : (
           <>
+            {data.screenState === "empty" ? (
+              <div className="mt-4 rounded-md border border-border-default bg-bg-surface p-3">
+                <p className="ty-caption text-text-secondary">Status</p>
+                <p className="ty-body">Carteira ainda não importada. Importe o template oficial para gerar o primeiro snapshot.</p>
+              </div>
+            ) : data.screenState === "portfolio_ready_analysis_pending" ? (
+              <div className="mt-4 rounded-md border border-border-default bg-bg-surface p-3">
+                <p className="ty-caption text-text-secondary">Status</p>
+                <p className="ty-body">Snapshot pronto. A análise consolidada ainda está pendente, mas seus números já podem ser lidos.</p>
+              </div>
+            ) : null}
+
             <div className="mt-4 grid gap-3 rounded-lg border border-border-default bg-bg-surface p-4 md:grid-cols-3">
               <div>
                 <p className="ty-caption text-text-secondary">Patrimônio</p>
@@ -85,13 +97,6 @@ export function HomePage() {
                 </p>
               </div>
             </div>
-
-            {data.sourceWarning ? (
-              <div className="mt-3 rounded-md border border-border-default bg-bg-surface p-3">
-                <p className="ty-caption text-text-secondary">Aviso</p>
-                <p className="ty-body">{data.sourceWarning}</p>
-              </div>
-            ) : null}
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <div className="rounded-md border border-border-default bg-bg-surface p-4">
@@ -113,6 +118,22 @@ export function HomePage() {
                 </div>
               </div>
             </div>
+
+            {data.aiSuggestion?.status === "ready" && data.aiSuggestion.text ? (
+              <div className="mt-4 rounded-md border border-border-default bg-bg-surface p-4">
+                <p className="ty-caption text-text-secondary">Sugestão por IA</p>
+                <p className="ty-body whitespace-pre-wrap">{data.aiSuggestion.text}</p>
+                <p className="ty-caption text-text-secondary mt-2">
+                  Fonte: {String(data.aiSuggestion.provider || "IA")}{" "}
+                  {data.aiSuggestion.generatedAt ? `(${new Date(data.aiSuggestion.generatedAt).toLocaleString("pt-BR")})` : null}
+                </p>
+              </div>
+            ) : data.aiSuggestion?.status === "error" ? (
+              <div className="mt-4 rounded-md border border-border-default bg-bg-surface p-4">
+                <p className="ty-caption text-text-secondary">Sugestão por IA</p>
+                <p className="ty-body text-text-secondary">{data.aiSuggestion.message || "IA indisponível no momento."}</p>
+              </div>
+            ) : null}
 
             <div className="mt-4 rounded-md border border-border-default bg-bg-surface p-4">
               <p className="ty-caption text-text-secondary">Score</p>
@@ -218,30 +239,6 @@ export function HomePage() {
           </>
         )}
       </section>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Próximo passo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="ty-body text-text-secondary">
-              Conectar com API real via <code>VITE_API_BASE_URL</code> e trocar
-              o modo para <code>http</code>.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Alertas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="ty-body text-text-secondary">
-              Placeholder para estado de risco, concentração e recomendações.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

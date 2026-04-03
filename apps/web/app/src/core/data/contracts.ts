@@ -24,7 +24,7 @@ export type DashboardDistributionItem = {
 };
 
 export type DashboardHomeReadyData = {
-  screenState: "ready";
+  screenState: "empty" | "portfolio_ready_analysis_pending" | "ready";
   portfolioId: string;
   hero: {
     totalEquity: number;
@@ -37,9 +37,9 @@ export type DashboardHomeReadyData = {
   primaryProblem: { code: string; title: string; body: string; severity: string };
   primaryAction: { code: string; title: string; body: string; ctaLabel: string; target: string };
   distribution: DashboardDistributionItem[];
-  insights: Array<{ kind: string; title: string; body: string; severity: string }>;
+  insights: Array<{ kind: string; title: string; body: string }>;
+  aiSuggestion?: { status: "disabled" | "ready" | "error"; text?: string; provider?: string; generatedAt?: string; message?: string };
   updatedAt: string;
-  sourceWarning: string | null;
 };
 
 export type DashboardHomeData = ScreenStateRedirect | DashboardHomeReadyData;

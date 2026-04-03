@@ -2,8 +2,8 @@
 
 ## Routes
 - `POST /v1/imports/start`
-- `GET /v1/imports/templates/custom` (CSV template próprio)
-- `GET /v1/imports/templates/b3` (CSV layout B3)
+- `GET /v1/imports/templates/custom` (CSV v1 oficial)
+- `GET /v1/imports/templates/csv-v1` (alias do CSV v1 oficial)
 - `GET /v1/imports/{importId}/preview`
 - `GET /v1/imports/{importId}/engine-status`
 - `GET /v1/imports/{importId}/conflicts`
@@ -39,7 +39,7 @@ Headers:
 As rotas abaixo retornam o CSV como arquivo (sem envelope JSON).
 
 - `GET /v1/imports/templates/custom`: template com cabeçalho `tipo,codigo,nome,quantidade,valor_investido,valor_atual,categoria,observacoes`
-- `GET /v1/imports/templates/b3`: template com cabeçalho `codigo,produto,quantidade,preco_medio,valor_atual`
+- `GET /v1/imports/templates/csv-v1`: alias do template oficial (mesmo conteúdo)
 
 ## Start response (data)
 ```json
@@ -250,3 +250,4 @@ Detalhe operacional por documento e por linha (erros, conflitos, baixa confianç
 - preview vem antes do commit
 - conflito exige decisão explícita
 - commit deve poder gerar snapshot
+- Release 0.1: `origin` aceito no start é somente `CUSTOM_TEMPLATE` (alias `CSV_V1` também é aceito)

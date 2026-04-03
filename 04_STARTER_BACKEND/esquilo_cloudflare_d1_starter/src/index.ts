@@ -6,7 +6,7 @@ import { getPortfolio, getHoldingDetail } from './routes/portfolio';
 import { getProfileContext, putProfileContext } from './routes/profile';
 import { getAnalysis } from './routes/analysis';
 import { getSnapshots, getTimeline, getImportsCenter } from './routes/history';
-import { postImportStart, getImportPreview, patchImportRow, postImportRowDuplicateResolution, postImportCommit, getCustomTemplateDownload, getB3TemplateDownload } from './routes/imports';
+import { postImportStart, getImportPreview, patchImportRow, postImportRowDuplicateResolution, postImportCommit, getCustomTemplateDownload, getCsvV1TemplateDownload } from './routes/imports';
 import { getPortfolioEntryOnboardingRoute } from './routes/onboarding';
 import { getImportConflicts } from './routes/import_conflicts';
 import { getImportDetail } from './routes/import_detail';
@@ -36,7 +36,8 @@ router.register('GET', '/v1/history/timeline', getTimeline);
 router.register('GET', '/v1/history/imports', getImportsCenter);
 router.register('POST', '/v1/imports/start', postImportStart);
 router.register('GET', '/v1/imports/templates/custom', getCustomTemplateDownload);
-router.register('GET', '/v1/imports/templates/b3', getB3TemplateDownload);
+// Alias oficial da Release 0.1 (CSV v1).
+router.register('GET', '/v1/imports/templates/csv-v1', getCsvV1TemplateDownload);
 router.register('GET', '/v1/imports/:importId/preview', getImportPreview);
 router.register('GET', '/v1/imports/:importId/engine-status', getImportEngineStatus);
 router.register('GET', '/v1/imports/:importId/conflicts', getImportConflicts);
@@ -57,7 +58,90 @@ export default {
 
     try {
       const matched = await router.handle(request, env);
-      const response = matched ?? fail(env.API_VERSION, 'route_not_found', 'Rota não encontrada.', 404);
+      // API -> sempre responde com envelope (nao confundir com SPA).
+      if (matched) {
+        const response = matched;
+        const requestId = response.headers.get('x-request-id');
+        const errorCode = response.headers.get('x-error-code');
+        logHttpRequest(env, {
+          requestId,
+          method,
+          path,
+          status: response.status,
+          durationMs: Date.now() - startedAt,
+          errorCode,
+          cfRay,
+          ip
+        });
+        return response;
+      }
+
+      // SPA/Assets: qualquer rota nao /v1/* cai aqui.
+      if (method === 'GET' && !path.startsWith('/v1/')) {
+        const assets = env.ASSETS;
+        if (!assets) {
+          const response = new Response('Static assets binding (ASSETS) não configurado.', { status: 500 });
+          logHttpRequest(env, {
+            requestId: null,
+            method,
+            path,
+            status: response.status,
+            durationMs: Date.now() - startedAt,
+            errorCode: 'assets_binding_missing',
+            cfRay,
+            ip
+          });
+          return response;
+        }
+
+        const assetRes = await assets.fetch(request);
+        if (assetRes.status !== 404) {
+          logHttpRequest(env, {
+            requestId: null,
+            method,
+            path,
+            status: assetRes.status,
+            durationMs: Date.now() - startedAt,
+            errorCode: null,
+            cfRay,
+            ip
+          });
+          return assetRes;
+        }
+
+        // Fallback SPA: rotas do React Router devem servir index.html.
+        const accept = request.headers.get('accept') || '';
+        if (accept.includes('text/html')) {
+          const indexUrl = new URL(request.url);
+          indexUrl.pathname = '/index.html';
+          const indexRes = await assets.fetch(new Request(indexUrl.toString(), request));
+          logHttpRequest(env, {
+            requestId: null,
+            method,
+            path,
+            status: indexRes.status,
+            durationMs: Date.now() - startedAt,
+            errorCode: null,
+            cfRay,
+            ip
+          });
+          return indexRes;
+        }
+
+        logHttpRequest(env, {
+          requestId: null,
+          method,
+          path,
+          status: 404,
+          durationMs: Date.now() - startedAt,
+          errorCode: 'asset_not_found',
+          cfRay,
+          ip
+        });
+        return assetRes;
+      }
+
+      const response = fail(env.API_VERSION, 'route_not_found', 'Rota não encontrada.', 404);
       const requestId = response.headers.get('x-request-id');
       const errorCode = response.headers.get('x-error-code');
       logHttpRequest(env, {

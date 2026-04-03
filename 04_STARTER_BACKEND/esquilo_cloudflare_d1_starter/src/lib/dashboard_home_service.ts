@@ -9,6 +9,7 @@ import {
   findInsightsByAnalysisId
 } from '../repositories/dashboard_home_repository';
 import type { DistributionItem, HomeData } from '../types/contracts';
+import { getOrGenerateAiSuggestion } from './ai_suggestion_service';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
 
@@ -115,6 +116,24 @@ export async function getDashboardHomeData(request: Request, env: Env): Promise<
   }
 
   const insightsRows = await findInsightsByAnalysisId(env, analysis.id);
+  const primaryProblemTitle = analysis.primary_problem || 'Principal problema identificado';
+  const primaryActionTitle = analysis.primary_action || 'Principal ação recomendada';
+  const aiSuggestion = await getOrGenerateAiSuggestion(env, {
+    analysisId: analysis.id,
+    messagingJson: analysis.messaging_json,
+    promptData: {
+      scoreValue: Number(analysis.score_value || 0),
+      scoreStatus: analysis.score_status || 'Calculado',
+      primaryProblemTitle,
+      primaryActionTitle,
+      totals: {
+        totalEquity: Number(snapshot.total_equity || 0),
+        totalInvested: Number(snapshot.total_invested || 0),
+        totalProfitLoss: Number(snapshot.total_profit_loss || 0),
+        totalProfitLossPct: Number(snapshot.total_profit_loss_pct || 0)
+      }
+    }
+  });
   const readyData: HomeData = {
     screenState: 'ready',
     portfolioId: session.portfolioId,
@@ -149,6 +168,7 @@ export async function getDashboardHomeData(request: Request, env: Env): Promise<
       title: item.title || 'Insight',
       body: item.message
     })),
+    aiSuggestion,
     updatedAt: analysis.generated_at
   };
 

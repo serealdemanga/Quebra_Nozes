@@ -39,6 +39,9 @@ O payload da Home trabalha por estado (`screenState`):
 - `portfolio_ready_analysis_pending`: snapshot existe, analise ainda nao
 - `ready`: snapshot + analise existem
 
+Campo opcional:
+- `aiSuggestion`: sugestao textual (IA) para traduzir/orientar, sem interferir no score/problema/acao. Pode vir como `disabled`, `ready` ou `error`.
+
 ```json
 {
   "screenState": "ready",
@@ -76,6 +79,7 @@ O payload da Home trabalha por estado (`screenState`):
     }
   ],
   "insights": [{ "kind": "concentration", "title": "Insight", "body": "Mensagem" }],
+  "aiSuggestion": { "status": "ready", "text": "Paragrafo...\\n- bullet\\n- bullet\\n- bullet", "provider": "openai", "generatedAt": "2026-04-02T00:00:00.000Z" },
   "updatedAt": "2026-04-02T00:00:00.000Z"
 }
 ```

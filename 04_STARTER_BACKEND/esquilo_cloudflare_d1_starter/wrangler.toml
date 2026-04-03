@@ -2,6 +2,9 @@ name = "esquilo-invest-api"
 main = "src/index.ts"
 compatibility_date = "2026-03-30"
 
+# Single Worker: serve SPA (assets) + API (/v1/*) na mesma origem.
+assets = { directory = "./public", binding = "ASSETS" }
+
 [observability]
 enabled = true
 

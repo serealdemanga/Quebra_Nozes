@@ -31,6 +31,7 @@ export interface AnalysisRow {
   primary_problem: string | null;
   primary_action: string | null;
   summary_text: string | null;
+  messaging_json: string | null;
   generated_at: string;
 }
 
@@ -107,6 +108,7 @@ export async function findLatestAnalysisBySnapshotId(env: Env, snapshotId: strin
        primary_problem,
        primary_action,
        summary_text,
+       messaging_json,
        generated_at
      FROM portfolio_analyses
      WHERE snapshot_id = ?

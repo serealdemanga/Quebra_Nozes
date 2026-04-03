@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "wrangler dev --env local",
     "dev:local": "wrangler dev --env local",
-    "deploy": "wrangler deploy --env production",
-    "deploy:hml": "wrangler deploy --env hml",
-    "deploy:prod": "wrangler deploy --env production",
+    "build:web": "node scripts/build_web.mjs",
+    "sync:web": "node scripts/sync_web_public.mjs",
+    "deploy:hml": "node scripts/deploy.mjs hml",
+    "deploy:prod": "node scripts/deploy.mjs production",
+    "deploy": "npm run deploy:prod",
+    "rollback:prod": "node scripts/rollback.mjs production",
     "check": "tsc --noEmit"
   },
   "devDependencies": {

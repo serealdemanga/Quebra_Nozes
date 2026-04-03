@@ -14,7 +14,7 @@ export function ImportStartPage() {
   const [error, setError] = React.useState<string | null>(null);
 
   const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
-  const templateCustomUrl = apiBaseUrl ? `${apiBaseUrl}/v1/imports/templates/custom` : "/v1/imports/templates/custom";
+  const templateCustomUrl = apiBaseUrl ? `${apiBaseUrl}/v1/imports/templates/csv-v1` : "/v1/imports/templates/csv-v1";
 
   async function onStart() {
     setLoading(true);
@@ -130,7 +130,7 @@ export function ImportStartPage() {
           <div className="rounded-md border border-border-default bg-bg-surface p-3">
             <p className="ty-caption text-text-secondary">Limitações atuais</p>
             <p className="ty-body">
-              Nesta etapa, o foco é CSV (Template próprio ou B3). Upload de arquivo e outras origens entram depois.
+              Nesta release, aceitamos apenas o template CSV v1 oficial. Outros layouts entram depois.
             </p>
           </div>
           {!apiBaseUrl ? (

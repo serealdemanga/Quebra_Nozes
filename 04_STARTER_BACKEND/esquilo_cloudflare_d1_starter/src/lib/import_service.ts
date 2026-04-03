@@ -2,31 +2,36 @@ import type { Env } from '../types/env';
 import { ok, fail, readJson } from './http';
 import { buildEntityId, hashToken } from './auth_crypto';
 import { recordOperationalEvent } from './operational_events_service';
+import { generateDeterministicAnalysisForSnapshot } from './analysis_generation_service';
 import { findImportSessionStateByTokenHash, createImportRecord, updateImportRecord, replaceImportRows, findOwnedImportById, findImportRows, findManualDuplicateCandidates, findAssetTypeByCode, findAssetByNormalizedNameOrCode, createAsset, createPortfolioPosition, createPortfolioSnapshot, createSnapshotPosition } from '../repositories/import_repository';
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
-const ORIGIN_MANUAL_ENTRY = 'MANUAL_ENTRY';
+// Release 0.1: um unico layout CSV v1 (template proprio).
 const ORIGIN_CUSTOM_TEMPLATE = 'CUSTOM_TEMPLATE';
-const ORIGIN_B3_CSV = 'B3_CSV';
-const ORIGIN_DOCUMENT_AI_PARSE = 'DOCUMENT_AI_PARSE';
+const ORIGIN_CSV_V1 = 'CSV_V1';
 const VALID_SOURCE_KINDS = ['ACOES', 'FUNDOS', 'PREVIDENCIA'];
 const TEMPLATE_HEADERS = ['tipo', 'codigo', 'nome', 'quantidade', 'valor_investido', 'valor_atual', 'categoria', 'observacoes'];
-const B3_REQUIRED_HEADERS = ['codigo', 'produto', 'quantidade', 'preco_medio', 'valor_atual'];
-const IMPORTABLE_DOCUMENT_TYPES = ['portfolio_statement', 'account_statement'];
 const COMMIT_ALLOWED_STATUSES = ['NORMALIZED', 'RESOLVED_REPLACE', 'RESOLVED_CONSOLIDATE', 'IGNORED'];
 
 export async function startImport(request: Request, env: Env): Promise<Response> {
   const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
-  const origin = typeof payload.origin === 'string' ? payload.origin : ORIGIN_MANUAL_ENTRY;
-  if (origin === ORIGIN_CUSTOM_TEMPLATE) return await startCustomTemplateImport(request, env, payload);
-  if (origin === ORIGIN_B3_CSV) return await startB3CsvImport(request, env, payload);
-  if (origin === ORIGIN_DOCUMENT_AI_PARSE) return await startDocumentAiImport(request, env, payload);
-  return await startManualImportWithPayload(request, env, payload);
+  const origin = typeof payload.origin === 'string' ? payload.origin : '';
+  if (origin !== ORIGIN_CUSTOM_TEMPLATE && origin !== ORIGIN_CSV_V1) {
+    return fail(
+      env.API_VERSION,
+      'unsupported_import_origin',
+      'Nesta release, aceitamos apenas o template CSV v1 oficial. Use o botão "Baixar template oficial".',
+      400,
+      { acceptedOrigin: ORIGIN_CUSTOM_TEMPLATE, acceptedHeaders: TEMPLATE_HEADERS }
+    );
+  }
+  return await startCustomTemplateImport(request, env, payload);
 }
 
 export async function startManualImport(request: Request, env: Env): Promise<Response> {
-  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
-  return await startManualImportWithPayload(request, env, payload);
+  // Rota legada/externa (se usada em algum momento) fica explicitamente bloqueada na Release 0.1.
+  void request;
+  return fail(env.API_VERSION, 'manual_import_disabled', 'Entrada manual está desabilitada nesta release. Use o template CSV v1.', 400);
 }
 
 export async function patchImportPreviewRow(request: Request, env: Env, params: Record<string, string>): Promise<Response> {
@@ -348,6 +353,16 @@ export async function commitManualImport(request: Request, env: Env, params: Rec
   for (const asset of createdAssets) await createSnapshotPosition(env, { snapshotPositionId: buildEntityId('sps'), snapshotId, assetId: asset.assetId, quantity: asset.quantity, unitPrice: asset.currentPrice, currentValue: asset.currentValue });
   await updateImportRecord(env, { importId: params.importId, status: 'COMMITTED', totalRows: importRecord.total_rows, validRows: importRecord.valid_rows, invalidRows: importRecord.invalid_rows, duplicateRows: importRecord.duplicate_rows, finishedAt: true });
 
+  // Release 0.1: gera analise deterministica imediatamente apos o commit (sem IA).
+  const analysisResult = await generateDeterministicAnalysisForSnapshot(env, {
+    userId: session.userId,
+    portfolioId: session.portfolioId,
+    snapshotId,
+    importId: params.importId,
+    totals: { totalEquity, totalInvested, totalProfitLoss, totalProfitLossPct },
+    createdAssets
+  });
+
   await recordOperationalEvent(env, {
     userId: session.userId,
     portfolioId: session.portfolioId,
@@ -357,6 +372,7 @@ export async function commitManualImport(request: Request, env: Env, params: Rec
     details: {
       importId: params.importId,
       snapshotId,
+      analysisId: analysisResult.analysisId,
       affectedPositions: createdAssets.length,
       totals: { totalEquity, totalInvested, totalProfitLoss, totalProfitLossPct }
     }
@@ -365,8 +381,20 @@ export async function commitManualImport(request: Request, env: Env, params: Rec
   return ok(env.API_VERSION, { importId: params.importId, status: 'committed', createdSnapshotId: snapshotId, affectedPositions: createdAssets.length, nextStep: '/history/snapshots' });
 }
 
-export async function downloadCustomTemplate(_request: Request): Promise<Response> { const csv = [TEMPLATE_HEADERS.join(','), 'ACOES,PETR4,Petrobras PN,100,3200.00,3510.00,Ações,Exemplo', 'FUNDOS,,XP Selection Multimercado,1,42022.73,43810.20,Fundos,Exemplo'].join('\n'); return new Response(csv, { status: 200, headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="template_proprio.csv"' } }); }
-export async function downloadB3Template(_request: Request): Promise<Response> { const csv = ['codigo,produto,quantidade,preco_medio,valor_atual', 'PETR4,Petrobras PN,100,32.00,3510.00'].join('\n'); return new Response(csv, { status: 200, headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="template_b3.csv"' } }); }
+export async function downloadCustomTemplate(_request: Request): Promise<Response> {
+  const csv = [
+    TEMPLATE_HEADERS.join(','),
+    'ACOES,PETR4,Petrobras PN,100,3200.00,3510.00,Ações,Exemplo',
+    'FUNDOS,,XP Selection Multimercado,1,42022.73,43810.20,Fundos,Exemplo'
+  ].join('\n');
+  return new Response(csv, {
+    status: 200,
+    headers: {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': 'attachment; filename="esquilo_template_csv_v1.csv"'
+    }
+  });
+}
 
 async function requireImportSession(request: Request, env: Env): Promise<{ userId: string; portfolioId: string } | Response> {
   const token = readCookie(request.headers.get('cookie') || '', AUTH_COOKIE_NAME); if (!token) return fail(env.API_VERSION, 'unauthorized', 'Sessão não encontrada.', 401);
