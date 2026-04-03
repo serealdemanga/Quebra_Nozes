@@ -11,6 +11,8 @@ import { OnboardingPage } from "@/pages/OnboardingPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ImportStartPage } from "@/pages/ImportStartPage";
 import { ImportPreviewPage } from "@/pages/ImportPreviewPage";
+import { HistoryPage } from "@/pages/HistoryPage";
+import { RadarPage } from "@/pages/RadarPage";
 
 export const router = createBrowserRouter([
   {
@@ -31,6 +33,8 @@ export const router = createBrowserRouter([
       { path: "onboarding", element: <OnboardingPage /> },
       { path: "import", element: <ImportStartPage /> },
       { path: "import/:importId/preview", element: <ImportPreviewPage /> },
+      { path: "history", element: <HistoryPage /> },
+      { path: "radar", element: <RadarPage /> },
       { path: "portfolio", element: <PortfolioPage /> },
       {
         path: "portfolio/:portfolioId/holdings/:holdingId",

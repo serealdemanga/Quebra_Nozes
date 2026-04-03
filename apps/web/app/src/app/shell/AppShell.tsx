@@ -30,6 +30,12 @@ export function AppShell() {
             <TopLink to="/app/portfolio" icon="carteira" filledIcon="carteira-filled">
               Carteira
             </TopLink>
+            <TopLink to="/app/history" icon="historico">
+              Histórico
+            </TopLink>
+            <TopLink to="/app/radar" icon="radar">
+              Radar
+            </TopLink>
             <TopLink to="/app/profile" icon="perfil" filledIcon="perfil-filled">
               Perfil
             </TopLink>

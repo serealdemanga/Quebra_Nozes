@@ -7,6 +7,8 @@ import perfil from "@/assets/brandbook/icones/perfil-premium.svg?raw";
 import score from "@/assets/brandbook/icones/score-premium.svg?raw";
 import alerta from "@/assets/brandbook/icones/alerta-premium.svg?raw";
 import importar from "@/assets/brandbook/icones/importar-premium.svg?raw";
+import historico from "@/assets/brandbook/icones/historico-premium.svg?raw";
+import radar from "@/assets/brandbook/icones/radar-premium.svg?raw";
 
 import homeFilled from "@/assets/brandbook/icones/filled_active/home-filled.svg?raw";
 import carteiraFilled from "@/assets/brandbook/icones/filled_active/carteira-filled.svg?raw";
@@ -21,6 +23,8 @@ const ICONS = {
   score,
   alerta,
   importar,
+  historico,
+  radar,
   "home-filled": homeFilled,
   "carteira-filled": carteiraFilled,
   "perfil-filled": perfilFilled,
