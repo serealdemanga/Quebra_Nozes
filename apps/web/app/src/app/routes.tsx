@@ -5,12 +5,18 @@ import { HomePage } from "@/pages/HomePage";
 import { PortfolioPage } from "@/pages/PortfolioPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { SplashPage } from "@/pages/SplashPage";
+import { StartPage } from "@/pages/StartPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <SplashPage />,
+    errorElement: <NotFoundPage />,
+  },
+  {
+    path: "/start",
+    element: <StartPage />,
     errorElement: <NotFoundPage />,
   },
   {

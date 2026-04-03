@@ -1,13 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/brand/Logo";
 
 export function SplashPage() {
   return (
     <div className="min-h-dvh bg-bg-secondary text-text-primary">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-14">
         <header className="space-y-2">
-          <p className="ty-label text-text-secondary">Esquilo Invest</p>
+          <div className="flex items-center gap-3">
+            <Logo className="h-7 w-auto" />
+          </div>
           <h1 className="ty-display">
             Você não precisa de mais informação. Precisa de clareza.
           </h1>
@@ -38,7 +41,7 @@ export function SplashPage() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button asChild>
-              <Link to="/app/home">Começar</Link>
+              <Link to="/start">Começar</Link>
             </Button>
             <Button asChild variant="secondary">
               <Link to="/app/profile">Definir meu contexto</Link>
@@ -58,4 +61,3 @@ function Pillar({ title, body }: { title: string; body: string }) {
     </div>
   );
 }
-
