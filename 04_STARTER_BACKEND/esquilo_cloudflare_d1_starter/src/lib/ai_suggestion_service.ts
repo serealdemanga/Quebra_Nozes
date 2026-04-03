@@ -46,9 +46,12 @@ export async function getOrGenerateAiSuggestion(env: Env, input: {
       message: 'Falha ao gerar sugestao por IA.',
       details: { diagnostics }
     });
+
+    // Mensagem para UI: curta, neutra e sem detalhes de provedor/quota.
+    const friendly = 'Este serviço está indisponível no momento. Tente mais tarde.';
     return {
       status: 'error',
-      message: isQuota ? 'IA indisponível (quota/billing). Verifique limites do provedor.' : 'IA indisponível no momento.',
+      message: friendly,
       diagnostics
     };
   }
