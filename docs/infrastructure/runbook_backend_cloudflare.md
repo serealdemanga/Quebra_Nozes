@@ -75,13 +75,15 @@ npx wrangler secret put APPS_SCRIPT_RECOVERY_SECRET --env production
 Ordem:
 
 1. `database/d1/schema.sql`
-2. `database/seeds/seed_base.sql`
-3. seeds extras (se existir)
+2. `database/seeds/seed_reference_minimal.sql` (production: apenas referencias minimas)
+3. `database/seeds/seed_base.sql` (somente local/hml: cenarios de teste)
+4. seeds extras (se existir)
 
 Exemplo (D1 remoto por ambiente; algumas versoes exigem `--remote`):
 
 ```bash
 npx wrangler d1 execute esquilo-invest-local --env local --file=../../database/d1/schema.sql --remote
+npx wrangler d1 execute esquilo-invest-local --env local --file=../../database/seeds/seed_reference_minimal.sql --remote
 npx wrangler d1 execute esquilo-invest-local --env local --file=../../database/seeds/seed_base.sql --remote
 ```
 
