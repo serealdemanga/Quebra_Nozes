@@ -20,6 +20,7 @@ export interface SnapshotHistoryRow {
 
 export interface SnapshotAnalysisBadgeRow {
   snapshot_id: string;
+  score_value: number | null;
   score_status: string | null;
   primary_problem: string | null;
   primary_action: string | null;
@@ -70,6 +71,7 @@ export async function findLatestAnalysisBadgesByPortfolio(env: Env, portfolioId:
   return await d1(env).all<SnapshotAnalysisBadgeRow>(
     `SELECT
        pa.snapshot_id,
+       pa.score_value,
        pa.score_status,
        pa.primary_problem,
        pa.primary_action

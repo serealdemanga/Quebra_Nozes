@@ -104,6 +104,7 @@ Ready:
       "totalProfitLossPct": 2.58,
       "createdAt": "2026-04-02T00:00:00.000Z",
       "analysisBadge": {
+        "scoreValue": 72,
         "status": "saudavel",
         "primaryProblem": "string",
         "primaryAction": "string"

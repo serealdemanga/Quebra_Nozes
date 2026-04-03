@@ -60,6 +60,7 @@ export async function getHistorySnapshotsData(request: Request, env: Env): Promi
         totalProfitLossPct: Number(snapshot.total_profit_loss_pct || 0),
         createdAt: snapshot.created_at,
         analysisBadge: badge ? {
+          scoreValue: badge.score_value == null ? null : Number(badge.score_value),
           status: badge.score_status || 'Análise disponível',
           primaryProblem: badge.primary_problem || '',
           primaryAction: badge.primary_action || ''
@@ -129,6 +130,7 @@ export async function getHistoryTimelineData(request: Request, env: Env): Promis
         totalProfitLossPct: Number(snapshot.total_profit_loss_pct || 0)
       },
       recommendation: badge ? {
+        scoreValue: badge.score_value == null ? null : Number(badge.score_value),
         status: badge.score_status || 'Análise disponível',
         primaryProblem: badge.primary_problem || '',
         primaryAction: badge.primary_action || ''
