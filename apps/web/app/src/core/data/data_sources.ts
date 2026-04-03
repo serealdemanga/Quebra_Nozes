@@ -15,6 +15,9 @@ import type {
   ApiImportCommitEnvelope,
   ApiImportEngineStatusEnvelope,
   ApiImportDetailEnvelope,
+  ApiImportConflictsEnvelope,
+  ApiImportResolveDuplicateEnvelope,
+  ImportResolveDuplicateRequest,
 } from "./contracts";
 
 export interface AnalysisDataSource {
@@ -52,7 +55,9 @@ export interface ImportsDataSource {
   startImport(input?: { payload?: Record<string, unknown> }): Promise<ApiImportStartEnvelope>;
   getPreview(input: { importId: string }): Promise<ApiImportPreviewEnvelope>;
   getEngineStatus(input: { importId: string }): Promise<ApiImportEngineStatusEnvelope>;
+  getConflicts(input: { importId: string }): Promise<ApiImportConflictsEnvelope>;
   getImportDetail(input: { importId: string }): Promise<ApiImportDetailEnvelope>;
+  resolveDuplicateRow(input: { importId: string; rowId: string; payload: ImportResolveDuplicateRequest }): Promise<ApiImportResolveDuplicateEnvelope>;
   commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope>;
 }
 

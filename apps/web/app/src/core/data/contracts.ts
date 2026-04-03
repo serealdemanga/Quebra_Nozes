@@ -521,3 +521,84 @@ export type ImportDetailData = ScreenStateRedirect | {
 };
 
 export type ApiImportDetailEnvelope = ApiEnvelope<ImportDetailData>;
+
+// ===== Import conflicts (duplicate resolution) =====
+
+export type ImportDuplicateAction =
+  | "keep_current"
+  | "replace_existing"
+  | "consolidate"
+  | "ignore_import";
+
+export type ImportConflictItem = {
+  rowId: string;
+  rowNumber: number;
+  resolutionStatus: string;
+  errorMessage: string | null;
+  incoming: {
+    sourceKind: string;
+    code: string;
+    name: string;
+    quantity: number;
+    investedAmount: number;
+    currentAmount: number;
+    categoryLabel: string;
+  };
+  duplicateCandidates: Array<{
+    assetId: string;
+    assetCode: string;
+    assetName: string;
+    quantity: number;
+    investedAmount: number;
+    currentAmount: number;
+  }>;
+  allowedActions: Array<{ code: ImportDuplicateAction; label: string }>;
+  target: {
+    preview: string;
+    resolve: string;
+  };
+};
+
+export type ImportConflictsData =
+  | ScreenStateRedirect
+  | {
+      screenState: "empty";
+      importId: string;
+      origin: string;
+      summary: {
+        totalConflicts: number;
+        unresolvedConflicts: number;
+        resolvedConflicts: number;
+      };
+      emptyState: EmptyState;
+      conflicts: [];
+    }
+  | {
+      screenState: "ready";
+      importId: string;
+      origin: string;
+      summary: {
+        totalConflicts: number;
+        unresolvedConflicts: number;
+        resolvedConflicts: number;
+      };
+      conflicts: ImportConflictItem[];
+    };
+
+export type ApiImportConflictsEnvelope = ApiEnvelope<ImportConflictsData>;
+
+export type ImportResolveDuplicateRequest = {
+  action: ImportDuplicateAction;
+};
+
+export type ImportResolveDuplicateData = {
+  importId: string;
+  rowId: string;
+  status: string;
+  action: ImportDuplicateAction;
+  beforeStatus: string;
+  afterStatus: string;
+  nextStep: string;
+};
+
+export type ApiImportResolveDuplicateEnvelope = ApiEnvelope<ImportResolveDuplicateData>;

@@ -11,6 +11,7 @@ import { OnboardingPage } from "@/pages/OnboardingPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { ImportStartPage } from "@/pages/ImportStartPage";
 import { ImportPreviewPage } from "@/pages/ImportPreviewPage";
+import { ImportConflictsPage } from "@/pages/ImportConflictsPage";
 import { ImportOpsPage } from "@/pages/ImportOpsPage";
 import { ImportDetailOpsPage } from "@/pages/ImportDetailOpsPage";
 import { HistoryPage } from "@/pages/HistoryPage";
@@ -40,11 +41,13 @@ export const router = createBrowserRouter([
       { path: "onboarding", element: <OnboardingPage /> },
       { path: "import", element: <ImportStartPage /> },
       { path: "import/:importId/preview", element: <ImportPreviewPage /> },
+      { path: "import/:importId/conflicts", element: <ImportConflictsPage /> },
       { path: "import/:importId/ops", element: <ImportOpsPage /> },
       { path: "import/:importId/detail", element: <ImportDetailOpsPage /> },
       // Compat com targets antigos dos contratos/backend
       { path: "imports/entry", element: <ImportStartPage /> },
       { path: "imports/:importId/preview", element: <ImportPreviewPage /> },
+      { path: "imports/:importId/conflicts", element: <ImportConflictsPage /> },
       { path: "imports/:importId/engine-status", element: <ImportOpsPage /> },
       { path: "imports/:importId/detail", element: <ImportDetailOpsPage /> },
       { path: "history", element: <HistoryPage /> },

@@ -135,6 +135,13 @@ export function ImportOpsPage() {
                     Ver detalhe operacional
                   </Link>
                 </Button>
+                {data.targets.conflicts ? (
+                  <Button asChild size="sm" variant="secondary">
+                    <Link to={importId ? `/app/import/${encodeURIComponent(importId)}/conflicts` : "/app/import"}>
+                      Resolver duplicidades
+                    </Link>
+                  </Button>
+                ) : null}
                 <Button asChild size="sm" variant="secondary">
                   <Link to="/app/history/imports">Ir para histórico de importações</Link>
                 </Button>
@@ -161,4 +168,3 @@ function normalizeAppTarget(target: string) {
   if (target.startsWith("/app/")) return target;
   return `/app${target}`;
 }
-

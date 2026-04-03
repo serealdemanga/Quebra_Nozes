@@ -16,6 +16,9 @@ import type {
   ApiImportCommitEnvelope,
   ApiImportEngineStatusEnvelope,
   ApiImportDetailEnvelope,
+  ApiImportConflictsEnvelope,
+  ApiImportResolveDuplicateEnvelope,
+  ImportResolveDuplicateRequest,
 } from "../contracts";
 
 export interface HttpProviderOptions {
@@ -105,11 +108,25 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
           `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/engine-status`,
         );
       },
+      async getConflicts(input: { importId: string }): Promise<ApiImportConflictsEnvelope> {
+        return await fetchJson<ApiImportConflictsEnvelope>(
+          fetchImpl,
+          `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/conflicts`,
+        );
+      },
       async getImportDetail(input: { importId: string }): Promise<ApiImportDetailEnvelope> {
         return await fetchJson<ApiImportDetailEnvelope>(
           fetchImpl,
           `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/detail`,
         );
+      },
+      async resolveDuplicateRow(input: { importId: string; rowId: string; payload: ImportResolveDuplicateRequest }): Promise<ApiImportResolveDuplicateEnvelope> {
+        const path = `/v1/imports/${encodeURIComponent(input.importId)}/rows/${encodeURIComponent(input.rowId)}/duplicate-resolution`;
+        return await fetchJson<ApiImportResolveDuplicateEnvelope>(fetchImpl, `${baseUrl}${path}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(input.payload),
+        });
       },
       async commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope> {
         return await fetchJson<ApiImportCommitEnvelope>(

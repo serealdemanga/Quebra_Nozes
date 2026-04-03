@@ -4,6 +4,7 @@
 - `POST /v1/imports/start`
 - `GET /v1/imports/{importId}/preview`
 - `GET /v1/imports/{importId}/engine-status`
+- `GET /v1/imports/{importId}/conflicts`
 - `GET /v1/imports/{importId}/detail`
 - `POST /v1/imports/{importId}/commit`
 
@@ -115,6 +116,76 @@ Leitura operacional do processamento (sem UI de negócio).
     "conflicts": "/v1/imports/imp_123/conflicts",
     "commit": null
   }
+}
+```
+
+## Conflicts response (data)
+
+Lista de conflitos de duplicidade (apenas linhas `PENDING`) com ações explícitas e determinísticas.
+
+Quando não houver conflitos pendentes:
+
+```json
+{
+  "screenState": "empty",
+  "importId": "imp_123",
+  "origin": "MANUAL_ENTRY",
+  "summary": { "totalConflicts": 1, "unresolvedConflicts": 0, "resolvedConflicts": 1 },
+  "emptyState": {
+    "title": "Essa importação não tem conflitos de duplicidade pendentes",
+    "body": "Quando houver ativos conflitantes com a carteira atual, eles aparecerão aqui para decisão explícita.",
+    "ctaLabel": "Voltar ao preview",
+    "target": "/imports/imp_123/preview"
+  },
+  "conflicts": []
+}
+```
+
+Quando houver conflitos pendentes:
+
+```json
+{
+  "screenState": "ready",
+  "importId": "imp_123",
+  "origin": "MANUAL_ENTRY",
+  "summary": { "totalConflicts": 2, "unresolvedConflicts": 2, "resolvedConflicts": 0 },
+  "conflicts": [
+    {
+      "rowId": "imr_123",
+      "rowNumber": 12,
+      "resolutionStatus": "PENDING",
+      "errorMessage": "Possível duplicidade com ativo já existente na carteira.",
+      "incoming": {
+        "sourceKind": "ACOES",
+        "code": "PETR4",
+        "name": "Petrobras PN",
+        "quantity": 100,
+        "investedAmount": 3200,
+        "currentAmount": 3510,
+        "categoryLabel": "Ações"
+      },
+      "duplicateCandidates": [
+        {
+          "assetId": "ast_1",
+          "assetCode": "PETR4",
+          "assetName": "Petrobras PN",
+          "quantity": 80,
+          "investedAmount": 2500,
+          "currentAmount": 2800
+        }
+      ],
+      "allowedActions": [
+        { "code": "keep_current", "label": "Manter atual" },
+        { "code": "replace_existing", "label": "Substituir existente" },
+        { "code": "consolidate", "label": "Consolidar posições" },
+        { "code": "ignore_import", "label": "Ignorar entrada" }
+      ],
+      "target": {
+        "preview": "/imports/imp_123/preview",
+        "resolve": "/v1/imports/imp_123/rows/imr_123/duplicate-resolution"
+      }
+    }
+  ]
 }
 ```
 

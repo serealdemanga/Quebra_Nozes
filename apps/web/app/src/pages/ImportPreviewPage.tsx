@@ -145,6 +145,24 @@ export function ImportPreviewPage() {
               <CardTitle>Totais</CardTitle>
             </CardHeader>
             <CardContent>
+              {data.totals.duplicateRows > 0 || data.totals.invalidRows > 0 ? (
+                <div className="mb-3 rounded-md border border-border-default bg-bg-surface p-3">
+                  <p className="ty-body font-medium">Há pendências para resolver antes do commit</p>
+                  <p className="ty-caption text-text-secondary">
+                    {data.totals.invalidRows > 0 ? `${data.totals.invalidRows} inválidas` : "0 inválidas"} •{" "}
+                    {data.totals.duplicateRows > 0 ? `${data.totals.duplicateRows} duplicadas` : "0 duplicadas"}
+                  </p>
+                  {data.totals.duplicateRows > 0 ? (
+                    <div className="mt-2">
+                      <Button asChild size="sm" variant="secondary">
+                        <Link to={`/app/import/${encodeURIComponent(data.importId)}/conflicts`}>
+                          Resolver duplicidades
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <p className="ty-body">
                 {data.totals.totalRows} linhas • {data.totals.validRows} válidas •{" "}
                 {data.totals.invalidRows} inválidas • {data.totals.duplicateRows} duplicadas
@@ -153,6 +171,11 @@ export function ImportPreviewPage() {
                 <Button onClick={onCommit} disabled={!data.readyToCommit || committing}>
                   {committing ? "Confirmando…" : "Confirmar importação"}
                 </Button>
+                {!data.readyToCommit ? (
+                  <p className="mt-2 ty-caption text-text-secondary">
+                    O commit só libera quando não houver inválidas, baixa confiança crítica ou duplicidades pendentes.
+                  </p>
+                ) : null}
               </div>
             </CardContent>
           </Card>

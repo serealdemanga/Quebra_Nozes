@@ -16,6 +16,9 @@ import type {
   ApiImportCommitEnvelope,
   ApiImportEngineStatusEnvelope,
   ApiImportDetailEnvelope,
+  ApiImportConflictsEnvelope,
+  ApiImportResolveDuplicateEnvelope,
+  ImportResolveDuplicateRequest,
 } from "../contracts";
 import type { JsonLoader } from "../types";
 
@@ -117,6 +120,42 @@ export function createMockDataSources(options: MockProviderOptions): AppDataSour
         }
         return status;
       },
+      async getConflicts(input: { importId: string }): Promise<ApiImportConflictsEnvelope> {
+        const conflicts = await loader.load<ApiImportConflictsEnvelope>(`${basePath}/imports_conflicts.json`);
+        if (!conflicts.ok) return conflicts;
+
+        if (conflicts.data && (conflicts.data as any).screenState === "ready") {
+          const patched = {
+            ...(conflicts.data as any),
+            importId: input.importId,
+            conflicts: Array.isArray((conflicts.data as any).conflicts)
+              ? (conflicts.data as any).conflicts.map((c: any) => ({
+                  ...c,
+                  target: {
+                    ...c.target,
+                    preview: String(c.target?.preview || "").replace("imp_mock", input.importId),
+                    resolve: String(c.target?.resolve || "").replace("imp_mock", input.importId),
+                  },
+                }))
+              : [],
+          };
+          return { ...conflicts, data: patched };
+        }
+
+        if (conflicts.data && (conflicts.data as any).screenState === "empty") {
+          const patched = {
+            ...(conflicts.data as any),
+            importId: input.importId,
+            emptyState: {
+              ...(conflicts.data as any).emptyState,
+              target: String((conflicts.data as any).emptyState?.target || "").replace("imp_mock", input.importId),
+            },
+          };
+          return { ...conflicts, data: patched };
+        }
+
+        return conflicts;
+      },
       async getImportDetail(input: { importId: string }): Promise<ApiImportDetailEnvelope> {
         const detail = await loader.load<ApiImportDetailEnvelope>(`${basePath}/imports_detail.json`);
         if (!detail.ok) return detail;
@@ -124,6 +163,22 @@ export function createMockDataSources(options: MockProviderOptions): AppDataSour
           return { ...detail, data: { ...(detail.data as any), importId: input.importId } };
         }
         return detail;
+      },
+      async resolveDuplicateRow(input: { importId: string; rowId: string; payload: ImportResolveDuplicateRequest }): Promise<ApiImportResolveDuplicateEnvelope> {
+        const now = new Date().toISOString();
+        return {
+          ok: true,
+          meta: { requestId: "mock", timestamp: now, version: "v1" },
+          data: {
+            importId: input.importId,
+            rowId: input.rowId,
+            status: "duplicate_resolved",
+            action: input.payload.action,
+            beforeStatus: "PENDING",
+            afterStatus: input.payload.action === "replace_existing" ? "RESOLVED_REPLACE" : input.payload.action === "consolidate" ? "RESOLVED_CONSOLIDATE" : "IGNORED",
+            nextStep: `/v1/imports/${encodeURIComponent(input.importId)}/preview`,
+          },
+        };
       },
       async commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope> {
         const commit = await loader.load<ApiImportCommitEnvelope>(`${basePath}/imports_commit.json`);
