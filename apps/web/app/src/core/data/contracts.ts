@@ -227,13 +227,26 @@ export type HoldingDetailDataReady = {
     score: number;
     status: string;
     motives: string[];
+    opportunityScore: number;
   };
-  performance: {
-    currentValue: number;
-    investedAmount: number | null;
-    performanceValue: number | null;
-    performancePct: number | null;
+  recommendation: {
+    code: string;
+    title: string;
+    body: string;
   };
+  categoryContext: {
+    categoryKey: string;
+    categoryLabel: string;
+    categoryRisk: string;
+    categoryRecommendation: string;
+    primaryMessage: string;
+    holdingsCount: number;
+    totalCurrent: number;
+    totalInvested: number;
+    totalProfitLoss: number;
+    totalProfitLossPct: number;
+  };
+  externalLink: string | null;
 };
 
 export type HoldingDetailData = ScreenStateRedirect | HoldingDetailDataReady;
@@ -317,4 +330,3 @@ export type HistoryTimelineReadyData = {
 
 export type HistoryTimelineData = ScreenStateRedirect | HistoryTimelineEmptyData | HistoryTimelineReadyData;
 export type ApiHistoryTimelineEnvelope = ApiEnvelope<HistoryTimelineData>;
-

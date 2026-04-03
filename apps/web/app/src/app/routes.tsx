@@ -6,6 +6,7 @@ import { PortfolioPage } from "@/pages/PortfolioPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { SplashPage } from "@/pages/SplashPage";
 import { StartPage } from "@/pages/StartPage";
+import { HoldingDetailPage } from "@/pages/HoldingDetailPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export const router = createBrowserRouter([
@@ -25,6 +26,10 @@ export const router = createBrowserRouter([
     children: [
       { path: "home", element: <HomePage /> },
       { path: "portfolio", element: <PortfolioPage /> },
+      {
+        path: "portfolio/:portfolioId/holdings/:holdingId",
+        element: <HoldingDetailPage />,
+      },
       { path: "profile", element: <ProfilePage /> },
     ],
   },

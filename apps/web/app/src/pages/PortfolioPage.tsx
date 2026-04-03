@@ -7,6 +7,9 @@ import { Link } from "react-router-dom";
 
 export function PortfolioPage() {
   const ds = useDataSources();
+  const [performance, setPerformance] = React.useState<"all" | "best" | "worst">(
+    "all",
+  );
   const [data, setData] = React.useState<PortfolioData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -14,7 +17,7 @@ export function PortfolioPage() {
     let cancelled = false;
     async function run() {
       try {
-        const res = await ds.portfolio.getPortfolio();
+        const res = await ds.portfolio.getPortfolio({ performance });
         if (cancelled) return;
         if (!res.ok) {
           setError(res.error.message);
@@ -30,7 +33,7 @@ export function PortfolioPage() {
     return () => {
       cancelled = true;
     };
-  }, [ds]);
+  }, [ds, performance]);
 
   return (
     <div className="space-y-4">
@@ -44,6 +47,31 @@ export function PortfolioPage() {
           <CardTitle>Posições</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="ty-caption text-text-secondary">Filtro</span>
+            <Button
+              variant={performance === "all" ? "default" : "secondary"}
+              size="sm"
+              onClick={() => setPerformance("all")}
+            >
+              Todas
+            </Button>
+            <Button
+              variant={performance === "best" ? "default" : "secondary"}
+              size="sm"
+              onClick={() => setPerformance("best")}
+            >
+              Melhores
+            </Button>
+            <Button
+              variant={performance === "worst" ? "default" : "secondary"}
+              size="sm"
+              onClick={() => setPerformance("worst")}
+            >
+              Piores
+            </Button>
+          </div>
+
           {error ? (
             <p className="ty-body text-state-error">{error}</p>
           ) : !data ? (
@@ -73,7 +101,12 @@ export function PortfolioPage() {
                     {g.holdings.map((h) => (
                       <li key={h.id} className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="ty-body">{h.name}</p>
+                          <Link
+                            to={`/app/portfolio/${encodeURIComponent(data.portfolioId)}/holdings/${encodeURIComponent(h.id)}`}
+                            className="ty-body underline decoration-border-default underline-offset-4 hover:decoration-text-secondary"
+                          >
+                            {h.name}
+                          </Link>
                           <p className="ty-caption text-text-secondary">
                             {h.code ?? "Sem código"} {h.platformName ? `• ${h.platformName}` : ""}
                           </p>
