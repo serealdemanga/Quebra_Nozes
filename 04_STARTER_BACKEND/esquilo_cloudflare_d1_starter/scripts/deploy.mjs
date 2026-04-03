@@ -18,15 +18,15 @@ run("npm", ["run", "sync:web"], { cwd: workerDir });
 run("npx", ["wrangler", "deploy", "--env", envName], { cwd: workerDir });
 
 function run(bin, args, options) {
-  const cmd =
-    process.platform === "win32" && bin === "npm"
-      ? "npm.cmd"
-      : process.platform === "win32" && bin === "npx"
-        ? "npx.cmd"
-        : bin;
+  const cmd = bin;
   const pretty = `${cmd} ${args.join(" ")}`;
   console.log(`[deploy] ${pretty}`);
-  const result = spawnSync(cmd, args, { stdio: "inherit", env: process.env, ...options });
+  const result = spawnSync(cmd, args, {
+    stdio: "inherit",
+    env: process.env,
+    shell: process.platform === "win32",
+    ...options,
+  });
   if (result.error) {
     console.error(`[deploy] Falha ao executar: ${pretty}`);
     console.error(result.error);

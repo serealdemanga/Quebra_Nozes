@@ -6,11 +6,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..", "..", "..");
 const webDir = path.resolve(repoRoot, "apps", "web", "app");
 
-const cmd = process.platform === "win32" ? "npm.cmd" : "npm";
+const cmd = "npm";
 const result = spawnSync(cmd, ["run", "build"], {
   cwd: webDir,
   stdio: "inherit",
   env: process.env,
+  shell: process.platform === "win32",
 });
 
 if (result.error) {
