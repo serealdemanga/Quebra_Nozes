@@ -38,9 +38,10 @@ binding = "DB"
 database_name = "esquilo-invest-hml"
 database_id = "REPLACE_WITH_HML_D1_DATABASE_ID"
 
-[[env.hml.r2_buckets]]
-binding = "IMPORTS_BUCKET"
-bucket_name = "esquilo-invest-imports-hml"
+# NOTE: R2 ficou opcional nesta Release 0.1 para destravar deploy e evitar
+# dependencia de habilitacao manual de R2 na conta.
+# O runtime atual ainda nao depende de R2 para o fluxo CSV v1 (importacao via D1).
+# Quando o fluxo passar a armazenar arquivos/documentos, reabilitar os buckets aqui.
 
 [env.production]
 name = "esquilo-invest-api"
@@ -53,7 +54,3 @@ API_VERSION = "v1"
 binding = "DB"
 database_name = "esquilo-invest"
 database_id = "2a4849fa-e980-4540-bd60-514b740287d3"
-
-[[env.production.r2_buckets]]
-binding = "IMPORTS_BUCKET"
-bucket_name = "esquilo-invest-imports"
