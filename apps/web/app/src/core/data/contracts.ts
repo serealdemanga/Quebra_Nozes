@@ -274,6 +274,10 @@ export type ApiPortfolioEnvelope = ApiEnvelope<PortfolioData>;
 // ===== Holding detail =====
 
 export type HoldingDetailDataReady = {
+  // O payload "ready" nao traz screenState/redirectTo no runtime.
+  // Declaramos como opcionais (undefined) para permitir narrowing e evitar acesso ilegal em unions.
+  screenState?: undefined;
+  redirectTo?: undefined;
   holding: PortfolioHolding & {
     recommendation: string;
     statusLabel: string;
