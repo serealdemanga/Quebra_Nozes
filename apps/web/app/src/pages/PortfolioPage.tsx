@@ -2,6 +2,8 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
 import type { PortfolioData } from "@/core/data/contracts";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export function PortfolioPage() {
   const ds = useDataSources();
@@ -47,7 +49,16 @@ export function PortfolioPage() {
           ) : !data ? (
             <p className="ty-body text-text-secondary">Carregando…</p>
           ) : data.screenState === "redirect_onboarding" ? (
-            <p className="ty-body text-text-secondary">Complete seu contexto para destravar.</p>
+            <div className="space-y-2">
+              <p className="ty-body text-text-secondary">
+                Complete seu contexto para destravar.
+              </p>
+              <Button asChild>
+                <Link to={normalizeAppTarget(data.redirectTo)}>
+                  Continuar onboarding
+                </Link>
+              </Button>
+            </div>
           ) : data.screenState === "empty" ? (
             <p className="ty-body text-text-secondary">{data.emptyState.body}</p>
           ) : (
@@ -84,6 +95,12 @@ export function PortfolioPage() {
       </Card>
     </div>
   );
+}
+
+function normalizeAppTarget(target: string) {
+  if (!target.startsWith("/")) return `/app/${target}`;
+  if (target.startsWith("/app/")) return target;
+  return `/app${target}`;
 }
 
 function formatMoney(v: number) {

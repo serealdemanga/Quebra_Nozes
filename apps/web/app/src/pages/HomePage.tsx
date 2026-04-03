@@ -49,7 +49,9 @@ export function HomePage() {
             </p>
             <div className="mt-3">
               <Button asChild>
-                <Link to={data.redirectTo}>Continuar onboarding</Link>
+                <Link to={normalizeAppTarget(data.redirectTo)}>
+                  Continuar onboarding
+                </Link>
               </Button>
             </div>
           </div>
@@ -72,16 +74,18 @@ export function HomePage() {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="ty-caption text-text-secondary">Score</p>
-                <p className="ty-h2 font-display">
-                  {data.score.value} <span className="ty-caption text-text-secondary">{data.score.status}</span>
-                </p>
-                <p className="ty-body text-text-secondary">{data.score.explanation}</p>
-              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="ty-caption text-text-secondary">Score</p>
+                  <p className="ty-h2 font-display">
+                    {data.score.value} <span className="ty-caption text-text-secondary">{data.score.status}</span>
+                  </p>
+                  <p className="ty-body text-text-secondary">{data.score.explanation}</p>
+                </div>
               <Button asChild>
-                <Link to={data.primaryAction.target}>{data.primaryAction.ctaLabel}</Link>
+                <Link to={normalizeAppTarget(data.primaryAction.target)}>
+                  {data.primaryAction.ctaLabel}
+                </Link>
               </Button>
             </div>
           </>
@@ -113,6 +117,12 @@ export function HomePage() {
       </div>
     </div>
   );
+}
+
+function normalizeAppTarget(target: string) {
+  if (!target.startsWith("/")) return `/app/${target}`;
+  if (target.startsWith("/app/")) return target;
+  return `/app${target}`;
 }
 
 function formatMoney(v: number) {
