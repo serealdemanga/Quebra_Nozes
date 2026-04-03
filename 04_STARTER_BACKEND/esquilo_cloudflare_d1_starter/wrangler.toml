@@ -52,7 +52,7 @@ API_VERSION = "v1"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "esquilo-invest"
-database_id = "REPLACE_WITH_PROD_D1_DATABASE_ID"
+database_id = "2a4849fa-e980-4540-bd60-514b740287d3"
 
 [[env.production.r2_buckets]]
 binding = "IMPORTS_BUCKET"
