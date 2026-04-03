@@ -129,6 +129,7 @@ function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData 
   const structure = deriveStructureImpact(props.dashboard);
   const reality = deriveRealityImpact(props.profile, props.dashboard);
   const behavior = deriveBehaviorImpact(props.timeline);
+  const evolution = deriveScoreEvolution(props.timeline);
   return (
     <>
       <section className="card" style={{ padding: 16 }}>
@@ -225,6 +226,24 @@ function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData 
                   <li key={idx}>{tip}</li>
                 ))}
               </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {evolution ? (
+        <section className="card" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Evolucao do score</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: -0.2 }}>{evolution.title}</div>
+          <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.55 }}>{evolution.body}</div>
+          {evolution.points.length ? (
+            <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {evolution.points.map((p) => (
+                <div key={p.id} style={{ padding: '8px 10px', border: '1px solid rgba(31, 33, 37, 0.12)', borderRadius: 14, background: 'rgba(255,255,255,0.7)' }}>
+                  <div style={{ fontWeight: 900, letterSpacing: -0.25 }}>{p.value}</div>
+                  <div style={{ fontSize: 12, color: 'var(--c-slate)' }}>{p.label}</div>
+                </div>
+              ))}
             </div>
           ) : null}
         </section>
@@ -483,6 +502,47 @@ function deriveBehaviorImpact(
   }
 
   return { title, body, tips: tips.slice(0, 3) };
+}
+
+function deriveScoreEvolution(
+  timeline: HistoryTimelineData | null
+): null | { title: string; body: string; points: Array<{ id: string; value: number; label: string }> } {
+  if (!timeline) return null;
+  if (timeline.screenState !== 'ready') return null;
+
+  const snapshotItems = (timeline.items || []).filter((item) => item.kind === 'snapshot') as Array<{
+    kind: 'snapshot';
+    id: string;
+    referenceDate: string;
+    recommendation: null | { scoreValue?: number | null; status: string };
+  }>;
+
+  const points = snapshotItems
+    .map((item) => {
+      const value = item.recommendation?.scoreValue;
+      if (value == null) return null;
+      return { id: item.id, value: Number(value), label: item.referenceDate };
+    })
+    .filter(Boolean) as Array<{ id: string; value: number; label: string }>;
+
+  if (points.length < 2) {
+    return {
+      title: 'Evolucao ainda nao disponivel',
+      body: 'Para enxergar tendencia do score, o produto precisa de pelo menos dois snapshots com analise registrada.',
+      points: points.slice(0, 3)
+    };
+  }
+
+  const latest = points[0];
+  const previous = points[1];
+  const delta = latest.value - previous.value;
+  const direction = delta > 0 ? 'subiu' : delta < 0 ? 'caiu' : 'ficou estável';
+
+  return {
+    title: `Seu score ${direction}`,
+    body: `Do snapshot anterior para o mais recente, a nota mudou ${delta === 0 ? '0' : `${Math.abs(delta).toFixed(0)}`} pontos. Use isso para validar se as mudanças estao funcionando.`,
+    points: points.slice(0, 3)
+  };
 }
 
 function diffDays(a: string, b: string): number {
