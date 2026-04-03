@@ -141,8 +141,25 @@ export function RadarPage() {
                         key={`${i.kind}-${idx}`}
                         className="rounded-md border border-border-default bg-bg-primary p-3"
                       >
-                        <p className="ty-body">{i.title}</p>
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <p className="ty-body">{i.title}</p>
+                          <p className="ty-caption text-text-secondary">
+                            {i.severity ? severityLabel(i.severity) : ""}
+                          </p>
+                        </div>
                         <p className="ty-caption text-text-secondary">{i.body}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button asChild size="sm" variant="secondary">
+                            <Link to={`/app/alerts/${encodeURIComponent(buildAlertId(data.analysisId, idx))}`}>
+                              Ver detalhe
+                            </Link>
+                          </Button>
+                          {i.ctaLabel && i.target ? (
+                            <Button asChild size="sm">
+                              <Link to={normalizeAppTarget(i.target)}>{i.ctaLabel}</Link>
+                            </Button>
+                          ) : null}
+                        </div>
                       </li>
                     ))}
                 </ul>
@@ -198,4 +215,14 @@ function normalizeAppTarget(target: string) {
   if (!target.startsWith("/")) return `/app/${target}`;
   if (target.startsWith("/app/")) return target;
   return `/app${target}`;
+}
+
+function buildAlertId(analysisId: string, index: number) {
+  return `${analysisId}:${index}`;
+}
+
+function severityLabel(sev: "info" | "warning" | "critical") {
+  if (sev === "critical") return "crítico";
+  if (sev === "warning") return "atenção";
+  return "info";
 }

@@ -16,6 +16,7 @@ import { HistoryImportsPage } from "@/pages/HistoryImportsPage";
 import { RadarPage } from "@/pages/RadarPage";
 import { ScorePage } from "@/pages/ScorePage";
 import { AlertsPage } from "@/pages/AlertsPage";
+import { AlertDetailPage } from "@/pages/AlertDetailPage";
 import { GoalsPage } from "@/pages/GoalsPage";
 
 export const router = createBrowserRouter([
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { path: "radar", element: <RadarPage /> },
       { path: "score", element: <ScorePage /> },
       { path: "alerts", element: <AlertsPage /> },
+      { path: "alerts/:alertId", element: <AlertDetailPage /> },
       { path: "goals", element: <GoalsPage /> },
       { path: "portfolio", element: <PortfolioPage /> },
       {

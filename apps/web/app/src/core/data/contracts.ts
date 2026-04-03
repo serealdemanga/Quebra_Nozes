@@ -64,7 +64,15 @@ export type AnalysisReadyData = {
   portfolioDecision: string;
   actionPlan: string[];
   summary: string;
-  insights: Array<{ kind: string; title: string; body: string; priority: number }>;
+  insights: Array<{
+    kind: string;
+    title: string;
+    body: string;
+    priority: number;
+    severity?: "info" | "warning" | "critical";
+    ctaLabel?: string;
+    target?: string;
+  }>;
   generatedAt: string;
 };
 

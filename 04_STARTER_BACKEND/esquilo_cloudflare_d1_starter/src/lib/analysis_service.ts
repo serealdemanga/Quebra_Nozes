@@ -5,6 +5,26 @@ import { findAnalysisSessionStateByTokenHash, findLatestPortfolioAnalysis, findI
 
 const AUTH_COOKIE_NAME = 'esquilo_session';
 
+type InsightSeverity = 'info' | 'warning' | 'critical';
+
+function presentInsight(insightType: string, priority?: number | null) {
+  const p = typeof priority === 'number' ? priority : 999;
+  const severity: InsightSeverity = p <= 2 ? 'critical' : p <= 5 ? 'warning' : 'info';
+
+  const t = (insightType || '').toLowerCase();
+  if (t.includes('concentration') || t.includes('concentracao')) {
+    return { severity, ctaLabel: 'Ver carteira', target: '/portfolio' };
+  }
+  if (t.includes('import')) {
+    return { severity, ctaLabel: 'Ver importações', target: '/history/imports' };
+  }
+  if (t.includes('context') || t.includes('onboarding')) {
+    return { severity, ctaLabel: 'Completar contexto', target: '/onboarding' };
+  }
+
+  return { severity, ctaLabel: 'Abrir Radar', target: '/radar' };
+}
+
 export async function getAnalysisData(request: Request, env: Env): Promise<Response> {
   const token = readCookie(request.headers.get('cookie') || '', AUTH_COOKIE_NAME);
   if (!token) return fail(env.API_VERSION, 'unauthorized', 'Sessao nao encontrada.', 401);
@@ -67,7 +87,8 @@ export async function getAnalysisData(request: Request, env: Env): Promise<Respo
       kind: item.insight_type,
       title: item.title || 'Insight',
       body: item.message,
-      priority: item.priority ?? 999
+      priority: item.priority ?? 999,
+      ...presentInsight(item.insight_type, item.priority)
     })),
     generatedAt: analysis.generated_at
   });

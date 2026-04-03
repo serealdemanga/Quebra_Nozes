@@ -54,10 +54,30 @@ Ready:
   "portfolioDecision": "string",
   "actionPlan": ["passo 1", "passo 2"],
   "summary": "Resumo",
-  "insights": [{ "kind": "concentration", "title": "Insight", "body": "Mensagem", "priority": 1 }],
+  "insights": [
+    {
+      "kind": "concentration",
+      "title": "Insight",
+      "body": "Mensagem",
+      "priority": 1,
+      "severity": "critical",
+      "ctaLabel": "Ver carteira",
+      "target": "/portfolio"
+    }
+  ],
   "generatedAt": "2026-04-02T00:00:00.000Z"
 }
 ```
+
+## Insights (fields)
+
+`insights[]` é o mecanismo unificado para Score/Alertas no MVP. Cada item vem com um próximo passo determinístico.
+
+Campos adicionais (backward-compatible):
+
+- `severity`: `info | warning | critical`
+- `ctaLabel`: string curta (ex: "Ver carteira")
+- `target`: path relativo do app (ex: `/portfolio`, `/history/imports`, `/onboarding`)
 
 ## Rules
 
