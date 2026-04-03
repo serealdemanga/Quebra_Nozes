@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "./tokens.css";
+@import "./typography.css";
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.95em;
+}
+
