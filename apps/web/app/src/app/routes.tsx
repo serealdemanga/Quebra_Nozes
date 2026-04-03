@@ -33,6 +33,8 @@ export const router = createBrowserRouter([
       { path: "onboarding", element: <OnboardingPage /> },
       { path: "import", element: <ImportStartPage /> },
       { path: "import/:importId/preview", element: <ImportPreviewPage /> },
+      // Compat com targets antigos dos contratos/backend
+      { path: "imports/entry", element: <ImportStartPage /> },
       { path: "history", element: <HistoryPage /> },
       { path: "radar", element: <RadarPage /> },
       { path: "portfolio", element: <PortfolioPage /> },
