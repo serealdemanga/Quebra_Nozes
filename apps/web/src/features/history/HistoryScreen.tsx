@@ -63,6 +63,11 @@ function HistoryContent(props: { data: HistoryTimelineData; onGoToTarget(path: s
       <div className="card" style={{ padding: 16 }}>
         <div style={{ fontWeight: 900, marginBottom: 6 }}>Antes de tudo</div>
         <div style={{ color: 'var(--c-slate)' }}>Complete seu contexto para gerar leitura temporal.</div>
+        <div style={{ marginTop: 12 }}>
+          <button className="btn btnPrimary" onClick={() => props.onGoToTarget(d.redirectTo)}>
+            Completar contexto
+          </button>
+        </div>
       </div>
     );
   }
