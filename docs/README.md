@@ -4,6 +4,9 @@ Este é o mapa principal da documentação do `Quebra_Nozes`.
 
 ## Ordem de leitura recomendada
 
+### 0. Setup rápido (rodar sem pedir token no chat)
+- `00_setup/secrets.md`
+
 ### 1. Entender a origem
 - `00_migration/from_esquilo_invest_2_0_phase2.md`
 
