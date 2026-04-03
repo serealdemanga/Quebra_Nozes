@@ -108,6 +108,30 @@ export function HomePage() {
               </Button>
             </div>
 
+            <div className="mt-4 rounded-md border border-border-default bg-bg-surface p-3">
+              <p className="ty-caption text-text-secondary">Acessos rápidos</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button asChild size="sm" variant="secondary">
+                  <Link to="/app/portfolio">Carteira</Link>
+                </Button>
+                <Button asChild size="sm" variant="secondary">
+                  <Link to="/app/score">Score</Link>
+                </Button>
+                <Button asChild size="sm" variant="secondary">
+                  <Link to="/app/alerts">Alertas</Link>
+                </Button>
+                <Button asChild size="sm" variant="secondary">
+                  <Link to="/app/goals">Metas</Link>
+                </Button>
+                <Button asChild size="sm" variant="secondary">
+                  <Link to="/app/history">Histórico</Link>
+                </Button>
+                <Button asChild size="sm" variant="secondary">
+                  <Link to="/app/radar">Radar</Link>
+                </Button>
+              </div>
+            </div>
+
             <div className="mt-4">
               <Button
                 variant="secondary"

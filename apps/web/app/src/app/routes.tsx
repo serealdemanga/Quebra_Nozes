@@ -13,6 +13,9 @@ import { ImportStartPage } from "@/pages/ImportStartPage";
 import { ImportPreviewPage } from "@/pages/ImportPreviewPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { RadarPage } from "@/pages/RadarPage";
+import { ScorePage } from "@/pages/ScorePage";
+import { AlertsPage } from "@/pages/AlertsPage";
+import { GoalsPage } from "@/pages/GoalsPage";
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +42,9 @@ export const router = createBrowserRouter([
       // Compat com backend nextStep do commit do import (/history/snapshots)
       { path: "history/snapshots", element: <HistoryPage /> },
       { path: "radar", element: <RadarPage /> },
+      { path: "score", element: <ScorePage /> },
+      { path: "alerts", element: <AlertsPage /> },
+      { path: "goals", element: <GoalsPage /> },
       { path: "portfolio", element: <PortfolioPage /> },
       {
         path: "portfolio/:portfolioId/holdings/:holdingId",
