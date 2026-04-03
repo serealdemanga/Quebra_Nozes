@@ -2,6 +2,44 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
+type StateAction = {
+  label: string;
+  target: string;
+  variant?: "default" | "secondary";
+};
+
+function StateCard({
+  kicker,
+  title,
+  body,
+  actions,
+  children,
+}: {
+  kicker: string;
+  title: string;
+  body: string;
+  actions?: StateAction[];
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-border-default bg-bg-primary p-5 shadow-card">
+      <p className="ty-caption text-text-secondary">{kicker}</p>
+      <h2 className="ty-h2 font-display">{title}</h2>
+      <p className="ty-body text-text-secondary">{body}</p>
+      {children ? <div className="mt-3">{children}</div> : null}
+      {actions && actions.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {actions.map((a) => (
+            <Button key={`${a.target}:${a.label}`} asChild variant={a.variant ?? "default"}>
+              <Link to={a.target}>{a.label}</Link>
+            </Button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function LoadingState({
   title = "Carregando",
   body = "Só um instante.",
@@ -9,13 +47,7 @@ export function LoadingState({
   title?: string;
   body?: string;
 }) {
-  return (
-    <div className="rounded-lg border border-border-default bg-bg-primary p-5 shadow-card">
-      <p className="ty-caption text-text-secondary">Aguarde</p>
-      <h2 className="ty-h2 font-display">{title}</h2>
-      <p className="ty-body text-text-secondary">{body}</p>
-    </div>
-  );
+  return <StateCard kicker="Aguarde" title={title} body={body} />;
 }
 
 export function ErrorState({
@@ -33,21 +65,112 @@ export function ErrorState({
   secondaryCtaLabel?: string;
   secondaryCtaTarget?: string;
 }) {
+  const actions: StateAction[] = [{ label: ctaLabel, target: ctaTarget, variant: "default" }];
+  if (secondaryCtaLabel && secondaryCtaTarget) {
+    actions.push({
+      label: secondaryCtaLabel,
+      target: secondaryCtaTarget,
+      variant: "secondary",
+    });
+  }
   return (
-    <div className="rounded-lg border border-border-default bg-bg-primary p-5 shadow-card">
-      <p className="ty-caption text-text-secondary">Erro</p>
-      <h2 className="ty-h2 font-display">{title}</h2>
-      <p className="ty-body text-text-secondary">{body}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button asChild>
-          <Link to={ctaTarget}>{ctaLabel}</Link>
-        </Button>
-        {secondaryCtaLabel && secondaryCtaTarget ? (
-          <Button asChild variant="secondary">
-            <Link to={secondaryCtaTarget}>{secondaryCtaLabel}</Link>
-          </Button>
-        ) : null}
+    <StateCard kicker="Erro" title={title} body={body} actions={actions} />
+  );
+}
+
+export function EmptyState({
+  title = "Nada por aqui ainda",
+  body = "Quando tiver dados, eles aparecem aqui.",
+  ctaLabel,
+  ctaTarget,
+}: {
+  title?: string;
+  body?: string;
+  ctaLabel?: string;
+  ctaTarget?: string;
+}) {
+  const actions =
+    ctaLabel && ctaTarget ? ([{ label: ctaLabel, target: ctaTarget }] satisfies StateAction[]) : undefined;
+  return (
+    <StateCard kicker="Vazio" title={title} body={body} actions={actions} />
+  );
+}
+
+export function SuccessState({
+  title = "Tudo certo",
+  body = "Ação concluída.",
+  ctaLabel,
+  ctaTarget,
+}: {
+  title?: string;
+  body?: string;
+  ctaLabel?: string;
+  ctaTarget?: string;
+}) {
+  const actions =
+    ctaLabel && ctaTarget ? ([{ label: ctaLabel, target: ctaTarget }] satisfies StateAction[]) : undefined;
+  return (
+    <StateCard kicker="Sucesso" title={title} body={body} actions={actions} />
+  );
+}
+
+export function BlockedState({
+  title = "Falta um passo",
+  body = "Precisamos de um pouco mais de contexto para continuar.",
+  ctaLabel = "Continuar",
+  ctaTarget = "/app/onboarding",
+  secondaryCtaLabel,
+  secondaryCtaTarget,
+}: {
+  title?: string;
+  body?: string;
+  ctaLabel?: string;
+  ctaTarget?: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaTarget?: string;
+}) {
+  const actions: StateAction[] = [{ label: ctaLabel, target: ctaTarget, variant: "default" }];
+  if (secondaryCtaLabel && secondaryCtaTarget) {
+    actions.push({
+      label: secondaryCtaLabel,
+      target: secondaryCtaTarget,
+      variant: "secondary",
+    });
+  }
+  return <StateCard kicker="Bloqueado" title={title} body={body} actions={actions} />;
+}
+
+export function InsufficientDataState({
+  title = "Sem dados suficientes",
+  body = "Quando tiver mais dados, a gente consegue te orientar melhor.",
+  ctaLabel,
+  ctaTarget,
+}: {
+  title?: string;
+  body?: string;
+  ctaLabel?: string;
+  ctaTarget?: string;
+}) {
+  return <EmptyState title={title} body={body} ctaLabel={ctaLabel} ctaTarget={ctaTarget} />;
+}
+
+export function ConfirmState({
+  title = "Confirmar ação",
+  body = "Revise antes de continuar.",
+  primaryAction,
+  secondaryAction,
+}: {
+  title?: string;
+  body?: string;
+  primaryAction?: React.ReactNode;
+  secondaryAction?: React.ReactNode;
+}) {
+  return (
+    <StateCard kicker="Confirmação" title={title} body={body}>
+      <div className="flex flex-wrap gap-2">
+        {primaryAction ?? null}
+        {secondaryAction ?? null}
       </div>
-    </div>
+    </StateCard>
   );
 }

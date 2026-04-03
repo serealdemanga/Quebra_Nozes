@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
 import type { ProfileContextPayload, ProfileContextStep } from "@/core/data/contracts";
+import { ErrorState, InsufficientDataState, LoadingState } from "@/components/system/SystemState";
 
 export function OnboardingPage() {
   const ds = useDataSources();
@@ -59,10 +60,12 @@ export function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="space-y-2">
-        <p className="ty-caption text-text-secondary">Onboarding</p>
-        <h1 className="ty-h1 font-display">Preparando…</h1>
-        <p className="ty-body text-text-secondary">Sem burocracia.</p>
+      <div className="space-y-4">
+        <header className="space-y-1">
+          <p className="ty-caption text-text-secondary">Onboarding</p>
+          <h1 className="ty-h1 font-display">Preparando</h1>
+        </header>
+        <LoadingState title="Carregando onboarding" body="Sem burocracia." />
       </div>
     );
   }
@@ -77,7 +80,16 @@ export function OnboardingPage() {
         </p>
       </header>
 
-      {error ? <p className="ty-body text-state-error">{error}</p> : null}
+      {error ? (
+        <ErrorState
+          title="Não consegui abrir seu onboarding"
+          body={error}
+          ctaLabel="Tentar de novo"
+          ctaTarget="/app/onboarding"
+          secondaryCtaLabel="Voltar para a Home"
+          secondaryCtaTarget="/app/home"
+        />
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -85,7 +97,12 @@ export function OnboardingPage() {
         </CardHeader>
         <CardContent>
           {!context ? (
-            <p className="ty-body text-text-secondary">Sem dados de contexto.</p>
+            <InsufficientDataState
+              title="Sem dados de contexto"
+              body="Tente novamente. Se persistir, avance para a Home e volte depois."
+              ctaLabel="Recarregar onboarding"
+              ctaTarget="/app/onboarding"
+            />
           ) : (
             <>
               {step === "goal" ? (

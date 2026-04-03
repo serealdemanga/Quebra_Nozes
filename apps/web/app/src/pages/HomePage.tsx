@@ -4,6 +4,11 @@ import { Button } from "@/components/ui/button";
 import { useDataSources } from "@/core/data/react";
 import type { DashboardHomeData } from "@/core/data/contracts";
 import { Link } from "react-router-dom";
+import {
+  BlockedState,
+  ErrorState,
+  LoadingState,
+} from "@/components/system/SystemState";
 
 export function HomePage() {
   const ds = useDataSources();
@@ -40,22 +45,28 @@ export function HomePage() {
         <h1 className="ty-h1 font-display">Seu panorama</h1>
 
         {error ? (
-          <p className="ty-body text-state-error">{error}</p>
+          <ErrorState
+            title="Não consegui abrir sua Home"
+            body={error}
+            ctaLabel="Tentar de novo"
+            ctaTarget="/app/home"
+            secondaryCtaLabel="Ir para o perfil"
+            secondaryCtaTarget="/app/profile"
+          />
         ) : !data ? (
-          <p className="ty-body text-text-secondary">Carregando…</p>
+          <LoadingState
+            title="Carregando Home"
+            body="Estamos montando seu panorama."
+          />
         ) : data.screenState === "redirect_onboarding" ? (
-          <div className="mt-4">
-            <p className="ty-body text-text-secondary">
-              Falta pouco para destravar sua Home.
-            </p>
-            <div className="mt-3">
-              <Button asChild>
-                <Link to={normalizeAppTarget(data.redirectTo)}>
-                  Continuar onboarding
-                </Link>
-              </Button>
-            </div>
-          </div>
+          <BlockedState
+            title="Falta um passo para destravar"
+            body="Complete o onboarding para liberar seus dados e recomendações."
+            ctaLabel="Continuar onboarding"
+            ctaTarget={normalizeAppTarget(data.redirectTo)}
+            secondaryCtaLabel="Ver importação"
+            secondaryCtaTarget="/app/import"
+          />
         ) : (
           <>
             <div className="mt-4 grid gap-3 rounded-lg border border-border-default bg-bg-surface p-4 md:grid-cols-3">

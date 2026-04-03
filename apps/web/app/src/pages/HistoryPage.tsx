@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useDataSources } from "@/core/data/react";
 import type { HistoryTimelineData } from "@/core/data/contracts";
 import { useSearchParams } from "react-router-dom";
+import { EmptyState, ErrorState, LoadingState } from "@/components/system/SystemState";
 
 export function HistoryPage() {
   const ds = useDataSources();
@@ -54,10 +55,18 @@ export function HistoryPage() {
         </div>
       ) : null}
 
-      {error ? <p className="ty-body text-state-error">{error}</p> : null}
-      {!data ? (
-        <p className="ty-body text-text-secondary">Carregando…</p>
-      ) : data.screenState === "redirect_onboarding" ? (
+      {error ? (
+        <ErrorState
+          title="Não consegui abrir seu histórico"
+          body={error}
+          ctaLabel="Tentar de novo"
+          ctaTarget="/app/history"
+        />
+      ) : null}
+
+      {!data && !error ? (
+        <LoadingState title="Carregando histórico" body="Estamos montando sua linha do tempo." />
+      ) : data && data.screenState === "redirect_onboarding" ? (
         <Card>
           <CardHeader>
             <CardTitle>Falta pouco</CardTitle>
@@ -73,23 +82,14 @@ export function HistoryPage() {
             </div>
           </CardContent>
         </Card>
-      ) : data.screenState === "empty" ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Sem histórico ainda</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="ty-body text-text-secondary">{data.emptyState.body}</p>
-            <div className="mt-3">
-              <Button asChild>
-                <Link to={normalizeAppTarget(data.emptyState.target)}>
-                  {data.emptyState.ctaLabel}
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
+      ) : data && data.screenState === "empty" ? (
+        <EmptyState
+          title={data.emptyState.title}
+          body={data.emptyState.body}
+          ctaLabel={data.emptyState.ctaLabel}
+          ctaTarget={normalizeAppTarget(data.emptyState.target)}
+        />
+      ) : data ? (
         <Card>
           <CardHeader>
             <CardTitle>Linha do tempo</CardTitle>
@@ -134,7 +134,7 @@ export function HistoryPage() {
             </ul>
           </CardContent>
         </Card>
-      )}
+      ) : null}
     </div>
   );
 }

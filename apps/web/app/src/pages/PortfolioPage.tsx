@@ -4,6 +4,12 @@ import { useDataSources } from "@/core/data/react";
 import type { PortfolioData } from "@/core/data/contracts";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import {
+  BlockedState,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "@/components/system/SystemState";
 
 export function PortfolioPage() {
   const ds = useDataSources();
@@ -73,22 +79,35 @@ export function PortfolioPage() {
           </div>
 
           {error ? (
-            <p className="ty-body text-state-error">{error}</p>
+            <ErrorState
+              title="Não consegui abrir sua carteira"
+              body={error}
+              ctaLabel="Tentar de novo"
+              ctaTarget="/app/portfolio"
+              secondaryCtaLabel="Ir para a Home"
+              secondaryCtaTarget="/app/home"
+            />
           ) : !data ? (
-            <p className="ty-body text-text-secondary">Carregando…</p>
+            <LoadingState
+              title="Carregando posições"
+              body="Estamos puxando suas posições e agrupando por categoria."
+            />
           ) : data.screenState === "redirect_onboarding" ? (
-            <div className="space-y-2">
-              <p className="ty-body text-text-secondary">
-                Complete seu contexto para destravar.
-              </p>
-              <Button asChild>
-                <Link to={normalizeAppTarget(data.redirectTo)}>
-                  Continuar onboarding
-                </Link>
-              </Button>
-            </div>
+            <BlockedState
+              title="Falta um passo para destravar"
+              body="Complete o onboarding para liberar sua visão de carteira."
+              ctaLabel="Continuar onboarding"
+              ctaTarget={normalizeAppTarget(data.redirectTo)}
+              secondaryCtaLabel="Ver importação"
+              secondaryCtaTarget="/app/import"
+            />
           ) : data.screenState === "empty" ? (
-            <p className="ty-body text-text-secondary">{data.emptyState.body}</p>
+            <EmptyState
+              title={data.emptyState.title}
+              body={data.emptyState.body}
+              ctaLabel={data.emptyState.ctaLabel}
+              ctaTarget={normalizeAppTarget(data.emptyState.target)}
+            />
           ) : (
             <div className="space-y-4">
               {data.groups.map((g) => (

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
 import type { AnalysisData } from "@/core/data/contracts";
+import { ErrorState, LoadingState } from "@/components/system/SystemState";
 
 export function RadarPage() {
   const ds = useDataSources();
@@ -43,10 +44,18 @@ export function RadarPage() {
         </p>
       </header>
 
-      {error ? <p className="ty-body text-state-error">{error}</p> : null}
-      {!data ? (
-        <p className="ty-body text-text-secondary">Carregando…</p>
-      ) : data.screenState === "redirect_onboarding" ? (
+      {error ? (
+        <ErrorState
+          title="Não consegui abrir o Radar"
+          body={error}
+          ctaLabel="Tentar de novo"
+          ctaTarget="/app/radar"
+        />
+      ) : null}
+
+      {!data && !error ? (
+        <LoadingState title="Carregando Radar" body="Estamos buscando sua análise." />
+      ) : data && data.screenState === "redirect_onboarding" ? (
         <Card>
           <CardHeader>
             <CardTitle>Falta pouco</CardTitle>
@@ -62,7 +71,7 @@ export function RadarPage() {
             </div>
           </CardContent>
         </Card>
-      ) : data.screenState === "pending" ? (
+      ) : data && data.screenState === "pending" ? (
         <Card>
           <CardHeader>
             <CardTitle>Gerando sua análise</CardTitle>
@@ -71,7 +80,7 @@ export function RadarPage() {
             <p className="ty-body text-text-secondary">{data.pendingState.body}</p>
           </CardContent>
         </Card>
-      ) : (
+      ) : data ? (
         <>
           <Card>
             <CardHeader>
@@ -139,7 +148,7 @@ export function RadarPage() {
             </Card>
           ) : null}
         </>
-      )}
+      ) : null}
     </div>
   );
 }

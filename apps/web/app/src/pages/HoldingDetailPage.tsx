@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
 import type { HoldingDetailData } from "@/core/data/contracts";
+import { ErrorState, LoadingState } from "@/components/system/SystemState";
 
 export function HoldingDetailPage() {
   const { portfolioId, holdingId } = useParams();
@@ -46,10 +47,18 @@ export function HoldingDetailPage() {
         </Button>
       </header>
 
-      {error ? <p className="ty-body text-state-error">{error}</p> : null}
-      {!data ? (
-        <p className="ty-body text-text-secondary">Carregando…</p>
-      ) : data.screenState === "redirect_onboarding" ? (
+      {error ? (
+        <ErrorState
+          title="Não consegui abrir o detalhe"
+          body={error}
+          ctaLabel="Voltar"
+          ctaTarget="/app/portfolio"
+        />
+      ) : null}
+
+      {!data && !error ? (
+        <LoadingState title="Carregando detalhe" body="Só um instante." />
+      ) : data && data.screenState === "redirect_onboarding" ? (
         <Card>
           <CardHeader>
             <CardTitle>Falta pouco</CardTitle>
@@ -65,7 +74,7 @@ export function HoldingDetailPage() {
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : data ? (
         <div className="grid gap-3 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -119,7 +128,7 @@ export function HoldingDetailPage() {
             </CardContent>
           </Card>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -137,4 +146,3 @@ function formatMoney(v: number) {
     maximumFractionDigits: 2,
   }).format(v);
 }
-
