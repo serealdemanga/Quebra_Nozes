@@ -6,6 +6,7 @@ import { useDataSources } from "@/core/data/react";
 import type { ImportPreviewData } from "@/core/data/contracts";
 import { ErrorState, LoadingState } from "@/components/system/SystemState";
 import { useNavigate } from "react-router-dom";
+import type { ImportEngineStatusData } from "@/core/data/contracts";
 
 export function ImportPreviewPage() {
   const { importId } = useParams();
@@ -14,6 +15,7 @@ export function ImportPreviewPage() {
   const [data, setData] = React.useState<ImportPreviewData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [committing, setCommitting] = React.useState(false);
+  const [ops, setOps] = React.useState<ImportEngineStatusData | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -30,6 +32,24 @@ export function ImportPreviewPage() {
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : "Falha ao carregar.");
+      }
+    }
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [ds, importId]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (!importId) return;
+      try {
+        const res = await ds.imports.getEngineStatus({ importId });
+        if (cancelled) return;
+        if (res.ok) setOps(res.data);
+      } catch {
+        // operacional nao deve quebrar o preview
       }
     }
     void run();
@@ -91,6 +111,35 @@ export function ImportPreviewPage() {
         <LoadingState title="Gerando preview" body="Estamos preparando as linhas para você revisar." />
       ) : data ? (
         <>
+          {ops && (ops as any).screenState === "ready" ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Status operacional</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="ty-body">
+                  {(ops as any).engineStatus?.label ?? "Status disponível"}
+                </p>
+                <p className="ty-caption text-text-secondary">
+                  Baixa confiança: {(ops as any).summary?.lowConfidenceRows ?? 0} • Duplicadas:{" "}
+                  {(ops as any).summary?.duplicateRows ?? 0} • Inválidas: {(ops as any).summary?.invalidRows ?? 0}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button asChild size="sm" variant="secondary">
+                    <Link to={`/app/import/${encodeURIComponent(data.importId)}/ops`}>
+                      Ver status
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" variant="secondary">
+                    <Link to={`/app/import/${encodeURIComponent(data.importId)}/detail`}>
+                      Ver detalhe operacional
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
           <Card>
             <CardHeader>
               <CardTitle>Totais</CardTitle>

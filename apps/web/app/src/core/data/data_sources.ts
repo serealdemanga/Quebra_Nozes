@@ -13,6 +13,8 @@ import type {
   ApiImportStartEnvelope,
   ApiImportPreviewEnvelope,
   ApiImportCommitEnvelope,
+  ApiImportEngineStatusEnvelope,
+  ApiImportDetailEnvelope,
 } from "./contracts";
 
 export interface AnalysisDataSource {
@@ -49,6 +51,8 @@ export interface ProfileDataSource {
 export interface ImportsDataSource {
   startImport(input?: { payload?: Record<string, unknown> }): Promise<ApiImportStartEnvelope>;
   getPreview(input: { importId: string }): Promise<ApiImportPreviewEnvelope>;
+  getEngineStatus(input: { importId: string }): Promise<ApiImportEngineStatusEnvelope>;
+  getImportDetail(input: { importId: string }): Promise<ApiImportDetailEnvelope>;
   commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope>;
 }
 

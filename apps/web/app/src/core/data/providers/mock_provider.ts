@@ -14,6 +14,8 @@ import type {
   ApiImportStartEnvelope,
   ApiImportPreviewEnvelope,
   ApiImportCommitEnvelope,
+  ApiImportEngineStatusEnvelope,
+  ApiImportDetailEnvelope,
 } from "../contracts";
 import type { JsonLoader } from "../types";
 
@@ -105,6 +107,23 @@ export function createMockDataSources(options: MockProviderOptions): AppDataSour
           ...preview,
           data: { ...preview.data, importId: input.importId },
         };
+      },
+      async getEngineStatus(input: { importId: string }): Promise<ApiImportEngineStatusEnvelope> {
+        const status = await loader.load<ApiImportEngineStatusEnvelope>(`${basePath}/imports_engine_status.json`);
+        if (!status.ok) return status;
+        // Inject importId when needed
+        if (status.data && (status.data as any).screenState === "ready") {
+          return { ...status, data: { ...(status.data as any), importId: input.importId } };
+        }
+        return status;
+      },
+      async getImportDetail(input: { importId: string }): Promise<ApiImportDetailEnvelope> {
+        const detail = await loader.load<ApiImportDetailEnvelope>(`${basePath}/imports_detail.json`);
+        if (!detail.ok) return detail;
+        if (detail.data && (detail.data as any).screenState === "ready") {
+          return { ...detail, data: { ...(detail.data as any), importId: input.importId } };
+        }
+        return detail;
       },
       async commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope> {
         const commit = await loader.load<ApiImportCommitEnvelope>(`${basePath}/imports_commit.json`);

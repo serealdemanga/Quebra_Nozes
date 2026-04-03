@@ -14,6 +14,8 @@ import type {
   ApiImportStartEnvelope,
   ApiImportPreviewEnvelope,
   ApiImportCommitEnvelope,
+  ApiImportEngineStatusEnvelope,
+  ApiImportDetailEnvelope,
 } from "../contracts";
 
 export interface HttpProviderOptions {
@@ -95,6 +97,18 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
         return await fetchJson<ApiImportPreviewEnvelope>(
           fetchImpl,
           `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/preview`,
+        );
+      },
+      async getEngineStatus(input: { importId: string }): Promise<ApiImportEngineStatusEnvelope> {
+        return await fetchJson<ApiImportEngineStatusEnvelope>(
+          fetchImpl,
+          `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/engine-status`,
+        );
+      },
+      async getImportDetail(input: { importId: string }): Promise<ApiImportDetailEnvelope> {
+        return await fetchJson<ApiImportDetailEnvelope>(
+          fetchImpl,
+          `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/detail`,
         );
       },
       async commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope> {

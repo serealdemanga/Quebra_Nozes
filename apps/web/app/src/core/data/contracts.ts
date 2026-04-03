@@ -438,3 +438,86 @@ export type ImportCommitData = {
 };
 
 export type ApiImportCommitEnvelope = ApiEnvelope<ImportCommitData>;
+
+// ===== Import ops (engine status) =====
+
+export type ImportEngineStatusData = ScreenStateRedirect | {
+  screenState: "ready";
+  importId: string;
+  origin: string;
+  importStatus: string;
+  engineStatus: {
+    status: string;
+    label: string;
+    readyForReview: boolean;
+    readyToCommit: boolean;
+  };
+  document: {
+    parserMode: string;
+    confidence: number;
+    importable: boolean;
+  };
+  summary: {
+    totalRows: number;
+    processedRows: number;
+    validRows: number;
+    invalidRows: number;
+    duplicateRows: number;
+    lowConfidenceRows: number;
+    blockedRows: number;
+    failedRows: number;
+    fallbackRows: number;
+    manualDecisionRows: number;
+    aiAssistedRows: number;
+  };
+  states: Record<string, boolean>;
+  targets: {
+    preview: string;
+    detail: string;
+    conflicts: string | null;
+    commit: string | null;
+  };
+};
+
+export type ApiImportEngineStatusEnvelope = ApiEnvelope<ImportEngineStatusData>;
+
+// ===== Import ops detail =====
+
+export type ImportDetailRow = {
+  rowId: string;
+  rowNumber: number;
+  resolutionStatus: string;
+  errorMessage: string | null;
+  source: Record<string, unknown>;
+  normalized: Record<string, unknown>;
+  fieldSources: Record<string, unknown>;
+  fieldConfidences: Record<string, unknown>;
+  lowConfidenceFields: Array<{ field: string; confidence: number; source: string }>;
+  warnings: string[];
+  reviewMeta: Record<string, unknown>;
+  documentMeta: Record<string, unknown>;
+  duplicateCandidates: unknown[];
+  operationalFlags: {
+    hasError: boolean;
+    hasConflict: boolean;
+    hasLowConfidence: boolean;
+    usedFallback: boolean;
+    usedAi: boolean;
+    usedManualDecision: boolean;
+    nonImportable: boolean;
+  };
+  decision: { code: string; label: string; origin: string; details: string };
+};
+
+export type ImportDetailData = ScreenStateRedirect | {
+  screenState: "ready";
+  importId: string;
+  importMeta: Record<string, unknown>;
+  operationalSummary: Record<string, unknown>;
+  issueSummary: Record<string, unknown>;
+  decisionSummary: Record<string, unknown>;
+  snapshot: null | { id: string; referenceDate: string; target: string };
+  rows: ImportDetailRow[];
+};
+
+export type ApiImportDetailEnvelope = ApiEnvelope<ImportDetailData>;
