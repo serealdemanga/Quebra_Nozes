@@ -76,7 +76,10 @@ async function tryOpenAi(apiKey: string, prompt: string, maxTokens: number): Pro
       }),
       signal: controller.signal
     });
-    if (!res.ok) throw new Error(`openai_http_${res.status}`);
+    if (!res.ok) {
+      const detail = await safeResponseMessage(res);
+      throw new Error(detail ? `openai_http_${res.status}:${detail}` : `openai_http_${res.status}`);
+    }
     const data = (await res.json()) as any;
     const direct = typeof data.output_text === 'string' ? data.output_text : '';
     if (direct.trim()) return direct.trim();
@@ -96,29 +99,57 @@ async function tryOpenAi(apiKey: string, prompt: string, maxTokens: number): Pro
 }
 
 async function tryGemini(apiKey: string, prompt: string, maxTokens: number): Promise<string> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
-  try {
-    const model = 'gemini-1.5-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: maxTokens, temperature: 0.4 }
-      }),
-      signal: controller.signal
-    });
-    if (!res.ok) throw new Error(`gemini_http_${res.status}`);
-    const data = (await res.json()) as any;
-    const candidates = Array.isArray(data.candidates) ? data.candidates : [];
-    const parts = candidates[0]?.content?.parts;
-    if (Array.isArray(parts) && typeof parts[0]?.text === 'string') return String(parts[0].text).trim();
-    return '';
-  } finally {
-    clearTimeout(timeout);
+  const tries = [
+    { api: 'v1', model: 'gemini-1.5-flash' },
+    { api: 'v1beta', model: 'gemini-1.5-flash' },
+    { api: 'v1', model: 'gemini-1.5-flash-latest' },
+    { api: 'v1beta', model: 'gemini-1.5-flash-latest' },
+    { api: 'v1', model: 'gemini-2.0-flash' },
+    { api: 'v1beta', model: 'gemini-2.0-flash' }
+  ] as const;
+
+  let lastError: unknown = null;
+  for (const entry of tries) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20_000);
+    try {
+      const url = `https://generativelanguage.googleapis.com/${entry.api}/models/${encodeURIComponent(entry.model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.4 }
+        }),
+        signal: controller.signal
+      });
+
+      if (!res.ok) {
+        const detail = await safeResponseMessage(res);
+        // 404 aqui pode ser endpoint/modelo; tentamos proximo.
+        if (res.status === 404) {
+          lastError = new Error(detail ? `gemini_http_404:${detail}` : 'gemini_http_404');
+          continue;
+        }
+        throw new Error(detail ? `gemini_http_${res.status}:${detail}` : `gemini_http_${res.status}`);
+      }
+
+      const data = (await res.json()) as any;
+      const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+      const parts = candidates[0]?.content?.parts;
+      if (Array.isArray(parts) && typeof parts[0]?.text === 'string') return String(parts[0].text).trim();
+      return '';
+    } catch (error) {
+      lastError = error;
+      // Erros diferentes de 404 (ex: 401/403/429) nao vao melhorar com outro modelo.
+      const msg = error instanceof Error ? error.message : String(error);
+      if (!String(msg).includes('gemini_http_404')) throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
+
+  throw lastError || new Error('gemini_http_404');
 }
 
 function toDiag(provider: 'openai' | 'gemini', error: unknown): string {
@@ -128,5 +159,20 @@ function toDiag(provider: 'openai' | 'gemini', error: unknown): string {
     return `${provider}_error`;
   }
   return `${provider}_error_${String(error).slice(0, 120)}`;
+}
+
+async function safeResponseMessage(res: Response): Promise<string> {
+  try {
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = (await res.json()) as any;
+      const msg = data?.error?.message || data?.message || '';
+      return typeof msg === 'string' ? msg.trim().slice(0, 160) : '';
+    }
+    const text = await res.text();
+    return String(text || '').trim().slice(0, 160);
+  } catch {
+    return '';
+  }
 }
 
