@@ -9,6 +9,7 @@ export function RadarPage() {
   const ds = useDataSources();
   const [data, setData] = React.useState<AnalysisData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [showPlan, setShowPlan] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -111,21 +112,32 @@ export function RadarPage() {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Plano</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="ty-body text-text-secondary">{data.portfolioDecision}</p>
-              <ul className="mt-3 space-y-2">
-                {data.actionPlan.map((x, idx) => (
-                  <li key={idx} className="rounded-md border border-border-default bg-bg-primary p-3">
-                    <p className="ty-body">{x}</p>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          <div>
+            <Button variant="secondary" onClick={() => setShowPlan((v) => !v)}>
+              {showPlan ? "Ocultar plano" : "Ver plano"}
+            </Button>
+          </div>
+
+          {showPlan ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Plano</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="ty-body text-text-secondary">{data.portfolioDecision}</p>
+                <ul className="mt-3 space-y-2">
+                  {data.actionPlan.map((x, idx) => (
+                    <li
+                      key={idx}
+                      className="rounded-md border border-border-default bg-bg-primary p-3"
+                    >
+                      <p className="ty-body">{x}</p>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ) : null}
         </>
       )}
     </div>
@@ -137,4 +149,3 @@ function normalizeAppTarget(target: string) {
   if (target.startsWith("/app/")) return target;
   return `/app${target}`;
 }
-

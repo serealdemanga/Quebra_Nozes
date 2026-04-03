@@ -9,6 +9,7 @@ export function HomePage() {
   const ds = useDataSources();
   const [data, setData] = React.useState<DashboardHomeData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [showDetails, setShowDetails] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -36,7 +37,7 @@ export function HomePage() {
     <div className="space-y-4">
       <section className="rounded-lg border border-border-default bg-bg-primary p-5 shadow-card">
         <p className="ty-caption text-text-secondary">Resumo</p>
-        <h1 className="ty-h1 font-display">Seu panorama financeiro</h1>
+        <h1 className="ty-h1 font-display">Seu panorama</h1>
 
         {error ? (
           <p className="ty-body text-state-error">{error}</p>
@@ -96,56 +97,67 @@ export function HomePage() {
               </Button>
             </div>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Distribuição</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {data.distribution.map((d) => (
-                      <li
-                        key={d.key}
-                        className="flex items-center justify-between gap-3 rounded-md border border-border-default bg-bg-primary p-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="ty-body">{d.label}</p>
-                          <p className="ty-caption text-text-secondary">
-                            {d.sharePct.toFixed(2)}%
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="ty-tabular">{formatMoney(d.value)}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+            <div className="mt-4">
+              <Button
+                variant="secondary"
+                onClick={() => setShowDetails((v) => !v)}
+              >
+                {showDetails ? "Ocultar detalhes" : "Ver detalhes"}
+              </Button>
+            </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {data.insights.length === 0 ? (
-                    <p className="ty-body text-text-secondary">Sem insights por enquanto.</p>
-                  ) : (
+            {showDetails ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Distribuição</CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <ul className="space-y-2">
-                      {data.insights.map((i, idx) => (
+                      {data.distribution.map((d) => (
                         <li
-                          key={`${i.kind}-${idx}`}
-                          className="rounded-md border border-border-default bg-bg-primary p-3"
+                          key={d.key}
+                          className="flex items-center justify-between gap-3 rounded-md border border-border-default bg-bg-primary p-3"
                         >
-                          <p className="ty-body">{i.title}</p>
-                          <p className="ty-caption text-text-secondary">{i.body}</p>
+                          <div className="min-w-0">
+                            <p className="ty-body">{d.label}</p>
+                            <p className="ty-caption text-text-secondary">
+                              {d.sharePct.toFixed(2)}%
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="ty-tabular">{formatMoney(d.value)}</p>
+                          </div>
                         </li>
                       ))}
                     </ul>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Insights</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {data.insights.length === 0 ? (
+                      <p className="ty-body text-text-secondary">Nada urgente por aqui.</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {data.insights.map((i, idx) => (
+                          <li
+                            key={`${i.kind}-${idx}`}
+                            className="rounded-md border border-border-default bg-bg-primary p-3"
+                          >
+                            <p className="ty-body">{i.title}</p>
+                            <p className="ty-caption text-text-secondary">{i.body}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            ) : null}
           </>
         )}
       </section>

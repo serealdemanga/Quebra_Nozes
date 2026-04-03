@@ -71,9 +71,9 @@ export function OnboardingPage() {
     <div className="space-y-4">
       <header className="space-y-1">
         <p className="ty-caption text-text-secondary">Onboarding</p>
-        <h1 className="ty-h1 font-display">Vamos te guiar rápido</h1>
+        <h1 className="ty-h1 font-display">Vamos destravar seu valor</h1>
         <p className="ty-body text-text-secondary">
-          Você pode ajustar depois. O objetivo é destravar valor.
+          Leve e rápido. Você ajusta depois no Perfil.
         </p>
       </header>
 
