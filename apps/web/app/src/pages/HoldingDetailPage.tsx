@@ -3,8 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
-import type { HoldingDetailData } from "@/core/data/contracts";
-import { ErrorState, LoadingState } from "@/components/system/SystemState";
+import type { HoldingDetailData, HoldingDetailDataReady } from "@/core/data/contracts";
+import { BlockedState, ErrorState, LoadingState } from "@/components/system/SystemState";
 
 export function HoldingDetailPage() {
   const { portfolioId, holdingId } = useParams();
@@ -59,21 +59,14 @@ export function HoldingDetailPage() {
       {!data && !error ? (
         <LoadingState title="Carregando detalhe" body="Só um instante." />
       ) : data && data.screenState === "redirect_onboarding" ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Falta pouco</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="ty-body text-text-secondary">
-              Complete seu onboarding para destravar este detalhe.
-            </p>
-            <div className="mt-3">
-              <Button asChild>
-                <Link to={normalizeAppTarget(data.redirectTo)}>Continuar</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <BlockedState
+          title="Falta um passo para destravar"
+          body="Complete o onboarding para ver o detalhe e recomendações deste investimento."
+          ctaLabel="Continuar onboarding"
+          ctaTarget={normalizeAppTarget(data.redirectTo)}
+          secondaryCtaLabel="Voltar para a carteira"
+          secondaryCtaTarget="/app/portfolio"
+        />
       ) : data ? (
         <div className="grid gap-3 md:grid-cols-2">
           <Card>
@@ -100,6 +93,11 @@ export function HoldingDetailPage() {
               <div className="mt-3">
                 <p className="ty-caption text-text-secondary">Recomendação</p>
                 <p className="ty-body">{data.holding.recommendation}</p>
+              </div>
+
+              <div className="mt-4">
+                <p className="ty-caption text-text-secondary">Sinais</p>
+                <SignalsBlock data={data} />
               </div>
             </CardContent>
           </Card>
@@ -145,4 +143,104 @@ function formatMoney(v: number) {
     currency: "BRL",
     maximumFractionDigits: 2,
   }).format(v);
+}
+
+type Signal = { kind: "positive" | "attention"; label: string; body?: string };
+
+function renderSignals(data: HoldingDetailDataReady): Signal[] {
+  const res: Signal[] = [];
+  const h = data.holding;
+
+  const perf = h.performancePct ?? null;
+  if (typeof perf === "number") {
+    if (perf > 0.01) {
+      res.push({
+        kind: "positive",
+        label: "Em alta no seu preço médio",
+        body: `Este investimento está ${perf.toFixed(2)}% acima do seu preço médio.`,
+      });
+    } else if (perf < -0.01) {
+      res.push({
+        kind: "attention",
+        label: "Abaixo do seu preço médio",
+        body: `Este investimento está ${Math.abs(perf).toFixed(2)}% abaixo do seu preço médio.`,
+      });
+    }
+  }
+
+  const alloc = h.allocationPct ?? null;
+  if (typeof alloc === "number") {
+    if (alloc >= 20) {
+      res.push({
+        kind: "attention",
+        label: "Concentração alta",
+        body: `Peso na carteira: ${alloc.toFixed(2)}%.`,
+      });
+    } else if (alloc <= 2 && alloc > 0) {
+      res.push({
+        kind: "positive",
+        label: "Peso controlado",
+        body: `Peso na carteira: ${alloc.toFixed(2)}%.`,
+      });
+    }
+  }
+
+  if (data.ranking.motives.length) {
+    const kind: Signal["kind"] = data.ranking.score >= 70 ? "positive" : "attention";
+    for (const m of data.ranking.motives.slice(0, 4)) {
+      res.push({ kind, label: m });
+    }
+  }
+
+  if (res.length === 0) {
+    res.push({
+      kind: "attention",
+      label: "Sem sinais suficientes",
+      body: "Precisamos de mais dados para indicar sinais com confiança.",
+    });
+  }
+
+  return res;
+}
+
+function SignalsBlock({ data }: { data: HoldingDetailDataReady }) {
+  const signals = renderSignals(data);
+  const positive = signals.filter((s) => s.kind === "positive");
+  const attention = signals.filter((s) => s.kind === "attention");
+
+  return (
+    <div className="mt-2 grid gap-3 md:grid-cols-2">
+      <div className="rounded-md border border-border-default bg-bg-surface p-3">
+        <p className="ty-caption text-text-secondary">Sinais favoráveis</p>
+        {positive.length ? (
+          <ul className="mt-2 space-y-2">
+            {positive.map((s) => (
+              <li key={`p:${s.label}`} className="rounded-md border border-border-default bg-bg-primary p-3">
+                <p className="ty-body">{s.label}</p>
+                {s.body ? <p className="ty-caption text-text-secondary">{s.body}</p> : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 ty-body text-text-secondary">Sem sinais claros por enquanto.</p>
+        )}
+      </div>
+
+      <div className="rounded-md border border-border-default bg-bg-surface p-3">
+        <p className="ty-caption text-text-secondary">Pontos de atenção</p>
+        {attention.length ? (
+          <ul className="mt-2 space-y-2">
+            {attention.map((s) => (
+              <li key={`a:${s.label}`} className="rounded-md border border-border-default bg-bg-primary p-3">
+                <p className="ty-body">{s.label}</p>
+                {s.body ? <p className="ty-caption text-text-secondary">{s.body}</p> : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 ty-body text-text-secondary">Nada crítico identificado.</p>
+        )}
+      </div>
+    </div>
+  );
 }
