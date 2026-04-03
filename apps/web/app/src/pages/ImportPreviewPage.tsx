@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
 import type { ImportPreviewData } from "@/core/data/contracts";
+import { ErrorState, LoadingState } from "@/components/system/SystemState";
+import { useNavigate } from "react-router-dom";
 
 export function ImportPreviewPage() {
   const { importId } = useParams();
   const ds = useDataSources();
+  const nav = useNavigate();
   const [data, setData] = React.useState<ImportPreviewData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [committing, setCommitting] = React.useState(false);
@@ -45,8 +48,7 @@ export function ImportPreviewPage() {
         setError(res.error.message);
         return;
       }
-      // Ainda não temos as telas de histórico; deixamos o caminho claro.
-      setError(`Commit realizado. Próximo passo: ${res.data.nextStep}`);
+      nav(normalizeAppTarget(res.data.nextStep), { replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao commit.");
     } finally {
@@ -66,10 +68,18 @@ export function ImportPreviewPage() {
         </Button>
       </header>
 
-      {error ? <p className="ty-body text-text-secondary">{error}</p> : null}
-      {!data ? (
-        <p className="ty-body text-text-secondary">Carregando…</p>
-      ) : (
+      {error ? (
+        <ErrorState
+          title="Não consegui carregar o preview"
+          body={error}
+          ctaLabel="Voltar"
+          ctaTarget="/app/import"
+        />
+      ) : null}
+
+      {!data && !error ? (
+        <LoadingState title="Gerando preview" body="Estamos preparando as linhas para você revisar." />
+      ) : data ? (
         <>
           <Card>
             <CardHeader>
@@ -115,8 +125,13 @@ export function ImportPreviewPage() {
             </CardContent>
           </Card>
         </>
-      )}
+      ) : null}
     </div>
   );
 }
 
+function normalizeAppTarget(target: string) {
+  if (!target.startsWith("/")) return `/app/${target}`;
+  if (target.startsWith("/app/")) return target;
+  return `/app${target}`;
+}

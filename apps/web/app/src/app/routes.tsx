@@ -36,6 +36,8 @@ export const router = createBrowserRouter([
       // Compat com targets antigos dos contratos/backend
       { path: "imports/entry", element: <ImportStartPage /> },
       { path: "history", element: <HistoryPage /> },
+      // Compat com backend nextStep do commit do import (/history/snapshots)
+      { path: "history/snapshots", element: <HistoryPage /> },
       { path: "radar", element: <RadarPage /> },
       { path: "portfolio", element: <PortfolioPage /> },
       {

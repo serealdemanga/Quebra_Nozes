@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
+import { ErrorState } from "@/components/system/SystemState";
 
 export function ImportStartPage() {
   const ds = useDataSources();
@@ -43,7 +44,14 @@ export function ImportStartPage() {
         </p>
       </header>
 
-      {error ? <p className="ty-body text-state-error">{error}</p> : null}
+      {error ? (
+        <ErrorState
+          title="Não consegui gerar o preview"
+          body={error}
+          ctaLabel="Tentar de novo"
+          ctaTarget="/app/import"
+        />
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -72,4 +80,3 @@ export function ImportStartPage() {
     </div>
   );
 }
-
