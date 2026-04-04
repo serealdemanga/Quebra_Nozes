@@ -13,7 +13,7 @@ const SHORT_SESSION_HOURS = 12;
 const REMEMBER_SESSION_DAYS = 30;
 
 export async function registerUser(request: Request, env: Env): Promise<Response> {
-  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const payload = await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const cpf = normalizeCpf(payload.cpf);
   const email = normalizeEmail(payload.email);
   const password = stringValue(payload.password);
@@ -73,7 +73,7 @@ export async function registerUser(request: Request, env: Env): Promise<Response
 }
 
 export async function loginUser(request: Request, env: Env): Promise<Response> {
-  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const payload = await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const identifier = normalizeIdentifier(payload.identifier);
   const password = stringValue(payload.password);
   const rememberDevice = Boolean(payload.rememberDevice);

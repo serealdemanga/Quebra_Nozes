@@ -9,12 +9,18 @@ const AUTH_COOKIE_NAME = 'esquilo_session';
 // Release 0.1: um unico layout CSV v1 (template proprio).
 const ORIGIN_CUSTOM_TEMPLATE = 'CUSTOM_TEMPLATE';
 const ORIGIN_CSV_V1 = 'CSV_V1';
+// Constantes para fluxos futuros (ainda não expostos via rota pública).
+const ORIGIN_MANUAL_ENTRY = 'MANUAL_ENTRY';
+const ORIGIN_B3_CSV = 'B3_CSV';
+const ORIGIN_DOCUMENT_AI_PARSE = 'DOCUMENT_AI_PARSE';
+const IMPORTABLE_DOCUMENT_TYPES = ['extrato_b3', 'extrato_xp', 'extrato_rico', 'nota_corretagem'];
+const B3_REQUIRED_HEADERS = ['codigo', 'produto', 'quantidade', 'preco_medio', 'valor_atual'];
 const VALID_SOURCE_KINDS = ['ACOES', 'FUNDOS', 'PREVIDENCIA'];
 const TEMPLATE_HEADERS = ['tipo', 'codigo', 'nome', 'quantidade', 'valor_investido', 'valor_atual', 'categoria', 'observacoes'];
 const COMMIT_ALLOWED_STATUSES = ['NORMALIZED', 'RESOLVED_REPLACE', 'RESOLVED_CONSOLIDATE', 'IGNORED'];
 
 export async function startImport(request: Request, env: Env): Promise<Response> {
-  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const payload = await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const origin = typeof payload.origin === 'string' ? payload.origin : '';
   if (origin !== ORIGIN_CUSTOM_TEMPLATE && origin !== ORIGIN_CSV_V1) {
     return fail(
@@ -41,7 +47,7 @@ export async function patchImportPreviewRow(request: Request, env: Env, params: 
   if (importRecord instanceof Response) return importRecord;
   if (importRecord.status === 'COMMITTED') return fail(env.API_VERSION, 'import_already_committed', 'Esta importação já foi commitada.', 409);
 
-  const body = await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const body = await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const fields = typeof body.fields === 'object' && body.fields !== null ? body.fields as Record<string, unknown> : {};
   const rows = await findImportRows(env, params.importId);
   const targetRow = rows.find((row) => row.id === params.rowId);
@@ -114,7 +120,7 @@ export async function postImportResolveDuplicate(request: Request, env: Env, par
   if (importRecord instanceof Response) return importRecord;
   if (importRecord.status === 'COMMITTED') return fail(env.API_VERSION, 'import_already_committed', 'Esta importação já foi commitada.', 409);
 
-  const body = await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const body = await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const action = String(body.action || '');
   if (!['keep_current', 'replace_existing', 'consolidate', 'ignore_import'].includes(action)) {
     return fail(env.API_VERSION, 'invalid_duplicate_action', 'Ação de duplicidade inválida.', 400);
@@ -185,7 +191,7 @@ async function startManualImportWithPayload(request: Request, env: Env, payload:
 async function startCustomTemplateImport(request: Request, env: Env, payload?: Record<string, unknown>): Promise<Response> {
   const session = await requireImportSession(request, env);
   if (session instanceof Response) return session;
-  const body = payload || await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const body = payload || await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const csvContent = typeof body.csvContent === 'string' ? body.csvContent : '';
   const fileName = normalizeText(body.fileName);
   const mimeType = normalizeText(body.mimeType);
@@ -210,7 +216,7 @@ async function startCustomTemplateImport(request: Request, env: Env, payload?: R
 async function startB3CsvImport(request: Request, env: Env, payload?: Record<string, unknown>): Promise<Response> {
   const session = await requireImportSession(request, env);
   if (session instanceof Response) return session;
-  const body = payload || await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const body = payload || await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const csvContent = typeof body.csvContent === 'string' ? body.csvContent : '';
   const fileName = normalizeText(body.fileName);
   const mimeType = normalizeText(body.mimeType);
@@ -236,7 +242,7 @@ async function startB3CsvImport(request: Request, env: Env, payload?: Record<str
 async function startDocumentAiImport(request: Request, env: Env, payload?: Record<string, unknown>): Promise<Response> {
   const session = await requireImportSession(request, env);
   if (session instanceof Response) return session;
-  const body = payload || await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const body = payload || await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const fileName = normalizeText(body.fileName);
   const mimeType = normalizeText(body.mimeType);
   const documentType = normalizeText(body.documentType);

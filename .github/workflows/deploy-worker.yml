@@ -97,6 +97,14 @@ jobs:
 
       # Cria o .env do frontend para que VITE_API_BASE_URL seja embutido no build.
       # O secret VITE_API_BASE_URL deve conter a URL do Worker para cada environment.
+      - name: Validate web app secrets
+        run: |
+          set -euo pipefail
+          if [ -z "${{ secrets.VITE_API_BASE_URL }}" ]; then
+            echo "Missing secret: VITE_API_BASE_URL." >&2
+            exit 1
+          fi
+
       - name: Create web app .env
         run: |
           printf 'VITE_API_BASE_URL=%s\nVITE_APP_ENV=%s\nVITE_DATA_SOURCE_MODE=http\n' \

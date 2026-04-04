@@ -4,6 +4,10 @@ export interface Env {
   ASSETS?: Fetcher;
   APP_ENV: string;
   API_VERSION: string;
+  // Origens permitidas para CORS (separadas por vírgula).
+  // Em produção/hml, a SPA é servida pelo mesmo Worker (mesma origem), portanto
+  // só é necessário configurar para dev local ou clientes externos.
+  CORS_ALLOWED_ORIGINS?: string;
   APPS_SCRIPT_RECOVERY_URL?: string;
   APPS_SCRIPT_RECOVERY_SECRET?: string;
   OPENAI_API_KEY?: string;
