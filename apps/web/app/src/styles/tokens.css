@@ -1,25 +1,30 @@
 :root {
-  /* BrandBook: cores */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f0eb;
-  --bg-surface: #efe7dc;
-  --bg-inverse: #0b1218;
+  /* ── Fundos ────────────────────────────────────────────────────────────── */
+  --bg-primary:   #061018;   /* fundo principal da página                    */
+  --bg-secondary: #0C1823;   /* cards, painéis, superfícies elevadas         */
+  --bg-surface:   #112130;   /* superfícies de terceiro nível (hover, input) */
+  --bg-inverse:   #EFF5F7;   /* fundo inverso (textos sobre claro)           */
 
-  --text-primary: #0b1218;
-  --text-secondary: #4a5a6a;
-  --text-disabled: #bcc8d4;
+  /* ── Texto ─────────────────────────────────────────────────────────────── */
+  --text-primary:   #EFF5F7; /* texto principal                              */
+  --text-secondary: #9DB1BC; /* texto de apoio, labels, metadados            */
+  --text-disabled:  #3d5060; /* texto desabilitado                           */
 
-  --brand-primary: #f56a2a;
+  /* ── Marca ─────────────────────────────────────────────────────────────── */
+  --brand-primary: #56D5DE;  /* ciano — clareza, ação primária               */
+  --brand-accent:  #F7B955;  /* âmbar — destaque, ação secundária            */
 
-  --state-success: #6fcf97;
-  --state-warning: #f2b544;
-  --state-error: #e85c5c;
+  /* ── Estados ───────────────────────────────────────────────────────────── */
+  --state-success: #7ED9A3;  /* positivo                                     */
+  --state-warning: #F7B955;  /* atenção                                      */
+  --state-error:   #FF6B6B;  /* erro / alerta crítico                        */
 
-  --border-default: #e2ddd8;
+  /* ── Borda ─────────────────────────────────────────────────────────────── */
+  --border-default: rgba(239, 245, 247, 0.08); /* sutil sobre fundo escuro   */
+  --border-focus:   #56D5DE;                    /* foco / seleção ativa       */
 
-  /* Shape */
+  /* ── Shape ─────────────────────────────────────────────────────────────── */
   --radius-lg: 16px;
   --radius-md: 12px;
-  --radius-sm: 10px;
+  --radius-sm: 8px;
 }
-
