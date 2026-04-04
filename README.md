@@ -32,7 +32,11 @@ O legado serve como origem de contexto.
 O código novo deve nascer orientado a Cloudflare + D1.
 
 ## Estado real resumido
-- `apps/web` hoje concentra prototipos, wireframes e mocks; nao e um app integrado
-- `services/api` hoje e contratual e documental; nao e a API executavel
-- `04_STARTER_BACKEND/esquilo_cloudflare_d1_starter` e a area com backend mais vivo
-- `backend/modules` contem regras reais de dominio, mas ainda sem runtime oficial unico
+
+- `apps/web` hoje concentra protótipos, wireframes e mocks em `prototypes/` e `wireframes/`; o código em `src/` é scaffolding inicial, não é um app integrado
+- `apps/mobile` não tem implementação — apenas README de intenção
+- `services/api` é **documental e contratual** — não é a API executável
+- `04_STARTER_BACKEND/esquilo_cloudflare_d1_starter` é o **único runtime ativo** do backend
+- `backend/modules` contém regras reais de domínio, mas ainda sem runtime oficial único — referência para absorção futura pelo worker
+
+> Para rodar o backend: veja `04_STARTER_BACKEND/esquilo_cloudflare_d1_starter/ENVIRONMENTS.md`

@@ -26,3 +26,6 @@ Thumbs.db
 # Local tooling scratch
 tooling/_tmp/
 tooling/branding_deck_build/
+
+# Arquivos gerados por acidente (ex: git branch > tatus)
+tatus

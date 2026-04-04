@@ -14,8 +14,13 @@ npm install
 ## Regra desta fase
 
 - sempre executar com `--env local|hml|production`
-- os IDs reais do D1 nao ficam no codigo: ficam no `wrangler.toml`
-- secrets nao ficam em arquivo: usar `wrangler secret put` por ambiente
+- os IDs reais do D1 **não ficam commitados**: preencher `REPLACE_WITH_*` no `wrangler.toml` localmente e **não commitar** essa mudança
+- em CI/CD, passar os IDs via variável de ambiente ou secret do pipeline
+- secrets não ficam em arquivo: usar `wrangler secret put` por ambiente
+
+> ⚠️ O `database_id` de produção foi removido do `wrangler.toml` por segurança.
+> Preencha `REPLACE_WITH_PROD_D1_DATABASE_ID` localmente antes de fazer deploy.
+> O ID pode ser obtido em: Cloudflare Dashboard → Workers & Pages → D1.
 
 ## O que voce precisa configurar
 

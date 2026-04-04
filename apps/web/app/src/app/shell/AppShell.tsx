@@ -1,14 +1,18 @@
-import React from "react";
-import { NavLink, Outlet } from "react-router-dom";
-import { useLocation, useNavigation } from "react-router-dom";
+import * as React from "react";
+import { NavLink, Outlet, Link, useLocation, useNavigation } from "react-router-dom";
 import { useAppStore } from "@/core/state/app_store";
 import { Logo } from "@/components/brand/Logo";
 import { Icon, type IconName } from "@/components/brand/Icon";
+import { useGhostMode } from "@/core/contexts/GhostModeContext";
+import { EyeIcon, EyeOffIcon } from "@/components/system/Icons";
+import { PWAInstallNudge } from "@/components/system/PWAInstallNudge";
+import { GlobalErrorModal } from "@/components/system/GlobalErrorModal";
 
 export function AppShell({ children }: { children?: React.ReactNode }) {
   const store = useAppStore();
   const location = useLocation();
   const navigation = useNavigation();
+  const { isGhostMode, toggle: toggleGhost } = useGhostMode();
   const isNavigating = navigation.state !== "idle";
 
   React.useEffect(() => {
@@ -16,37 +20,49 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
   }, [location.pathname, store]);
 
   return (
-    <div className="min-h-dvh bg-bg-secondary text-text-primary">
+    <div className="min-h-dvh bg-bg-primary text-text-primary flex flex-col">
       {isNavigating ? <NavigationProgress /> : null}
-      <header className="sticky top-0 z-10 border-b border-border-default bg-bg-primary">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Logo className="h-6 w-auto text-text-primary" />
+      <PWAInstallNudge />
+      
+      <header className="sticky top-0 z-[60] border-b border-border-default/50 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 h-20">
+          <div className="flex items-center gap-8">
+            <Link to="/app/home" className="transition-transform active:scale-95">
+              <Logo kind="simbolo" className="h-10 w-auto md:hidden" />
+              <Logo kind="horizontal" className="h-8 w-auto hidden md:block" />
+            </Link>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-1 bg-bg-secondary p-1.5 rounded-2xl border border-border-default/50 shadow-inner">
+              <TopLink to="/app/home" end icon="home" filledIcon="home-filled">Resumo</TopLink>
+              <TopLink to="/app/portfolio" icon="carteira" filledIcon="carteira-filled">Carteira</TopLink>
+              <TopLink to="/app/radar" icon="radar">Radar</TopLink>
+              <TopLink to="/app/history" icon="historico">Histórico</TopLink>
+            </nav>
           </div>
-          <nav className="flex max-w-full items-center gap-1 overflow-x-auto whitespace-nowrap rounded-md bg-bg-surface p-1">
-            <TopLink to="/app/home" end icon="home" filledIcon="home-filled">
-              Home
-            </TopLink>
-            <TopLink to="/app/import" icon="importar">
-              Importar
-            </TopLink>
-            <TopLink to="/app/portfolio" icon="carteira" filledIcon="carteira-filled">
-              Carteira
-            </TopLink>
-            <TopLink to="/app/history" icon="historico">
-              Histórico
-            </TopLink>
-            <TopLink to="/app/radar" icon="radar">
-              Radar
-            </TopLink>
-            <TopLink to="/app/profile" icon="perfil" filledIcon="perfil-filled">
-              Perfil
-            </TopLink>
-          </nav>
+
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={toggleGhost}
+              className="p-3 rounded-2xl hover:bg-bg-secondary text-text-secondary hover:text-brand-primary transition-all border border-transparent hover:border-border-default/50"
+              title="Modo Fantasma"
+            >
+              {isGhostMode ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+            </button>
+            
+            <div className="h-8 w-px bg-border-default mx-2 hidden md:block" />
+            
+            <NavLink to="/app/profile" className={({ isActive }) => `flex items-center gap-3 p-2 pl-4 pr-3 rounded-2xl border transition-all ${isActive ? 'bg-brand-primary/5 border-brand-primary text-brand-primary' : 'border-border-default hover:bg-bg-secondary'}`}>
+               <span className="text-[13px] font-bold hidden lg:block">Meu Cofre</span>
+               <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center">
+                  <Icon name="perfil" className="w-4 h-4" />
+               </div>
+            </NavLink>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl px-4 py-6">
+      <main className="flex-1 overflow-x-hidden animate-fluid-in">
         {children ?? <Outlet />}
       </main>
     </div>

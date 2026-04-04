@@ -59,25 +59,37 @@ export function AuthedAppShell() {
 
   if (state.kind === "loading") {
     return (
-      <div className="min-h-dvh bg-bg-secondary text-text-primary">
-        <div className="mx-auto w-full max-w-5xl px-4 py-10">
-          <LoadingState title="Validando sua sessão" body="Só um instante." />
-        </div>
+      <div className="min-h-dvh bg-bg-secondary text-text-primary px-4 py-10 flex items-center justify-center">
+        <LoadingState title="Validando sua sessão" body="Só um instante." />
       </div>
     );
   }
 
   if (state.kind === "error") {
+    // Dispara o modal caso ainda não esteja aberto (evita loops se renderizar de novo)
+    const currentStore = store.getState();
+    if (!currentStore.ui.errorModal.isOpen) {
+      store.setState((s) => ({
+        ...s,
+        ui: {
+          ...s.ui,
+          errorModal: {
+            isOpen: true,
+            title: "Não consegui validar sua sessão",
+            body: state.message,
+            ctaLabel: "Ir para login",
+            ctaTarget: "/login",
+          },
+        },
+      }));
+    }
+
     return (
-      <div className="min-h-dvh bg-bg-secondary text-text-primary">
-        <div className="mx-auto w-full max-w-5xl px-4 py-10">
-          <ErrorState
-            title="Não consegui validar sua sessão"
-            body={state.message}
-            ctaLabel="Ir para login"
-            ctaTarget="/login"
-          />
-        </div>
+      <div className="min-h-dvh bg-bg-secondary text-text-primary flex items-center justify-center p-10">
+         <div className="text-center opacity-50">
+            <p className="text-[14px] font-bold uppercase tracking-widest mb-2">Sessão Suspensa</p>
+            <p className="text-[13px]">Verifique o alerta na tela.</p>
+         </div>
       </div>
     );
   }

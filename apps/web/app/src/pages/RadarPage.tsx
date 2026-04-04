@@ -1,12 +1,14 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDataSources } from "@/core/data/react";
 import type { AnalysisData } from "@/core/data/contracts";
 import { BlockedState, ErrorState, LoadingState } from "@/components/system/SystemState";
+import { BottomNav } from "@/components/system/BottomNav";
+import { useGhostMode } from "@/core/contexts/GhostModeContext";
 
 export function RadarPage() {
+  const { isGhostMode } = useGhostMode();
   const ds = useDataSources();
   const [data, setData] = React.useState<AnalysisData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -25,7 +27,7 @@ export function RadarPage() {
         setData(res.data);
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Falha ao carregar.");
+        setError(e instanceof Error ? e.message : "Vixe, o Radar perdeu o sinal. Tenta de novo?");
       }
     }
     void run();
@@ -35,178 +37,171 @@ export function RadarPage() {
   }, [ds]);
 
   return (
-    <div className="space-y-4">
-      <header className="space-y-1">
-        <p className="ty-caption text-text-secondary">Radar</p>
-        <h1 className="ty-h1 font-display">O que merece atenção</h1>
-        <p className="ty-body text-text-secondary">
-          Tradução do momento e próximo passo, sem economês.
-        </p>
-      </header>
+    <div className="min-h-dvh bg-bg-primary flex flex-col animate-fluid-in">
+      <div className="mx-auto w-full max-w-5xl px-6 py-8 md:py-16 pb-32">
+        <header className="mb-12 border-b border-border-default/50 pb-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <p className="text-[13px] font-bold uppercase tracking-[0.1em] text-text-secondary mb-2">Visão Tática</p>
+              <h1 className="font-display font-bold text-[38px] md:text-[52px] text-text-primary tracking-tighter leading-none">Radar do Esquilo</h1>
+            </div>
+            <Button asChild variant="secondary" className="h-12 px-6 font-bold text-[14px] bg-white border border-border-default shadow-sm hover:bg-bg-secondary">
+              <Link to="/app/portfolio">Ver Toda a Grade</Link>
+            </Button>
+          </div>
+        </header>
 
-      {error ? (
-        <ErrorState
-          title="Não consegui abrir o Radar"
-          body={error}
-          ctaLabel="Tentar de novo"
-          ctaTarget="/app/radar"
-        />
-      ) : null}
+        {error ? (
+          <div className="mt-10">
+            <ErrorState
+              title="Vixe, o Radar saiu do ar"
+              body={error}
+              ctaLabel="Tentar de novo"
+              ctaTarget="/app/radar"
+            />
+          </div>
+        ) : null}
 
-      {!data && !error ? (
-        <LoadingState title="Carregando Radar" body="Estamos buscando sua análise." />
-      ) : data && data.screenState === "redirect_onboarding" ? (
-        <BlockedState
-          title="Falta um passo para destravar"
-          body="Complete seu onboarding para gerar uma leitura coerente da sua carteira."
-          ctaLabel="Continuar onboarding"
-          ctaTarget={normalizeAppTarget(data.redirectTo)}
-          secondaryCtaLabel="Ir para o Perfil"
-          secondaryCtaTarget="/app/profile"
-        />
-      ) : data && data.screenState === "pending" ? (
-        <LoadingState title="Gerando sua análise" body={data.pendingState.body} />
-      ) : data ? (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Score</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="ty-number-hi">
-                {data.score.value}{" "}
-                <span className="ty-caption text-text-secondary">{data.score.status}</span>
-              </p>
-              <p className="ty-body text-text-secondary">{data.score.explanation}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button asChild size="sm" variant="secondary">
-                  <Link to="/app/score">Ver detalhe do score</Link>
-                </Button>
-                <Button asChild size="sm" variant="secondary">
-                  <Link to="/app/profile">Revisar contexto</Link>
+        {!data && !error ? (
+          <div className="mt-10">
+            <LoadingState title="Ajustando as antenas..." body="O Esquilo está farejando as melhores oportunidades para você." />
+          </div>
+        ) : data && data.screenState === "redirect_onboarding" ? (
+          <div className="mt-10">
+            <BlockedState
+              title="Opa, Radar trancado!"
+              body="A gente precisa entender seu perfil para liberar as recomendações certas para você."
+              ctaLabel="Continuar agora"
+              ctaTarget={normalizeAppTarget(data.redirectTo)}
+              secondaryCtaLabel="Ir para o Perfil"
+              secondaryCtaTarget="/app/profile"
+            />
+          </div>
+        ) : data && data.screenState === "pending" ? (
+          <div className="mt-10">
+            <LoadingState title="A IA está fritando os neurônios..." body={data.pendingState.body} />
+          </div>
+        ) : data ? (
+          <div className="flex flex-col gap-16">
+            
+            {/* Score & Resumo (Seal Style) */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-12 py-12 border-y border-border-default/50">
+              <div className="flex items-start gap-8">
+                <div className="relative">
+                  <svg className="w-32 h-32 transform -rotate-90">
+                    <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-border-default" />
+                    <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" 
+                      strokeDasharray={364.4} strokeDashoffset={364.4 - (364.4 * data.score.value) / 100}
+                      className="text-brand-primary transition-all duration-1000 ease-out" 
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center flex-col">
+                    <span className="font-display font-bold text-[32px] text-text-primary leading-none">{isGhostMode ? "••" : data.score.value}</span>
+                    <span className="text-[11px] font-bold text-brand-primary uppercase">Score</span>
+                  </div>
+                </div>
+                <div className="max-w-md">
+                   <h4 className="text-[14px] font-bold text-text-secondary uppercase tracking-widest mb-2 font-display">Status do Analista: <span className="text-brand-primary">{data.score.status}</span></h4>
+                   <p className="text-[17px] text-text-secondary leading-relaxed font-medium italic">"{data.score.explanation}"</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Problem & Action (Cardlessish) */}
+            <div className="grid gap-10 md:grid-cols-2">
+              <div className="p-10 border-l-8 border-state-error bg-state-error/[0.03] rounded-r-2xl shadow-sm">
+                <p className="text-[13px] font-bold text-state-error uppercase tracking-[0.2em] mb-4">Gatilho de Atenção</p>
+                <h3 className="font-display font-bold text-[28px] text-text-primary leading-tight mb-4 tracking-tight">{data.primaryProblem.title}</h3>
+                <p className="text-[16px] text-text-secondary leading-relaxed">{data.primaryProblem.body}</p>
+              </div>
+
+              <div className="p-10 border-l-8 border-brand-primary bg-brand-primary/[0.03] rounded-r-2xl shadow-sm">
+                <p className="text-[13px] font-bold text-brand-primary uppercase tracking-[0.2em] mb-4">Veredito da Célula</p>
+                <h3 className="font-display font-bold text-[28px] text-text-primary leading-tight mb-4 tracking-tight">{data.primaryAction.title}</h3>
+                <p className="text-[16px] text-text-secondary leading-relaxed mb-8">{data.primaryAction.body}</p>
+                <Button asChild className="h-14 px-10 bg-brand-primary hover:bg-[#D95C24] text-white font-bold shadow-lg shadow-brand-primary/20">
+                  <Link to={normalizeAppTarget(data.primaryAction.target)}>
+                    {data.primaryAction.ctaLabel}
+                  </Link>
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Principal problema</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="ty-h3 font-display">{data.primaryProblem.title}</p>
-                <p className="ty-body text-text-secondary">{data.primaryProblem.body}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Próxima ação</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="ty-h3 font-display">{data.primaryAction.title}</p>
-                <p className="ty-body text-text-secondary">{data.primaryAction.body}</p>
-                <div className="mt-3">
-                  <Button asChild>
-                    <Link to={normalizeAppTarget(data.primaryAction.target)}>
-                      {data.primaryAction.ctaLabel}
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Resumo executivo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="ty-body text-text-secondary">{data.summary}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Insights</CardTitle>
-            </CardHeader>
-            <CardContent>
+            {/* Insights List */}
+            <section>
+              <h3 className="font-display font-bold text-[32px] text-text-primary mb-10 tracking-tight">Destaques da Tese</h3>
               {data.insights.length ? (
-                <ul className="space-y-2">
+                <div className="grid gap-6">
                   {[...data.insights]
                     .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
                     .slice(0, 8)
                     .map((i, idx) => (
-                      <li
+                      <div
                         key={`${i.kind}-${idx}`}
-                        className="rounded-md border border-border-default bg-bg-primary p-3"
+                        className="group p-8 bg-white border border-border-default/30 rounded-2xl hover:shadow-xl transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
                       >
-                        <div className="flex flex-wrap items-baseline justify-between gap-2">
-                          <p className="ty-body">{i.title}</p>
-                          <p className="ty-caption text-text-secondary">
-                            {i.severity ? severityLabel(i.severity) : ""}
-                          </p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                             <div className={`w-2 h-2 rounded-full ${i.severity === 'critical' ? 'bg-state-error' : i.severity === 'warning' ? 'bg-[#F2B544]' : 'bg-brand-primary'}`} />
+                             <span className="text-[11px] font-bold text-text-disabled uppercase tracking-widest">{i.severity ? severityLabel(i.severity) : "INFO"}</span>
+                          </div>
+                          <p className="font-bold text-[18px] text-text-primary leading-tight">{i.title}</p>
+                          <p className="text-[15px] text-text-secondary mt-2 leading-relaxed">{i.body}</p>
                         </div>
-                        <p className="ty-caption text-text-secondary">{i.body}</p>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Button asChild size="sm" variant="secondary">
-                            <Link to={`/app/alerts/${encodeURIComponent(buildAlertId(data.analysisId, idx))}`}>
-                              Ver detalhe
-                            </Link>
+                        <div className="flex gap-3">
+                          <Button asChild variant="secondary" className="h-10 px-6 font-bold text-[13px] bg-bg-secondary hover:bg-border-default">
+                            <Link to={`/app/alerts/${encodeURIComponent(buildAlertId(data.analysisId, idx))}`}>Dossiê</Link>
                           </Button>
                           {i.ctaLabel && i.target ? (
-                            <Button asChild size="sm">
+                            <Button asChild className="h-10 px-6 font-bold text-[13px] bg-brand-primary text-white">
                               <Link to={normalizeAppTarget(i.target)}>{i.ctaLabel}</Link>
                             </Button>
                           ) : null}
                         </div>
-                      </li>
+                      </div>
                     ))}
-                </ul>
+                </div>
               ) : (
-                <div className="rounded-md border border-border-default bg-bg-surface p-3">
-                  <p className="ty-caption text-text-secondary">Sem insights</p>
-                  <p className="ty-body text-text-secondary">
-                    Quando houver sinais suficientes, os insights aparecem aqui.
-                  </p>
-                  <div className="mt-3">
-                    <Button asChild size="sm" variant="secondary">
-                      <Link to="/app/portfolio">Ver carteira</Link>
-                    </Button>
-                  </div>
+                <div className="py-20 text-center border-2 border-dashed border-border-default rounded-3xl opacity-60">
+                  <p className="text-[18px] font-display font-bold text-text-secondary italic">Ué, o Radar ainda não pegou nenhum sinal por aqui.</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </section>
 
-          <div>
-            <Button variant="secondary" onClick={() => setShowPlan((v) => !v)}>
-              {showPlan ? "Ocultar plano" : "Ver plano"}
-            </Button>
+            {/* Ação / Plano Final */}
+            <div className="pt-12 border-t border-border-default/50">
+               <button 
+                 onClick={() => setShowPlan((v) => !v)}
+                 className="flex items-center gap-2 text-brand-primary font-bold hover:underline mb-8"
+               >
+                 {showPlan ? "↓ Recolher Plano Estratégico" : "↑ Expandir Plano Estratégico Completo"}
+               </button>
+
+              {showPlan ? (
+                <div className="bg-white p-10 rounded-2xl border border-border-default/50 shadow-sm animate-in zoom-in-95 duration-200">
+                  <h3 className="font-display font-bold text-[28px] text-text-primary mb-6">Plano de Evolução</h3>
+                  <p className="text-[17px] text-text-secondary leading-relaxed mb-10 border-b border-border-default/30 pb-10 italic">
+                    "{data.portfolioDecision}"
+                  </p>
+                  <ul className="grid gap-6 md:grid-cols-2">
+                    {data.actionPlan.map((x, idx) => (
+                      <li
+                        key={idx}
+                        className="p-6 bg-bg-secondary/40 rounded-xl border border-border-default/20 flex gap-4"
+                      >
+                        <span className="font-display font-bold text-brand-primary text-[18px]">{idx + 1}.</span>
+                        <p className="text-[15px] font-bold text-text-primary leading-snug">{x}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
           </div>
+        ) : null}
+      </div>
 
-          {showPlan ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Plano</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="ty-body text-text-secondary">{data.portfolioDecision}</p>
-                <ul className="mt-3 space-y-2">
-                  {data.actionPlan.map((x, idx) => (
-                    <li
-                      key={idx}
-                      className="rounded-md border border-border-default bg-bg-primary p-3"
-                    >
-                      <p className="ty-body">{x}</p>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          ) : null}
-        </>
-      ) : null}
+      <BottomNav />
     </div>
   );
 }
@@ -222,7 +217,7 @@ function buildAlertId(analysisId: string, index: number) {
 }
 
 function severityLabel(sev: "info" | "warning" | "critical") {
-  if (sev === "critical") return "crítico";
-  if (sev === "warning") return "atenção";
-  return "info";
+  if (sev === "critical") return "Crítico";
+  if (sev === "warning") return "Atenção";
+  return "Info";
 }
