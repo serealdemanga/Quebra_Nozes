@@ -15,7 +15,7 @@ export async function getOperationalEvents(request: Request, env: Env): Promise<
   if (!session || session.revoked_at) return fail(env.API_VERSION, 'unauthorized', 'Sessao invalida.', 401);
 
   const url = new URL(request.url);
-  const limit = Number(url.searchParams.get('limit') || '50') || 50;
+  const limit = Math.min(Number(url.searchParams.get('limit') || '50') || 50, 200);
   const portfolioId = url.searchParams.get('portfolioId');
 
   const events = await getOperationalEventsForUser(env, {

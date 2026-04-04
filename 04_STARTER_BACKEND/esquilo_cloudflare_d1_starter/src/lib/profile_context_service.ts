@@ -37,7 +37,7 @@ export async function putProfileContextForOnboarding(request: Request, env: Env)
   const session = await requireActiveSession(request, env);
   if (session instanceof Response) return session;
 
-  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const payload = await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const context = (payload.context ?? payload) as Record<string, unknown>;
   const onboardingStep = normalizeStep(payload.step ?? context.onboardingStep);
 

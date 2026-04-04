@@ -107,7 +107,7 @@ function mapImportDetailRow(row: {
   const normalized = parseJson(row.normalized_payload_json, {});
   const fieldSources = asRecord(normalized.fieldSources);
   const fieldConfidences = asRecord(normalized.fieldConfidences);
-  const warnings = Array.isArray(normalized.warnings) ? normalized.warnings.map((item) => String(item)) : [];
+  const warnings = Array.isArray(normalized.warnings) ? normalized.warnings.map((item: unknown) => String(item)) : [];
   const reviewMeta = asRecord(normalized.reviewMeta);
   const documentMeta = asRecord(normalized.documentMeta);
   const duplicateCandidates = Array.isArray(normalized.duplicateCandidates) ? normalized.duplicateCandidates : [];

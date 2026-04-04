@@ -6,7 +6,7 @@ import { findRecoveryTargetByIdentifier, createRecoveryRequest, updateRecoveryRe
 const RECOVERY_EXPIRY_MINUTES = 30;
 
 export async function recoverUserViaEmailBridge(request: Request, env: Env): Promise<Response> {
-  const payload = await readJson<Record<string, unknown>>(request).catch(() => ({}));
+  const payload = await readJson<Record<string, unknown>>(request).catch((): Record<string, unknown> => ({}));
   const identifier = normalizeIdentifier(payload.identifier);
 
   if (!identifier) {
