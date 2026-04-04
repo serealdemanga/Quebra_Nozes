@@ -14,23 +14,25 @@ function StateCard({
   body,
   actions,
   children,
+  className = "",
 }: {
   kicker: string;
   title: string;
   body: string;
   actions?: StateAction[];
   children?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border-default bg-bg-primary p-5 shadow-card">
-      <p className="ty-caption text-text-secondary">{kicker}</p>
-      <h2 className="ty-h2 font-display">{title}</h2>
-      <p className="ty-body text-text-secondary">{body}</p>
-      {children ? <div className="mt-3">{children}</div> : null}
+    <div className={`rounded-3xl border border-border-default/50 bg-white p-8 shadow-sm animate-fluid-in ${className}`}>
+      <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-text-secondary mb-3">{kicker}</p>
+      <h2 className="font-display font-bold text-[28px] text-text-primary tracking-tight leading-tight mb-2">{title}</h2>
+      <p className="text-[16px] text-text-secondary leading-relaxed">{body}</p>
+      {children ? <div className="mt-6">{children}</div> : null}
       {actions && actions.length ? (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-8 flex flex-wrap gap-3">
           {actions.map((a) => (
-            <Button key={`${a.target}:${a.label}`} asChild variant={a.variant ?? "default"}>
+            <Button key={`${a.target}:${a.label}`} asChild variant={a.variant ?? "default"} className="h-12 px-6 font-bold rounded-xl">
               <Link to={a.target}>{a.label}</Link>
             </Button>
           ))}
@@ -41,19 +43,30 @@ function StateCard({
 }
 
 export function LoadingState({
-  title = "Carregando",
-  body = "Só um instante.",
+  title = "Só um fôlego...",
+  body = "O Esquilo está correndo para buscar seus dados.",
 }: {
   title?: string;
   body?: string;
 }) {
-  return <StateCard kicker="Aguarde" title={title} body={body} />;
+  return (
+    <div className="flex flex-col items-center justify-center py-20 animate-fluid-in">
+      <div className="w-24 h-24 mb-8 text-brand-primary animate-squirrel-pulse">
+        <svg viewBox="0 0 260 220" fill="currentColor">
+          <path d="M118 78C118 44, 92 20, 58 20C31 20, 12 36, 12 58C29 50, 45 48, 58 50C72 53, 80 63, 80 79C80 96, 71 107, 58 118C48 126, 42 138, 42 152C42 177, 60 196, 84 202C65 197, 51 181, 51 160C51 148, 56 138, 65 131C80 119, 92 104, 92 81C92 68, 88 57, 80 48C95 54, 106 66, 118 78 Z" />
+          <path d="M97 202C77 191, 67 172, 67 149C67 129, 76 111, 92 95L140 47C148 39, 152 29, 152 18C152 9, 158 3, 167 3C175 3, 180 9, 181 17C182 28, 187 37, 197 44C215 56, 228 74, 228 97C228 122, 217 141, 198 154C184 164, 169 169, 152 171L152 183C152 194, 159 202, 170 202L97 202 Z" />
+        </svg>
+      </div>
+      <h3 className="font-display font-bold text-[24px] text-text-primary mb-2">{title}</h3>
+      <p className="text-[16px] text-text-secondary">{body}</p>
+    </div>
+  );
 }
 
 export function ErrorState({
-  title = "Algo não funcionou",
-  body = "Tente novamente em instantes.",
-  ctaLabel = "Voltar",
+  title = "Ih, deu um nó aqui",
+  body = "Não consegui falar com o servidor agora.",
+  ctaLabel = "Tentar de novo",
   ctaTarget = "/app/home",
   secondaryCtaLabel,
   secondaryCtaTarget,
@@ -75,13 +88,13 @@ export function ErrorState({
   }
   const displayBody = humanizeErrorMessage(body);
   return (
-    <StateCard kicker="Erro" title={title} body={displayBody} actions={actions} />
+    <StateCard kicker="Ops!" title={title} body={displayBody} actions={actions} className="border-state-error/20" />
   );
 }
 
 export function EmptyState({
-  title = "Nada por aqui ainda",
-  body = "Quando tiver dados, eles aparecem aqui.",
+  title = "Tudo limpo por aqui",
+  body = "Ainda não encontramos nada para mostrar nessa seção.",
   ctaLabel,
   ctaTarget,
 }: {
@@ -98,8 +111,8 @@ export function EmptyState({
 }
 
 export function SuccessState({
-  title = "Tudo certo",
-  body = "Ação concluída.",
+  title = "Show de bola!",
+  body = "Deu tudo certo com a sua solicitação.",
   ctaLabel,
   ctaTarget,
 }: {
@@ -111,14 +124,14 @@ export function SuccessState({
   const actions =
     ctaLabel && ctaTarget ? ([{ label: ctaLabel, target: ctaTarget }] satisfies StateAction[]) : undefined;
   return (
-    <StateCard kicker="Sucesso" title={title} body={body} actions={actions} />
+    <StateCard kicker="Sucesso" title={title} body={body} actions={actions} className="border-state-success/20" />
   );
 }
 
 export function BlockedState({
-  title = "Falta um passo",
-  body = "Precisamos de um pouco mais de contexto para continuar.",
-  ctaLabel = "Continuar",
+  title = "Calma lá, falta um tiquinho",
+  body = "A gente precisa de mais algumas infos suas para liberar essa parte.",
+  ctaLabel = "Resolver agora",
   ctaTarget = "/app/onboarding",
   secondaryCtaLabel,
   secondaryCtaTarget,
@@ -142,8 +155,8 @@ export function BlockedState({
 }
 
 export function InsufficientDataState({
-  title = "Sem dados suficientes",
-  body = "Quando tiver mais dados, a gente consegue te orientar melhor.",
+  title = "Tá faltando dado na mesa",
+  body = "Com um pouco mais de informação a gente consegue te dar uma visão melhor.",
   ctaLabel,
   ctaTarget,
 }: {
@@ -156,8 +169,8 @@ export function InsufficientDataState({
 }
 
 export function ConfirmState({
-  title = "Confirmar ação",
-  body = "Revise antes de continuar.",
+  title = "Dá uma conferida",
+  body = "Veja se está tudo certinho antes de a gente seguir.",
   primaryAction,
   secondaryAction,
 }: {
@@ -168,7 +181,7 @@ export function ConfirmState({
 }) {
   return (
     <StateCard kicker="Confirmação" title={title} body={body}>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         {primaryAction ?? null}
         {secondaryAction ?? null}
       </div>
@@ -178,9 +191,11 @@ export function ConfirmState({
 
 function humanizeErrorMessage(body: string) {
   const raw = (body ?? "").trim();
-  if (!raw) return "Tente novamente em instantes.";
+  if (!raw) return "Ih, deu um branco no sistema. Tenta recarregar para a gente ver o que houve?";
 
   const s = raw.toLowerCase();
+  
+  // Problemas de Conexão/Rede
   if (
     s.includes("typeerror") ||
     s.includes("failed to fetch") ||
@@ -189,18 +204,29 @@ function humanizeErrorMessage(body: string) {
     s.includes("timeout") ||
     s.includes("fetch")
   ) {
-    return "Não consegui concluir agora. Verifique sua conexão e tente novamente.";
-  }
-  if (s.includes("unauthorized") || s.includes("sessao")) {
-    return "Sua sessão parece ter expirado. Volte e tente novamente.";
-  }
-  if (s.includes("not found") || s.includes("nao encontrado")) {
-    return "Não encontrei esse item. Volte e tente novamente.";
-  }
-  if (s.includes("sql") || s.includes("d1") || s.includes("database")) {
-    return "Falha interna ao buscar dados. Tente novamente em instantes.";
+    return "Eita, parece que a internet deu uma escapada. Dá uma olhada no seu sinal e tenta de novo!";
   }
 
-  // Quando a API já retorna linguagem humana, usamos direto.
-  return raw;
+  // Acesso e Autenticação
+  if (s.includes("unauthorized") || s.includes("forbidden") || s.includes("401") || s.includes("403") || s.includes("sessao") || s.includes("login")) {
+    return "Opa, sua entrada no app expirou ou você não tem a 'chave' dessa porta. Tenta entrar de novo?";
+  }
+
+  // Não Encontrado
+  if (s.includes("not found") || s.includes("nao encontrado") || s.includes("404")) {
+    return "Vixe, procurei em todo canto mas esse dado sumiu. Ele mudou de lugar ou foi apagado?";
+  }
+
+  // Erro de Servidor / Banco
+  if (s.includes("500") || s.includes("sql") || s.includes("d1") || s.includes("database") || s.includes("server error")) {
+    return "Ih, nossos servidores estão fazendo hora extra e se cansaram. Tenta de novo em um minutinho?";
+  }
+
+  // Validação Genérica
+  if (s.includes("invalid") || s.includes("invalido") || s.includes("wrong")) {
+    return "Opa, essa informação não tá batendo com o que eu esperava. Dá uma conferida nos campos?";
+  }
+
+  // Se não bater com nada, coloca um prefixo da marca
+  return `Vixe, aconteceu algo inesperado: ${raw}. Tenta de novo?`;
 }

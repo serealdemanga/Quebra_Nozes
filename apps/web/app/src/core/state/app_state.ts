@@ -19,6 +19,15 @@ export interface AppState {
     identity?: Identity;
   };
   route: AppRoute;
+  ui: {
+    errorModal: {
+      isOpen: boolean;
+      title?: string;
+      body?: string;
+      ctaLabel?: string;
+      ctaTarget?: string;
+    };
+  };
 }
 
 export function createInitialAppState(input: {
@@ -29,6 +38,9 @@ export function createInitialAppState(input: {
     env: input.env,
     session: { status: "unknown" },
     route: input.route,
+    ui: {
+      errorModal: { isOpen: false },
+    },
   };
 }
 

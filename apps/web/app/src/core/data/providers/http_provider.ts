@@ -170,6 +170,60 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
 }
 
 async function fetchJson<T>(fetchImpl: typeof fetch, url: string, init?: RequestInit): Promise<T> {
-  const response = await fetchImpl(url, { credentials: "include", ...init });
-  return (await response.json()) as T;
+  try {
+    const response = await fetchImpl(url, { credentials: "include", ...init });
+    
+    // Check for 401 Unauthorized (Session Expired)
+    if (response.status === 401) {
+       // We return a custom envelope error so the UI can handle it (redirect or modal)
+       return { 
+         ok: false, 
+         error: { 
+           code: "UNAUTHORIZED", 
+           message: "Sua sessão expirou por segurança. Por favor, acesse o cofre novamente.",
+           status: 401 
+         } 
+       } as unknown as T;
+    }
+
+    const contentType = response.headers.get("content-type");
+    const isJson = contentType && contentType.includes("application/json");
+
+    if (!response.ok) {
+       // If not OK but is JSON, it's likely a business error from the API
+       if (isJson) {
+         return (await response.json()) as T;
+       }
+       // If not OK and NOT JSON (e.g. 502/504 nginx page), return generic error
+       return {
+         ok: false,
+         error: {
+           code: `SERVER_ERROR_${response.status}`,
+           message: "Opa, o servidor está um pouco cansado agora (erro de conexão). Tente novamente em alguns instantes."
+         }
+       } as unknown as T;
+    }
+
+    // Response is OK, but we MUST check if it's JSON before parsing
+    if (!isJson) {
+       return {
+         ok: false,
+         error: {
+           code: "INVALID_RESPONSE",
+           message: "Recebemos uma resposta inesperada do sistema. Que tal recarregar a página?"
+         }
+       } as unknown as T;
+    }
+
+    return (await response.json()) as T;
+  } catch (err) {
+    // Network Error or unexpected crash
+    return {
+      ok: false,
+      error: {
+        code: "NETWORK_ERROR",
+        message: err instanceof Error ? err.message : "Não conseguimos conectar à rede. Verifique seu Wi-Fi ou dados móveis."
+      }
+    } as unknown as T;
+  }
 }

@@ -77,7 +77,7 @@ export function AlertDetailPage() {
         <LoadingState title="Gerando sua análise" body={data.pendingState.body} />
       ) : data && data.screenState === "ready" && !parsed ? (
         <ErrorState
-          title="Alerta inválido"
+          title="Ih, esse alerta sumiu"
           body="Este alerta não existe ou expirou."
           ctaLabel="Voltar para alertas"
           ctaTarget="/app/alerts"
