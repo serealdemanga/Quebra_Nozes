@@ -404,6 +404,11 @@ paths:
   /v1/history/snapshots:
     get:
       summary: Ler snapshots do historico
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
       responses:
         '200':
           description: OK
@@ -411,6 +416,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiOkHistorySnapshots'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/history/timeline:
+    get:
+      summary: Ler timeline (snapshots + eventos)
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 10, maximum: 200, default: 80 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkHistoryTimeline'
         '401':
           description: Nao autenticado
           content:
@@ -941,6 +980,10 @@ components:
       type: object
       additionalProperties: true
 
+    HistoryTimelineData:
+      type: object
+      additionalProperties: true
+
     HistoryImportsCenterData:
       type: object
       additionalProperties: true
@@ -1052,6 +1095,14 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/HistorySnapshotsData'
+
+    ApiOkHistoryTimeline:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HistoryTimelineData'
 
     ApiOkHistoryImportsCenter:
       allOf:

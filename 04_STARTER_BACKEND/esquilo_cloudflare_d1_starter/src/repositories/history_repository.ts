@@ -47,6 +47,34 @@ export async function findHistorySessionStateByTokenHash(env: Env, tokenHash: st
 }
 
 export async function findPortfolioSnapshots(env: Env, portfolioId: string): Promise<SnapshotHistoryRow[]> {
+  return await findPortfolioSnapshotsLimited(env, { portfolioId });
+}
+
+export async function findPortfolioSnapshotsLimited(env: Env, input: {
+  portfolioId: string;
+  limit?: number | null;
+}): Promise<SnapshotHistoryRow[]> {
+  const limit = input.limit == null ? null : Math.max(1, Math.min(200, input.limit));
+
+  if (limit) {
+    return await d1(env).all<SnapshotHistoryRow>(
+      `SELECT
+         id,
+         portfolio_id,
+         reference_date,
+         total_equity,
+         total_invested,
+         total_profit_loss,
+         total_profit_loss_pct,
+         created_at
+       FROM portfolio_snapshots
+       WHERE portfolio_id = ?
+       ORDER BY reference_date DESC, created_at DESC
+       LIMIT ?`,
+      [input.portfolioId, limit]
+    );
+  }
+
   return await d1(env).all<SnapshotHistoryRow>(
     `SELECT
        id,
@@ -60,7 +88,7 @@ export async function findPortfolioSnapshots(env: Env, portfolioId: string): Pro
      FROM portfolio_snapshots
      WHERE portfolio_id = ?
      ORDER BY reference_date DESC, created_at DESC`,
-    [portfolioId]
+    [input.portfolioId]
   );
 }
 
