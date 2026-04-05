@@ -2,6 +2,9 @@ import type {
   ApiAnalysisEnvelope,
   ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
+  ApiImportCommitEnvelope,
+  ApiImportPreviewEnvelope,
+  ApiImportStartEnvelope,
   ApiImportsCenterEnvelope,
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
@@ -41,6 +44,12 @@ export interface ImportsCenterDataSource {
   getImportsCenter(): Promise<ApiImportsCenterEnvelope>;
 }
 
+export interface ImportsDataSource {
+  startImport(input?: { payload?: unknown }): Promise<ApiImportStartEnvelope>;
+  getImportPreview(input: { importId: string }): Promise<ApiImportPreviewEnvelope>;
+  commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope>;
+}
+
 export interface AppDataSources {
   dashboard: DashboardDataSource;
   analysis: AnalysisDataSource;
@@ -49,5 +58,6 @@ export interface AppDataSources {
   holdingDetail: HoldingDetailDataSource;
   profile: ProfileDataSource;
   importsCenter: ImportsCenterDataSource;
+  imports: ImportsDataSource;
 }
 

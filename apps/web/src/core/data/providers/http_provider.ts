@@ -3,6 +3,9 @@ import type {
   ApiAnalysisEnvelope,
   ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
+  ApiImportCommitEnvelope,
+  ApiImportPreviewEnvelope,
+  ApiImportStartEnvelope,
   ApiImportsCenterEnvelope,
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
@@ -72,6 +75,20 @@ export function createHttpDataSources(options: HttpProviderOptions): AppDataSour
     importsCenter: {
       async getImportsCenter(): Promise<ApiImportsCenterEnvelope> {
         return await fetchJson<ApiImportsCenterEnvelope>(fetchImpl, `${baseUrl}/v1/history/imports`);
+      }
+    },
+    imports: {
+      async startImport(input?: { payload?: unknown }): Promise<ApiImportStartEnvelope> {
+        // OpenAPI atual nao define request body; payload fica opcional para evolucao sem quebrar UI.
+        return await fetchJson<ApiImportStartEnvelope>(fetchImpl, `${baseUrl}/v1/imports/start`, input?.payload !== undefined
+          ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input.payload) }
+          : { method: 'POST' });
+      },
+      async getImportPreview(input: { importId: string }): Promise<ApiImportPreviewEnvelope> {
+        return await fetchJson<ApiImportPreviewEnvelope>(fetchImpl, `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/preview`);
+      },
+      async commitImport(input: { importId: string }): Promise<ApiImportCommitEnvelope> {
+        return await fetchJson<ApiImportCommitEnvelope>(fetchImpl, `${baseUrl}/v1/imports/${encodeURIComponent(input.importId)}/commit`, { method: 'POST' });
       }
     }
   };
