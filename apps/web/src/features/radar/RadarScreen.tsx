@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { AppDataSources } from '../../core/data/data_sources';
-import type { AnalysisData } from '../../core/data/contracts';
+import type { AnalysisData, DashboardHomeData } from '../../core/data/contracts';
 
 export interface RadarScreenProps {
   dataSources: AppDataSources;
@@ -12,7 +12,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
   const [state, setState] = useState<
     | { kind: 'loading' }
     | { kind: 'error'; message: string }
-    | { kind: 'ready'; data: AnalysisData }
+    | { kind: 'ready'; data: AnalysisData; dashboard: DashboardHomeData | null }
   >({ kind: 'loading' });
 
   useEffect(() => {
@@ -20,13 +20,20 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
     setState({ kind: 'loading' });
     (async () => {
       try {
-        const res = await props.dataSources.analysis.getAnalysis();
+        const [analysisRes, dashboardRes] = await Promise.all([
+          props.dataSources.analysis.getAnalysis(),
+          props.dataSources.dashboard.getDashboardHome().catch((e) => ({
+            ok: false,
+            meta: { requestId: 'req_dash_failed', timestamp: new Date().toISOString(), version: 'v1' },
+            error: { code: 'dashboard_failed', message: e instanceof Error ? e.message : 'Falha ao carregar dashboard' }
+          }))
+        ]);
         if (cancelled) return;
-        if (!res.ok) {
-          setState({ kind: 'error', message: `${res.error.code}: ${res.error.message}` });
+        if (!analysisRes.ok) {
+          setState({ kind: 'error', message: `${analysisRes.error.code}: ${analysisRes.error.message}` });
           return;
         }
-        setState({ kind: 'ready', data: res.data });
+        setState({ kind: 'ready', data: analysisRes.data, dashboard: dashboardRes.ok ? dashboardRes.data : null });
       } catch (e) {
         if (cancelled) return;
         setState({ kind: 'error', message: e instanceof Error ? e.message : 'Falha ao carregar' });
@@ -67,7 +74,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
               <div style={{ color: 'var(--c-slate)' }}>{state.message}</div>
             </div>
           ) : (
-            <RadarContent data={state.data} onGoToTarget={props.onGoToTarget} />
+            <RadarContent data={state.data} dashboard={state.dashboard} onGoToTarget={props.onGoToTarget} />
           )}
         </main>
       </div>
@@ -75,7 +82,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
   );
 }
 
-function RadarContent(props: { data: AnalysisData; onGoToTarget(path: string): void }): JSX.Element {
+function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData | null; onGoToTarget(path: string): void }): JSX.Element {
   const d = props.data;
 
   if (d.screenState === 'redirect_onboarding') {
@@ -103,6 +110,7 @@ function RadarContent(props: { data: AnalysisData; onGoToTarget(path: string): v
 
   // ready
   const breakdown = deriveScoreBreakdown(d);
+  const structure = deriveStructureImpact(props.dashboard);
   return (
     <>
       <section className="card" style={{ padding: 16 }}>
@@ -142,6 +150,24 @@ function RadarContent(props: { data: AnalysisData; onGoToTarget(path: string): v
           </div>
         </div>
       </section>
+
+      {structure ? (
+        <section className="card" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Estrutura x score</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: -0.2 }}>{structure.title}</div>
+          <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.55 }}>{structure.body}</div>
+          {structure.tips.length ? (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 900, marginBottom: 6 }}>Como melhorar</div>
+              <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--c-slate)', lineHeight: 1.55 }}>
+                {structure.tips.map((tip, idx) => (
+                  <li key={idx}>{tip}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="card" style={{ padding: 16 }}>
         <div style={{ fontWeight: 900, marginBottom: 6 }}>Problema principal</div>
@@ -245,4 +271,43 @@ function dedupeByTitle(items: Array<{ title: string; body: string }>): Array<{ t
     out.push(item);
   }
   return out;
+}
+
+function deriveStructureImpact(
+  dashboard: DashboardHomeData | null
+): null | { title: string; body: string; tips: string[] } {
+  if (!dashboard) return null;
+  if (dashboard.screenState !== 'ready' && dashboard.screenState !== 'portfolio_ready_analysis_pending') return null;
+
+  const dist = dashboard.distribution || [];
+  if (!dist.length) return null;
+
+  const top = dist[0];
+  const topPct = Number(top.sharePct || 0);
+  const uniqueBuckets = dist.length;
+  const hhi = dist.reduce((acc, item) => {
+    const p = Math.max(0, Number(item.sharePct || 0)) / 100;
+    return acc + p * p;
+  }, 0);
+
+  const tips: string[] = [];
+  let title = 'Distribuicao equilibrada';
+  let body = `Hoje sua carteira esta distribuida em ${uniqueBuckets} blocos. Isso tende a deixar o score mais estavel.`;
+
+  if (topPct >= 40 || hhi >= 0.35) {
+    title = 'Concentracao alta pressiona a nota';
+    body = `${top.label} esta com cerca de ${Math.round(topPct)}% do patrimonio. Quando um bloco domina, o risco aumenta e o score tende a cair.`;
+    tips.push('Defina um teto por classe e pare de reforcar o bloco dominante.');
+    tips.push('Use novos aportes para crescer a parte sub-representada antes de vender.');
+  } else if (topPct >= 25 || hhi >= 0.25) {
+    title = 'Concentracao moderada';
+    body = `${top.label} e um bloco relevante (~${Math.round(topPct)}%). Isso pode pressionar o score se continuar crescendo sozinho.`;
+    tips.push('Direcione os proximos aportes para outros blocos para diluir a concentracao.');
+  } else if (uniqueBuckets <= 3) {
+    title = 'Poucos blocos na carteira';
+    body = `A carteira esta concentrada em poucos blocos (${uniqueBuckets}). Isso aumenta oscilacao e tende a pressionar o score.`;
+    tips.push('Crie pelo menos um bloco adicional (ex: renda fixa, acoes, fundos) para reduzir dependencia.');
+  }
+
+  return { title, body, tips };
 }
