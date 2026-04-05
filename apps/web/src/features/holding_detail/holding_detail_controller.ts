@@ -4,6 +4,7 @@ import { createRouter, type Router } from '../../core/router';
 import type { OperationFeedback } from '../../core/ops/load_state';
 import { loading } from '../../core/ops/load_state';
 import { toErrorFeedback } from '../../core/ops/error_catalog';
+import { bannerFromMissingExternalLink, bannerFromQuotationStatus, type ExternalDataBanner } from '../../core/view_models/external_data';
 
 export type HoldingDetailViewModel =
   | { kind: 'redirect_onboarding'; redirectTo: string }
@@ -25,6 +26,7 @@ export interface HoldingDetailControllerResult {
   viewModel: HoldingDetailViewModel;
   loadingFeedback: OperationFeedback;
   errorFeedback?: OperationFeedback;
+  externalDataBanner?: ExternalDataBanner | null;
 }
 
 export interface HoldingDetailController {
@@ -60,9 +62,13 @@ export function createHoldingDetailController(input: { holdingDetail: HoldingDet
       }
 
       const ready = data as HoldingDetailDataReady;
+      const externalDataBanner =
+        bannerFromQuotationStatus({ quotationStatus: ready.holding.quotationStatus }) ??
+        bannerFromMissingExternalLink(ready.externalLink);
       return {
         envelope,
         loadingFeedback,
+        externalDataBanner,
         viewModel: {
           kind: 'ready',
           holding: ready.holding,

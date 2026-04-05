@@ -12,6 +12,7 @@ import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view
 import type { OperationFeedback } from '../../core/ops/load_state';
 import { loading } from '../../core/ops/load_state';
 import { toErrorFeedback } from '../../core/ops/error_catalog';
+import { bannerFromQuotationStatus, type ExternalDataBanner } from '../../core/view_models/external_data';
 
 export type PortfolioLocalFilters = {
   categoryKey?: string;
@@ -71,6 +72,7 @@ export interface PortfolioControllerResult {
   viewModel: PortfolioViewModel;
   loadingFeedback: OperationFeedback;
   errorFeedback?: OperationFeedback;
+  externalDataBanner?: ExternalDataBanner | null;
 }
 
 export interface PortfolioController {
@@ -102,9 +104,16 @@ export function createPortfolioController(input: { portfolio: PortfolioDataSourc
       }
 
       const viewModel = buildViewModel(envelope.data, query ?? {}, router);
-      return { envelope, viewModel, loadingFeedback };
+      const externalDataBanner = inferExternalBanner(viewModel);
+      return { envelope, viewModel, loadingFeedback, externalDataBanner };
     }
   };
+}
+
+function inferExternalBanner(viewModel: PortfolioViewModel): ExternalDataBanner | null {
+  if (viewModel.kind !== 'ready') return null;
+  const hasDegraded = viewModel.holdings.some((h) => h.quotationStatus && h.quotationStatus !== 'priced');
+  return hasDegraded ? bannerFromQuotationStatus({ quotationStatus: 'degraded' }) : null;
 }
 
 function buildViewModel(data: PortfolioData, query: PortfolioQuery, router: Router): PortfolioViewModel {
