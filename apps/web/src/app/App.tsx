@@ -80,6 +80,7 @@ export function App(): JSX.Element {
         dataSources={dataSources}
         onGoToOnboarding={() => navigate('/onboarding')}
         onGoToPortfolio={() => navigate('/portfolio')}
+        onGoToRadar={() => navigate('/radar')}
       />
     );
   }
@@ -90,6 +91,8 @@ export function App(): JSX.Element {
         dataSources={dataSources}
         onBack={() => navigate('/home')}
         onOpenHolding={({ portfolioId, holdingId }) => navigate(`/portfolio/${encodeURIComponent(portfolioId)}/holdings/${encodeURIComponent(holdingId)}`)}
+        onGoToHome={() => navigate('/home')}
+        onGoToRadar={() => navigate('/radar')}
       />
     );
   }
@@ -111,6 +114,8 @@ export function App(): JSX.Element {
         dataSources={dataSources}
         onBack={() => navigate('/home')}
         onGoToTarget={(path) => navigate(path)}
+        onGoToHome={() => navigate('/home')}
+        onGoToPortfolio={() => navigate('/portfolio')}
       />
     );
   }

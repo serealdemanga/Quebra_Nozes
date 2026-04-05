@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import type { AppDataSources } from '../../core/data/data_sources';
 import type { DashboardHomeData } from '../../core/data/contracts';
+import { ShellLayout } from '../../app/ShellLayout';
 
 export interface HomeScreenProps {
   dataSources: AppDataSources;
   onGoToOnboarding(): void;
   onGoToPortfolio(): void;
+  onGoToRadar(): void;
 }
 
 export function HomeScreen(props: HomeScreenProps): JSX.Element {
@@ -37,26 +39,21 @@ export function HomeScreen(props: HomeScreenProps): JSX.Element {
   }, [props.dataSources]);
 
   return (
-    <div className="app">
-      <div className="container" style={{ paddingTop: 18, paddingBottom: 28 }}>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img
-              src="/brand/esquilo-icon.png"
-              alt="Esquilo"
-              width={34}
-              height={34}
-              style={{ borderRadius: 12, background: 'rgba(255,255,255,0.85)', boxShadow: 'var(--shadow-1)' }}
-            />
-            <div style={{ fontWeight: 900 }}>Home</div>
-          </div>
-          <button className="btn btnGhost" onClick={props.onGoToOnboarding}>
-            Editar contexto
-          </button>
-        </header>
-
-        <main style={{ marginTop: 14 }}>
-          {state.kind === 'loading' ? (
+    <ShellLayout
+      title="Home"
+      activeRouteId="home"
+      onNavigate={(href) => {
+        if (href === '/portfolio') props.onGoToPortfolio();
+        else if (href === '/radar') props.onGoToRadar();
+        else if (href === '/profile') props.onGoToOnboarding();
+      }}
+      rightSlot={
+        <button className="btn btnGhost" onClick={props.onGoToOnboarding}>
+          Editar contexto
+        </button>
+      }
+    >
+      {state.kind === 'loading' ? (
             <div className="card" style={{ padding: 16 }}>
               Carregando...
             </div>
@@ -66,15 +63,13 @@ export function HomeScreen(props: HomeScreenProps): JSX.Element {
               <div style={{ color: 'var(--c-slate)' }}>{state.message}</div>
             </div>
           ) : (
-            <HomeContent data={state.data} onGoToPortfolio={props.onGoToPortfolio} />
+            <HomeContent data={state.data} onGoToPortfolio={props.onGoToPortfolio} onGoToRadar={props.onGoToRadar} />
           )}
-        </main>
-      </div>
-    </div>
+    </ShellLayout>
   );
 }
 
-function HomeContent(props: { data: DashboardHomeData; onGoToPortfolio(): void }): JSX.Element {
+function HomeContent(props: { data: DashboardHomeData; onGoToPortfolio(): void; onGoToRadar(): void }): JSX.Element {
   const d = props.data;
 
   if (d.screenState === 'redirect_onboarding') {
@@ -109,6 +104,11 @@ function HomeContent(props: { data: DashboardHomeData; onGoToPortfolio(): void }
           <Kpi label="Patrimonio" value={formatMoney(d.hero.totalEquity)} />
           <Kpi label="Score" value={String(d.score.value)} />
           <Kpi label="Disponivel" value={formatMoney(d.hero.totalEquity * 0.02)} />
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <button className="btn btnGhost" onClick={props.onGoToRadar}>
+            Abrir score
+          </button>
         </div>
       </div>
 
@@ -148,4 +148,3 @@ function formatMoney(v: number): string {
     return `R$ ${v.toFixed(2)}`;
   }
 }
-
