@@ -28,6 +28,7 @@ export interface HoldingDetailRow {
   stop_loss: number | null;
   target_price: number | null;
   profitability: number | null;
+  created_at: string;
 }
 
 export interface CategoryAggregateRow {
@@ -95,7 +96,8 @@ export async function findHoldingDetailById(env: Env, portfolioId: string, holdi
        pp.notes,
        pp.stop_loss,
        pp.target_price,
-       pp.profitability
+       pp.profitability,
+       pp.created_at
      FROM portfolio_positions pp
      JOIN assets a ON a.id = pp.asset_id
      JOIN asset_types at ON at.id = a.asset_type_id

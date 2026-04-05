@@ -34,6 +34,14 @@ export interface ExternalQuote {
   source: string;
 }
 
+export interface ExternalBenchmarkCdi {
+  kind: 'cdi';
+  accumulatedPct: number;
+  fromDate: string;
+  toDate: string;
+  source: string;
+}
+
 export async function getExternalQuoteForStockBvmf(env: Env, code: string): Promise<ExternalQuote | null> {
   if (!isEnabledFlag(env.EXTERNAL_REFERENCES_ENABLED)) return null;
   const normalized = (code || '').trim().toUpperCase();
@@ -95,6 +103,60 @@ export async function getExternalQuoteForStockBvmf(env: Env, code: string): Prom
   return fetched;
 }
 
+export async function getCdiAccumulatedPct(env: Env, input: { fromDate: string; toDate: string }): Promise<ExternalBenchmarkCdi | null> {
+  if (!isEnabledFlag(env.EXTERNAL_REFERENCES_ENABLED)) return null;
+  const from = normalizeIsoDate(input.fromDate);
+  const to = normalizeIsoDate(input.toDate);
+  if (!from || !to) return null;
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const cacheKey = `benchmark:cdi:accumulated:${from}:${to}`;
+
+  const cached = await findFreshExternalReferenceCacheByKey(env, cacheKey, nowIso).catch(() => null);
+  if (cached?.status === 'ok') {
+    const parsed = safeJsonParse<Record<string, unknown>>(cached.value_json);
+    const accumulatedPct = coerceNumber(parsed?.accumulatedPct);
+    const fromDate = typeof parsed?.fromDate === 'string' ? parsed.fromDate : from;
+    const toDate = typeof parsed?.toDate === 'string' ? parsed.toDate : to;
+    if (accumulatedPct != null) {
+      return { kind: 'cdi', accumulatedPct, fromDate, toDate, source: cached.source };
+    }
+  }
+
+  const fetched = await fetchCdiAccumulatedPctFromBcb(env, { fromDate: from, toDate: to });
+  const ttlOkMs = 24 * 60 * 60 * 1000;
+  const ttlErrMs = 10 * 60 * 1000;
+  const expiresAt = new Date(now.getTime() + (fetched ? ttlOkMs : ttlErrMs)).toISOString();
+
+  if (!fetched) {
+    await upsertExternalReferenceCache(env, {
+      cacheKey,
+      kind: 'benchmark',
+      source: 'bcb_sgs_12',
+      valueJson: JSON.stringify({ fromDate: from, toDate: to }),
+      fetchedAt: nowIso,
+      expiresAt,
+      status: 'error',
+      errorMessage: 'cdi_unavailable'
+    }).catch(() => {});
+    return null;
+  }
+
+  await upsertExternalReferenceCache(env, {
+    cacheKey,
+    kind: 'benchmark',
+    source: fetched.source,
+    valueJson: JSON.stringify({ accumulatedPct: fetched.accumulatedPct, fromDate: fetched.fromDate, toDate: fetched.toDate }),
+    fetchedAt: nowIso,
+    expiresAt,
+    status: 'ok',
+    errorMessage: null
+  }).catch(() => {});
+
+  return fetched;
+}
+
 async function fetchQuoteFromBrapi(env: Env, code: string): Promise<ExternalQuote | null> {
   const base = (env.EXTERNAL_REFERENCES_BRAPI_BASE_URL || 'https://brapi.dev/api').replace(/\/+$/, '');
   const token = (env.EXTERNAL_REFERENCES_BRAPI_TOKEN || '').trim();
@@ -135,6 +197,44 @@ async function fetchQuoteFromBrapi(env: Env, code: string): Promise<ExternalQuot
   }
 }
 
+async function fetchCdiAccumulatedPctFromBcb(
+  _env: Env,
+  input: { fromDate: string; toDate: string }
+): Promise<ExternalBenchmarkCdi | null> {
+  // BCB SGS series 12: CDI daily rate (% a.d). Values look like "0.054266" (0.054266% per day).
+  const fromBr = toBcbBrDate(input.fromDate);
+  const toBr = toBcbBrDate(input.toDate);
+  if (!fromBr || !toBr) return null;
+
+  const url = new URL('https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados');
+  url.searchParams.set('formato', 'json');
+  url.searchParams.set('dataInicial', fromBr);
+  url.searchParams.set('dataFinal', toBr);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7000);
+  try {
+    const res = await fetch(url.toString(), { method: 'GET', headers: { accept: 'application/json' }, signal: controller.signal });
+    if (!res.ok) return null;
+    const items = await res.json<any>().catch(() => null);
+    if (!Array.isArray(items) || items.length === 0) return null;
+
+    let factor = 1;
+    for (const it of items) {
+      const rate = coerceNumber(it?.valor);
+      if (rate == null) continue;
+      factor *= 1 + rate / 100;
+    }
+
+    const accumulatedPct = round4((factor - 1) * 100);
+    return { kind: 'cdi', accumulatedPct, fromDate: input.fromDate, toDate: input.toDate, source: 'bcb_sgs_12' };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function pickFirstResult(value: any): any | null {
   if (!value || typeof value !== 'object') return null;
   const results = (value.results ?? value.result ?? value.data) as unknown;
@@ -152,6 +252,10 @@ function safeJsonParse<T>(value: unknown): T | null {
   }
 }
 
+function round4(n: number): number {
+  return Math.round(n * 10000) / 10000;
+}
+
 function coerceNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value))) return Number(value);
@@ -166,3 +270,16 @@ function coerceIsoFromUnixSeconds(value: unknown): string | null {
   return Number.isFinite(date.getTime()) ? date.toISOString() : null;
 }
 
+function normalizeIsoDate(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const trimmed = value.trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (!m) return null;
+  return trimmed;
+}
+
+function toBcbBrDate(isoDate: string): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  if (!m) return null;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}

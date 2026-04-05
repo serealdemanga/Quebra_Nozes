@@ -1,7 +1,7 @@
 import type { Env } from '../types/env';
 import { ok, fail } from './http';
 import { hashToken } from './auth_crypto';
-import { getExternalQuoteForStockBvmf } from './external_references_service';
+import { getCdiAccumulatedPct, getExternalQuoteForStockBvmf, getExternalReferencesServiceStatus } from './external_references_service';
 import {
   findHoldingSessionStateByTokenHash,
   findHoldingDetailById,
@@ -68,6 +68,12 @@ export async function getHoldingDetailData(request: Request, env: Env, params: R
     latestAnalysis
   });
 
+  const benchmarkComparison = await buildBenchmarkComparison(env, {
+    assetTypeCode: holding.asset_type_code || '',
+    holdingCreatedAt: holding.created_at,
+    holdingPerformancePct: performancePct
+  });
+
   return ok(env.API_VERSION, {
     holding: {
       id: holding.id,
@@ -98,8 +104,93 @@ export async function getHoldingDetailData(request: Request, env: Env, params: R
     ranking,
     recommendation,
     categoryContext,
-    externalLink: buildExternalLink(holding.asset_type_code || '', holding.code || '')
+    externalLink: buildExternalLink(holding.asset_type_code || '', holding.code || ''),
+    benchmarkComparison
   }, sourceWarning);
+}
+
+async function buildBenchmarkComparison(
+  env: Env,
+  input: { assetTypeCode: string; holdingCreatedAt: string; holdingPerformancePct: number | null }
+): Promise<
+  | {
+      benchmark: 'CDI';
+      fromDate: string;
+      toDate: string;
+      benchmarkAccumulatedPct: number | null;
+      holdingPerformancePct: number | null;
+      deltaPct: number | null;
+      status: 'disabled' | 'degraded' | 'ok';
+      label: string;
+    }
+  | null
+> {
+  const assetType = (input.assetTypeCode || '').toUpperCase();
+  if (assetType !== 'FUND') return null;
+
+  const fromDate = toIsoDate(input.holdingCreatedAt) ?? new Date().toISOString().slice(0, 10);
+  const toDate = new Date().toISOString().slice(0, 10);
+
+  const svc = await getExternalReferencesServiceStatus(env).catch(() => 'degraded');
+  if (svc === 'disabled') {
+    return {
+      benchmark: 'CDI',
+      fromDate,
+      toDate,
+      benchmarkAccumulatedPct: null,
+      holdingPerformancePct: input.holdingPerformancePct,
+      deltaPct: null,
+      status: 'disabled',
+      label: 'CDI indisponivel'
+    };
+  }
+
+  const cdi = await getCdiAccumulatedPct(env, { fromDate, toDate });
+  if (!cdi) {
+    return {
+      benchmark: 'CDI',
+      fromDate,
+      toDate,
+      benchmarkAccumulatedPct: null,
+      holdingPerformancePct: input.holdingPerformancePct,
+      deltaPct: null,
+      status: 'degraded',
+      label: 'CDI indisponivel'
+    };
+  }
+
+  const deltaPct = input.holdingPerformancePct != null ? round2(input.holdingPerformancePct - cdi.accumulatedPct) : null;
+  const label = inferCdiLabel({ deltaPct, holdingPerformancePct: input.holdingPerformancePct });
+
+  return {
+    benchmark: 'CDI',
+    fromDate: cdi.fromDate,
+    toDate: cdi.toDate,
+    benchmarkAccumulatedPct: cdi.accumulatedPct,
+    holdingPerformancePct: input.holdingPerformancePct,
+    deltaPct,
+    status: 'ok',
+    label
+  };
+}
+
+function inferCdiLabel(input: { deltaPct: number | null; holdingPerformancePct: number | null }): string {
+  if (input.holdingPerformancePct == null) return 'Sem base suficiente';
+  if (input.deltaPct == null) return 'Comparacao indisponivel';
+  if (input.deltaPct <= -2) return 'Abaixo do CDI';
+  if (input.deltaPct >= 2) return 'Acima do CDI';
+  return 'Em linha com CDI';
+}
+
+function toIsoDate(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  // D1 timestamps are often "YYYY-MM-DD HH:MM:SS".
+  const iso = value.trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 function buildRanking(input: { allocationPct: number; performancePct: number | null; hasQuote: boolean }) {
