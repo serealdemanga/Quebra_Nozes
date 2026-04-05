@@ -141,10 +141,29 @@ function inferRoleMessage(holding: HoldingDetailDataReady['holding']): string {
   const allocation = holding.allocationPct ?? 0;
   const performance = holding.performancePct;
   const hasQuote = holding.quotationStatus === 'priced';
+  const assetType = (holding.assetTypeCode || '').toUpperCase();
 
   if (!hasQuote) {
     return 'Sem cotacao atual, a leitura de relevancia e performance fica incompleta. Priorize corrigir a origem do dado antes de decidir.';
   }
+
+  if (assetType === 'PENSION') {
+    if (allocation >= 20 && performance != null && performance < -10) {
+      return 'Previdencia com peso alto e performance negativa: vale revisar taxas, estrategia e se o produto ainda serve ao seu objetivo.';
+    }
+    if (allocation >= 20) {
+      return 'Previdencia com peso alto: confira se o tamanho esta coerente com seu objetivo e horizonte. Se nao for intencional, pode estar travando flexibilidade.';
+    }
+    if (allocation >= 8) {
+      return performance != null && performance < -10
+        ? 'Previdencia relevante e em queda: revise se a alocacao e o produto estao coerentes com sua estrategia.'
+        : 'Previdencia relevante: em geral serve como estrategia de longo prazo, mas precisa estar no tamanho certo para nao distorcer a carteira.';
+    }
+    return performance != null && performance < -10
+      ? 'Previdencia pequena mas em queda: monitore e valide se o produto ainda faz sentido.'
+      : 'Previdencia pequena: tende a ser parte estrategica de longo prazo; acompanhe para manter coerencia com o restante da carteira.';
+  }
+
   if (allocation >= 20) {
     if (performance != null && performance < -10) return 'Peso alto e performance negativa: este ativo pode estar distorcendo o resultado da carteira.';
     if (performance != null && performance > 15) return 'Peso alto com ganho acumulado: faz sentido avaliar protecao de ganho e diversificacao.';
