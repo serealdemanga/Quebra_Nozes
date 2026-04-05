@@ -2,6 +2,7 @@ import type {
   ApiAnalysisEnvelope,
   ApiDashboardHomeEnvelope,
   ApiHoldingDetailEnvelope,
+  ApiImportsCenterEnvelope,
   ApiPortfolioEnvelope,
   ApiHistorySnapshotsEnvelope,
   ApiHistoryTimelineEnvelope,
@@ -36,6 +37,10 @@ export interface ProfileDataSource {
   putProfileContext(input: ProfileContextPutRequest): Promise<ApiProfileContextPutEnvelope>;
 }
 
+export interface ImportsCenterDataSource {
+  getImportsCenter(): Promise<ApiImportsCenterEnvelope>;
+}
+
 export interface AppDataSources {
   dashboard: DashboardDataSource;
   analysis: AnalysisDataSource;
@@ -43,5 +48,6 @@ export interface AppDataSources {
   portfolio: PortfolioDataSource;
   holdingDetail: HoldingDetailDataSource;
   profile: ProfileDataSource;
+  importsCenter: ImportsCenterDataSource;
 }
 
