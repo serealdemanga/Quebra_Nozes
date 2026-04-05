@@ -66,7 +66,7 @@ export async function registerUser(request: Request, env: Env): Promise<Response
     user: { id: userId, cpf, email, displayName, emailVerified: false },
     portfolio: { id: portfolioId, isPrimary: true },
     session: { id: sessionId, rememberDevice, lockoutPolicy: { maxFailedAttempts: LOCKOUT_MAX_ATTEMPTS, lockMinutes: LOCKOUT_MINUTES } },
-    nextStep: '/onboarding'
+    nextStep: '/app/onboarding'
   }, undefined, 201);
   response.headers.append('Set-Cookie', buildSessionCookie(sessionToken, rememberDevice, env));
   return response;
@@ -133,7 +133,7 @@ export async function loginUser(request: Request, env: Env): Promise<Response> {
     portfolioId: sessionState.portfolioId,
     rememberDevice,
     emailVerified: Boolean(user.email_verified_at),
-    nextStep: sessionState.hasContext ? '/home' : '/onboarding',
+    nextStep: sessionState.hasContext ? '/app/home' : '/app/onboarding',
     lockoutPolicy: { maxFailedAttempts: LOCKOUT_MAX_ATTEMPTS, lockMinutes: LOCKOUT_MINUTES }
   });
   response.headers.append('Set-Cookie', buildSessionCookie(sessionToken, rememberDevice, env));
@@ -158,7 +158,7 @@ export async function getSession(request: Request, env: Env): Promise<Response> 
     userId: session.user_id,
     portfolioId: session.portfolio_id,
     emailVerified: Boolean(session.email_verified_at),
-    nextStep: session.has_context ? '/home' : '/onboarding'
+    nextStep: session.has_context ? '/app/home' : '/app/onboarding'
   });
 }
 
