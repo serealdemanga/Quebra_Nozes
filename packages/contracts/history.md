@@ -1,9 +1,9 @@
 # History contract
 
-## Route
-`GET /v1/history/snapshots`
-`GET /v1/history/imports`
-`GET /v1/history/timeline`
+## Routes
+- `GET /v1/history/snapshots`
+- `GET /v1/history/timeline`
+- `GET /v1/history/imports`
 
 ## Envelope HTTP
 
@@ -81,7 +81,7 @@ Empty:
 {
   "screenState": "empty",
   "portfolioId": "pfl_123",
-  "emptyState": { "title": "string", "body": "string", "ctaLabel": "string", "target": "/import" },
+  "emptyState": { "title": "string", "body": "string", "ctaLabel": "string", "target": "/imports/entry" },
   "summary": { "totalSnapshots": 0, "latestReferenceDate": null },
   "snapshots": []
 }
@@ -104,6 +104,7 @@ Ready:
       "totalProfitLossPct": 2.58,
       "createdAt": "2026-04-02T00:00:00.000Z",
       "analysisBadge": {
+        "scoreValue": 72,
         "status": "saudavel",
         "primaryProblem": "string",
         "primaryAction": "string"
@@ -113,7 +114,57 @@ Ready:
 }
 ```
 
-Observacao: eventos operacionais nao aparecem nesta rota hoje; a trilha operacional fica em `GET /v1/ops/events`.
+Observacao: `snapshots` e apenas fotografia. Para linha do tempo (snapshots + eventos operacionais) usar `GET /v1/history/timeline`.
+
+## Timeline response shape (data)
+
+Estados:
+
+- `redirect_onboarding`
+- `empty`
+- `ready`
+
+Empty:
+
+```json
+{
+  "screenState": "empty",
+  "portfolioId": "pfl_123",
+  "emptyState": { "title": "string", "body": "string", "ctaLabel": "string", "target": "/imports/entry" },
+  "summary": { "totalItems": 0, "totalSnapshots": 0, "totalEvents": 0, "latestOccurredAt": null },
+  "items": []
+}
+```
+
+Ready:
+
+```json
+{
+  "screenState": "ready",
+  "portfolioId": "pfl_123",
+  "summary": { "totalItems": 3, "totalSnapshots": 1, "totalEvents": 2, "latestOccurredAt": "2026-04-02T00:00:00.000Z" },
+  "items": [
+    {
+      "kind": "snapshot",
+      "id": "snp_123",
+      "occurredAt": "2026-04-02T00:00:00.000Z",
+      "referenceDate": "2026-03-31",
+      "createdAt": "2026-04-02T00:00:00.000Z",
+      "totals": { "totalEquity": 0, "totalInvested": 0, "totalProfitLoss": 0, "totalProfitLossPct": 0 },
+      "recommendation": null
+    },
+    {
+      "kind": "event",
+      "id": "evt_123",
+      "occurredAt": "2026-04-02T00:00:00.000Z",
+      "portfolioId": "pfl_123",
+      "type": "import_created",
+      "status": "ok",
+      "message": "string"
+    }
+  ]
+}
+```
 
 ## Timeline (data)
 

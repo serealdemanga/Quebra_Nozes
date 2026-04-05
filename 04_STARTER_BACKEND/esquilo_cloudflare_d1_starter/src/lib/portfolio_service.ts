@@ -38,14 +38,14 @@ export async function getPortfolioData(request: Request, env: Env): Promise<Resp
         totalProfitLossPct: 0,
         statusLabel: 'Sem posicoes ativas'
       },
-      emptyState: {
-        title: 'Sua carteira ainda nao tem posicoes ativas',
-        body: 'Importe sua carteira para montar a leitura consolidada dos ativos.',
-        ctaLabel: 'Importar carteira',
-        target: '/import'
-      },
-      groups: [],
-      filters: { performance: performanceFilter },
+        emptyState: {
+          title: 'Sua carteira ainda nao tem posicoes ativas',
+          body: 'Importe sua carteira para montar a leitura consolidada dos ativos.',
+          ctaLabel: 'Importar carteira',
+          target: '/imports/entry'
+        },
+        groups: [],
+        filters: { performance: performanceFilter },
       orders: []
     };
     return ok(env.API_VERSION, emptyData);

@@ -53,7 +53,7 @@ export async function getDashboardHomeData(request: Request, env: Env): Promise<
         title: 'Importe sua carteira',
         body: 'Envie um CSV ou extrato para montar a leitura inicial da sua carteira.',
         ctaLabel: 'Importar carteira',
-        target: '/import'
+        target: '/imports/entry'
       },
       score: {
         value: 0,

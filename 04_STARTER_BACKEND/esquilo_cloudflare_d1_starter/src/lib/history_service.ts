@@ -29,7 +29,7 @@ export async function getHistorySnapshotsData(request: Request, env: Env): Promi
         title: 'Seu histórico ainda não existe',
         body: 'Importe a carteira para gerar o primeiro snapshot e começar a evolução patrimonial.',
         ctaLabel: 'Importar carteira',
-        target: '/import'
+        target: '/imports/entry'
       },
       summary: {
         totalSnapshots: 0,
@@ -60,6 +60,7 @@ export async function getHistorySnapshotsData(request: Request, env: Env): Promi
         totalProfitLossPct: Number(snapshot.total_profit_loss_pct || 0),
         createdAt: snapshot.created_at,
         analysisBadge: badge ? {
+          scoreValue: badge.score_value == null ? null : Number(badge.score_value),
           status: badge.score_status || 'Análise disponível',
           primaryProblem: badge.primary_problem || '',
           primaryAction: badge.primary_action || ''
@@ -84,66 +85,23 @@ export async function getHistoryTimelineData(request: Request, env: Env): Promis
   }
 
   const url = new URL(request.url);
-  const limit = clampInt(url.searchParams.get('limit'), 1, 50, 50);
+  const limit = Math.max(1, Math.min(200, Number(url.searchParams.get('limit') || '50') || 50));
 
-  const snapshots = (await findPortfolioSnapshots(env, session.portfolioId)).slice(0, limit);
-  const badgeRows = await findLatestAnalysisBadgesByPortfolio(env, session.portfolioId);
-  const badgeMap = new Map(badgeRows.map((row) => [row.snapshot_id, row]));
+  const [snapshots, badgeRows, events] = await Promise.all([
+    findPortfolioSnapshots(env, session.portfolioId),
+    findLatestAnalysisBadgesByPortfolio(env, session.portfolioId),
+    getOperationalEventsForUser(env, { userId: session.userId, portfolioId: session.portfolioId, limit })
+  ]);
 
-  const events = await getOperationalEventsForUser(env, {
-    userId: session.userId,
-    portfolioId: session.portfolioId,
-    limit
-  });
-
-  const snapshotItems = snapshots.map((snapshot) => {
-    const badge = badgeMap.get(snapshot.id);
-    return {
-      kind: 'snapshot',
-      id: snapshot.id,
-      occurredAt: snapshot.created_at,
-      referenceDate: snapshot.reference_date,
-      createdAt: snapshot.created_at,
-      totals: {
-        totalEquity: Number(snapshot.total_equity || 0),
-        totalInvested: Number(snapshot.total_invested || 0),
-        totalProfitLoss: Number(snapshot.total_profit_loss || 0),
-        totalProfitLossPct: Number(snapshot.total_profit_loss_pct || 0)
-      },
-      recommendation: badge ? {
-        status: badge.score_status || 'Análise disponível',
-        primaryProblem: badge.primary_problem || '',
-        primaryAction: badge.primary_action || ''
-      } : null
-    };
-  });
-
-  const eventItems = events.map((evt) => ({
-    kind: 'event',
-    id: evt.id,
-    occurredAt: evt.occurredAt,
-    portfolioId: evt.portfolioId ?? null,
-    type: evt.type,
-    status: evt.status,
-    message: evt.message ?? null
-  }));
-
-  const merged = [...snapshotItems, ...eventItems].sort((a, b) => {
-    // Ordena mais recente primeiro.
-    const at = Date.parse(a.occurredAt);
-    const bt = Date.parse(b.occurredAt);
-    return bt - at;
-  }).slice(0, limit);
-
-  if (!merged.length) {
+  if (!snapshots.length && !events.length) {
     return ok(env.API_VERSION, {
       screenState: 'empty',
       portfolioId: session.portfolioId,
       emptyState: {
-        title: 'Seu histórico ainda não existe',
-        body: 'Quando você importar e revisar a carteira, os snapshots e eventos aparecem aqui.',
+        title: 'Sua linha do tempo ainda está vazia',
+        body: 'Importe a carteira para gerar o primeiro snapshot e começar a trajetória.',
         ctaLabel: 'Importar carteira',
-        target: '/import'
+        target: '/imports/entry'
       },
       summary: {
         totalItems: 0,
@@ -155,19 +113,66 @@ export async function getHistoryTimelineData(request: Request, env: Env): Promis
     });
   }
 
-  const totalSnapshots = merged.filter((x) => x.kind === 'snapshot').length;
-  const totalEvents = merged.filter((x) => x.kind === 'event').length;
+  const badgeMap = new Map(badgeRows.map((row) => [row.snapshot_id, row]));
+
+  const snapshotItems = snapshots.map((snapshot) => {
+    const badge = badgeMap.get(snapshot.id);
+    return {
+      kind: 'snapshot' as const,
+      id: snapshot.id,
+      occurredAt: snapshot.created_at,
+      referenceDate: snapshot.reference_date,
+      createdAt: snapshot.created_at,
+      totals: {
+        totalEquity: Number(snapshot.total_equity || 0),
+        totalInvested: Number(snapshot.total_invested || 0),
+        totalProfitLoss: Number(snapshot.total_profit_loss || 0),
+        totalProfitLossPct: Number(snapshot.total_profit_loss_pct || 0)
+      },
+      recommendation: badge ? {
+        scoreValue: badge.score_value == null ? null : Number(badge.score_value),
+        status: badge.score_status || 'Análise disponível',
+        primaryProblem: badge.primary_problem || '',
+        primaryAction: badge.primary_action || ''
+      } : null
+    };
+  });
+
+  const eventItems = events.map((evt) => {
+    return {
+      kind: 'event' as const,
+      id: evt.id,
+      occurredAt: evt.occurredAt,
+      portfolioId: evt.portfolioId,
+      type: evt.type,
+      status: evt.status,
+      message: evt.message
+    };
+  });
+
+  const items = [...snapshotItems, ...eventItems]
+    .sort((a, b) => {
+      const ta = Date.parse(a.occurredAt) || 0;
+      const tb = Date.parse(b.occurredAt) || 0;
+      return tb - ta;
+    })
+    .slice(0, limit);
+
+  const totalSnapshots = snapshotItems.length;
+  const totalEvents = eventItems.length;
+  const totalItems = totalSnapshots + totalEvents;
+  const latestOccurredAt = items[0]?.occurredAt ?? null;
 
   return ok(env.API_VERSION, {
     screenState: 'ready',
     portfolioId: session.portfolioId,
     summary: {
-      totalItems: merged.length,
+      totalItems,
       totalSnapshots,
       totalEvents,
-      latestOccurredAt: merged[0]?.occurredAt ?? null
+      latestOccurredAt
     },
-    items: merged
+    items
   });
 }
 
@@ -177,8 +182,3 @@ function readCookie(cookieHeader: string, cookieName: string): string {
   return match ? decodeURIComponent(match.slice(prefix.length)) : '';
 }
 
-function clampInt(raw: string | null, min: number, max: number, fallback: number) {
-  const n = raw ? Number(raw) : NaN;
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(min, Math.min(max, Math.trunc(n)));
-}

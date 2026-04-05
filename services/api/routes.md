@@ -15,12 +15,14 @@
 ## Segunda leva
 - `GET /v1/portfolio/{portfolioId}/holdings/{holdingId}`
 - `GET /v1/history/snapshots`
+- `GET /v1/history/timeline`
 - `GET /v1/analysis`
 
 ## Terceira leva
 - `POST /v1/imports/start`
 - `GET /v1/imports/{importId}/preview`
 - `POST /v1/imports/{importId}/commit`
+- `GET /v1/history/imports`
 
 ## Operacao (interno)
 - `GET /v1/ops/events` (protegida por cookie; lista trilha operacional do usuario)
