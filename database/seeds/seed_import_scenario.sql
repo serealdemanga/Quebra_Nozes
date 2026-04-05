@@ -13,7 +13,7 @@ INSERT INTO portfolios (id, user_id, name, is_primary, status) VALUES
 INSERT INTO user_financial_context (
   id, user_id, financial_goal, monthly_income_range, monthly_investment_target, available_to_invest,
   risk_profile, risk_profile_self_declared, risk_profile_quiz_result, risk_profile_effective,
-  investment_horizon, platforms_used_json, display_preferences_json, onboarding_step
+  investment_horizon, platforms_used_json, display_preferences_json, onboarding_step, onboarding_completed_at
 ) VALUES (
   'ctx_seed_import',
   'usr_seed_import',
@@ -26,9 +26,10 @@ INSERT INTO user_financial_context (
   'moderado',
   'moderado',
   'medio_prazo',
-  '["xp"]',
+  '{"platformIds":["xp"],"otherPlatforms":[]}',
   '{"ghostMode":false}',
-  'done'
+  'confirm',
+  '2026-03-31T00:00:00.000Z'
 );
 
 -- Base de carteira (para deduplicacao)

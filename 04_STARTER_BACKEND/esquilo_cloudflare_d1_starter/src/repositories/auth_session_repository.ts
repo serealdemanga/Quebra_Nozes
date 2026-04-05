@@ -100,10 +100,7 @@ export async function findSessionStateByTokenHash(env: Env, tokenHash: string): 
        u.email_verified_at,
        p.id AS portfolio_id,
        CASE
-         WHEN c.financial_goal IS NOT NULL AND c.financial_goal <> ''
-          AND COALESCE(c.risk_profile_effective, c.risk_profile) IS NOT NULL
-          AND COALESCE(c.risk_profile_effective, c.risk_profile) <> ''
-         THEN 1
+         WHEN c.onboarding_completed_at IS NOT NULL THEN 1
          ELSE 0
        END AS has_context
      FROM auth_sessions s

@@ -49,10 +49,7 @@ export async function findImportSessionStateByTokenHash(env: Env, tokenHash: str
        s.user_id AS userId,
        p.id AS portfolioId,
        CASE
-         WHEN c.financial_goal IS NOT NULL AND c.financial_goal <> ''
-          AND COALESCE(c.risk_profile_effective, c.risk_profile) IS NOT NULL
-          AND COALESCE(c.risk_profile_effective, c.risk_profile) <> ''
-         THEN 1
+         WHEN c.onboarding_completed_at IS NOT NULL THEN 1
          ELSE 0
        END AS hasContext
      FROM auth_sessions s
@@ -118,6 +115,18 @@ export async function updateImportRecord(env: Env, input: {
          finished_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE finished_at END
      WHERE id = ?`,
     [input.status, input.totalRows, input.validRows, input.invalidRows, input.duplicateRows, input.finishedAt ? 1 : 0, input.importId]
+  );
+}
+
+export async function cancelImportRecord(env: Env, importId: string): Promise<void> {
+  await d1(env).run(
+    `UPDATE imports
+     SET status = 'CANCELLED',
+         updated_at = CURRENT_TIMESTAMP,
+         finished_at = COALESCE(finished_at, CURRENT_TIMESTAMP)
+     WHERE id = ?
+       AND status <> 'COMMITTED'`,
+    [importId]
   );
 }
 

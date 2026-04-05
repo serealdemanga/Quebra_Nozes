@@ -6,6 +6,9 @@
 Query params:
 
 - `performance=all|best|worst` (opcional)
+- `category=<categoryKey>` (opcional)
+- `platformId=<platformId>` (opcional)
+- `attentionOnly=true|false` (opcional)
 
 ## Envelope HTTP
 
@@ -78,7 +81,7 @@ O payload da Carteira trabalha por estado (`screenState`):
       ]
     }
   ],
-  "filters": { "performance": "all" },
+  "filters": { "performance": "all", "category": "acoes", "platformId": "plt_xp", "attentionOnly": false },
   "orders": []
 }
 ```

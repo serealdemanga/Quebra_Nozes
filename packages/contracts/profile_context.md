@@ -64,7 +64,7 @@ Headers:
 O backend aceita:
 
 - payload direto (campos de `context`)
-- ou `{ context: {...}, step: "goal|risk_quiz|income_horizon|platforms" }`
+- ou `{ context: {...}, step: "goal|risk_quiz|income_horizon|platforms|review|confirm" }`
 
 Campos mais usados:
 
@@ -77,6 +77,12 @@ Campos mais usados:
 - `investmentHorizon`
 - `platformsUsed`
 - `displayPreferences`
+
+## Regra de conclusão do onboarding
+
+- `review` serve para a UI exibir o resumo do contexto coletado ate aqui (sem concluir).
+- `confirm` conclui o onboarding quando o contexto essencial estiver completo (objetivo, risco efetivo, renda, horizonte e plataformas).
+- apos `confirm`, chamadas futuras de `PUT` sem `step` sao tratadas como edicao de perfil (patch parcial), sem travar por validacao de etapa.
 
 ## PUT /v1/profile/context (data)
 

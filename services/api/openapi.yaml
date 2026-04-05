@@ -4,6 +4,493 @@ info:
   version: 0.1.0
   description: API inicial do projeto novo do Esquilo Invest.
 paths:
+  /v1/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkHealth'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/auth/register:
+    post:
+      summary: Registrar usuario e criar sessao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegisterRequest'
+      responses:
+        '201':
+          description: Criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkAuthRegister'
+        '400':
+          description: Requisicao invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '409':
+          description: Conflito (cpf/email em uso)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/auth/login:
+    post:
+      summary: Autenticar usuario e criar sessao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkAuthLogin'
+        '400':
+          description: Requisicao invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '401':
+          description: Credenciais invalidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '403':
+          description: Conta indisponivel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '423':
+          description: Conta bloqueada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/auth/session:
+    get:
+      summary: Ler sessao atual (cookie)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkAuthSession'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/auth/logout:
+    post:
+      summary: Encerrar sessao atual (cookie)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkAuthLogout'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/auth/recover:
+    post:
+      summary: Solicitar recuperacao de conta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRecoverRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkAuthRecover'
+        '400':
+          description: Requisicao invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '503':
+          description: Recuperacao indisponivel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/profile/context:
+    get:
+      summary: Ler contexto do usuario (onboarding/perfil)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkProfileContextGet'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+    put:
+      summary: Gravar/atualizar contexto do usuario (onboarding/perfil)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileContextPutRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkProfileContextPut'
+        '400':
+          description: Requisicao invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/dashboard/home:
+    get:
+      summary: Ler Home (dashboard)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkDashboardHome'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/portfolio:
+    get:
+      summary: Ler carteira (lista e grupos)
+      parameters:
+        - in: query
+          name: performance
+          schema: { type: string, enum: [all, best, worst] }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: platformId
+          schema: { type: string }
+        - in: query
+          name: attentionOnly
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkPortfolio'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/portfolio/{portfolioId}/holdings/{holdingId}:
+    get:
+      summary: Ler detalhe de holding/ativo (carteira)
+      parameters:
+        - in: path
+          name: portfolioId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: holdingId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkHoldingDetail'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '403':
+          description: Acesso invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/onboarding/portfolio-entry:
+    get:
+      summary: Rota de onboarding para entrada de carteira
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkOnboardingPortfolioEntry'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/analysis:
+    get:
+      summary: Ler Radar/Analise
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkAnalysis'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/history/snapshots:
+    get:
+      summary: Ler snapshots do historico
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkHistorySnapshots'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/history/imports:
+    get:
+      summary: Ler centro de importacoes do usuario
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkHistoryImportsCenter'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
+  /v1/ops/events:
+    get:
+      summary: Listar trilha operacional (interno)
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - in: query
+          name: portfolioId
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkOperationalEvents'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+
   /v1/imports/start:
     post:
       summary: Iniciar importação manual, CSV ou documento assistido
@@ -192,6 +679,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiEnvelopeError'
+  /v1/imports/{importId}/cancel:
+    post:
+      summary: Cancelar importação antes do commit
+      parameters:
+        - in: path
+          name: importId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiOkImportCancel'
+        '401':
+          description: Nao autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '404':
+          description: Nao encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
+        '409':
+          description: Conflito (ja commitada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeError'
   /v1/imports/templates/custom:
     get:
       summary: Baixar template próprio CSV
@@ -317,6 +838,252 @@ components:
         ok: { type: boolean, const: false }
         meta: { $ref: '#/components/schemas/ResponseMeta' }
         error: { $ref: '#/components/schemas/ApiError' }
+
+    HealthData:
+      type: object
+      required: [status, appEnv, services]
+      properties:
+        status: { type: string, enum: [ok] }
+        appEnv: { type: string, description: local|hml|prd }
+        apiVersion: { type: string, nullable: true }
+        services:
+          type: object
+          additionalProperties: true
+
+    AuthRegisterRequest:
+      type: object
+      required: [cpf, email, password, confirmPassword]
+      properties:
+        cpf: { type: string, description: CPF sem pontuacao (11 digitos) }
+        email: { type: string }
+        password: { type: string }
+        confirmPassword: { type: string }
+        displayName: { type: string, nullable: true }
+        rememberDevice: { type: boolean, nullable: true }
+
+    AuthLoginRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier: { type: string, description: CPF (11 digitos) ou e-mail }
+        password: { type: string }
+        rememberDevice: { type: boolean, nullable: true }
+
+    AuthRecoverRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+
+    ProfileContextPutRequest:
+      description: Aceita payload direto (campos de context) ou { context, step }.
+      oneOf:
+        - type: object
+          required: [step, context]
+          properties:
+            step: { type: string, description: goal|risk_quiz|income_horizon|platforms|review|confirm }
+            context: { type: object, additionalProperties: true }
+        - type: object
+          additionalProperties: true
+
+    AuthRegisterData:
+      type: object
+      additionalProperties: true
+
+    AuthLoginData:
+      type: object
+      additionalProperties: true
+
+    AuthSessionData:
+      type: object
+      required: [authenticated, nextStep]
+      properties:
+        authenticated: { type: boolean }
+        userId: { type: string, nullable: true }
+        portfolioId: { type: string, nullable: true }
+        emailVerified: { type: boolean, nullable: true }
+        nextStep: { type: string, description: /login|/onboarding|/home }
+
+    AuthLogoutData:
+      type: object
+      additionalProperties: true
+
+    AuthRecoverData:
+      type: object
+      additionalProperties: true
+
+    ProfileContextGetData:
+      type: object
+      additionalProperties: true
+
+    DashboardHomeData:
+      type: object
+      required: [screenState]
+      properties:
+        screenState:
+          type: string
+          enum: [redirect_onboarding, empty, portfolio_ready_analysis_pending, ready]
+        redirectTo: { type: string, nullable: true }
+        portfolioId: { type: string, nullable: true }
+
+    OnboardingPortfolioEntryData:
+      type: object
+      required: [screenState]
+      properties:
+        screenState: { type: string }
+        redirectTo: { type: string, nullable: true }
+
+    AnalysisData:
+      type: object
+      additionalProperties: true
+
+    HistorySnapshotsData:
+      type: object
+      additionalProperties: true
+
+    HistoryImportsCenterData:
+      type: object
+      additionalProperties: true
+
+    PortfolioData:
+      type: object
+      additionalProperties: true
+
+    HoldingDetailData:
+      type: object
+      additionalProperties: true
+
+    OperationalEventsData:
+      type: object
+      additionalProperties: true
+
+    ApiOkHealth:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HealthData'
+
+    ApiOkAuthRegister:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AuthRegisterData'
+
+    ApiOkAuthLogin:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AuthLoginData'
+
+    ApiOkAuthSession:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AuthSessionData'
+
+    ApiOkAuthLogout:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AuthLogoutData'
+
+    ApiOkAuthRecover:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AuthRecoverData'
+
+    ApiOkProfileContextGet:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ProfileContextGetData'
+
+    ApiOkProfileContextPut:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ProfileContextGetData'
+
+    ApiOkDashboardHome:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/DashboardHomeData'
+
+    ApiOkOnboardingPortfolioEntry:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/OnboardingPortfolioEntryData'
+
+    ApiOkAnalysis:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AnalysisData'
+
+    ApiOkHistorySnapshots:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HistorySnapshotsData'
+
+    ApiOkHistoryImportsCenter:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HistoryImportsCenterData'
+
+    ApiOkPortfolio:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PortfolioData'
+
+    ApiOkHoldingDetail:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HoldingDetailData'
+
+    ApiOkOperationalEvents:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/OperationalEventsData'
     ApiOkImportStart:
       allOf:
         - $ref: '#/components/schemas/ApiEnvelopeOk'
@@ -352,6 +1119,13 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/ImportCommitData'
+    ApiOkImportCancel:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeOk'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImportCancelData'
     ImportStartData:
       type: object
       properties:
@@ -412,4 +1186,10 @@ components:
         status: { type: string }
         createdSnapshotId: { type: string }
         affectedPositions: { type: number }
+        nextStep: { type: string }
+    ImportCancelData:
+      type: object
+      properties:
+        importId: { type: string }
+        status: { type: string }
         nextStep: { type: string }
