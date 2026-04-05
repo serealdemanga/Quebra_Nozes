@@ -15,3 +15,6 @@ Traduzir a analise consolidada em problema principal + acao principal, sem virar
 ## Regra
 Uma acao principal por vez. O resto so existe para sustentar a decisao.
 
+## Implementacao (sem layout)
+`analysis_controller.ts` centraliza consumo do contrato e targets de navegacao.
+

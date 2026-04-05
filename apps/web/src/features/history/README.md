@@ -15,3 +15,6 @@ Mostrar trajetoria de forma rastreavel (snapshots + eventos) e orientar proximo 
 ## Regra
 Historico nao e dumping de dado: priorizar o que ajuda o usuario a entender evolucao e proxima acao.
 
+## Implementacao (sem layout)
+`history_controller.ts` consolida snapshots + timeline em uma chamada headless.
+
