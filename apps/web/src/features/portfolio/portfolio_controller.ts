@@ -32,12 +32,38 @@ export type PortfolioCategorySummary = {
   concentrationLevel: 'low' | 'medium' | 'high';
 };
 
+export type PortfolioAssetConcentration = {
+  assetId: string;
+  code: string;
+  name: string;
+  totalCurrent: number;
+  sharePct: number;
+  positionsCount: number;
+  platformsCount: number;
+  concentrationLevel: 'low' | 'medium' | 'high';
+  attentionLabel: string | null;
+  primaryHoldingId: string;
+};
+
+export type PortfolioInstitutionConcentration = {
+  platformId: string;
+  platformName: string;
+  totalCurrent: number;
+  sharePct: number;
+  positionsCount: number;
+  categoriesCount: number;
+  concentrationLevel: 'low' | 'medium' | 'high';
+  attentionLabel: string | null;
+};
+
 export type PortfolioReadyViewModel = {
   kind: 'ready';
   portfolioId: string;
   summary: PortfolioDataReady['summary'];
   filters: PortfolioDataReady['filters'] & PortfolioLocalFilters;
   categories: PortfolioCategorySummary[];
+  assets: PortfolioAssetConcentration[];
+  institutions: PortfolioInstitutionConcentration[];
   groups: PortfolioGroup[];
   holdings: PortfolioHolding[];
   targets: {
@@ -131,6 +157,8 @@ function buildViewModel(data: PortfolioData, query: PortfolioQuery, router: Rout
   const groups = applyLocalFilters(ready.groups, query);
   const holdings = groups.flatMap((g) => g.holdings);
   const categories = buildCategorySummaries(groups, ready.summary.totalEquity);
+  const assets = buildAssetConcentrations(holdings, ready.summary.totalEquity);
+  const institutions = buildInstitutionConcentrations(holdings, ready.summary.totalEquity);
 
   return {
     kind: 'ready',
@@ -138,6 +166,8 @@ function buildViewModel(data: PortfolioData, query: PortfolioQuery, router: Rout
     summary: ready.summary,
     filters: { ...ready.filters, categoryKey: query.categoryKey, platformId: query.platformId },
     categories,
+    assets,
+    institutions,
     groups,
     holdings,
     targets: {
@@ -176,6 +206,106 @@ function buildCategorySummaries(groups: PortfolioGroup[], totalEquity: number): 
       concentrationLevel: concentrationLevel((g.totalCurrent / eq) * 100)
     }))
     .sort((a, b) => b.totalCurrent - a.totalCurrent);
+}
+
+function buildAssetConcentrations(holdings: PortfolioHolding[], totalEquity: number): PortfolioAssetConcentration[] {
+  const eq = totalEquity > 0 ? totalEquity : 1;
+  const map = new Map<
+    string,
+    {
+      assetId: string;
+      code: string;
+      name: string;
+      totalCurrent: number;
+      holdingIds: string[];
+      platformIds: Set<string>;
+      primaryHoldingId: string;
+      primaryHoldingValue: number;
+    }
+  >();
+
+  for (const h of holdings) {
+    const key = h.assetId;
+    const current = map.get(key) ?? {
+      assetId: h.assetId,
+      code: h.code,
+      name: h.name,
+      totalCurrent: 0,
+      holdingIds: [] as string[],
+      platformIds: new Set<string>(),
+      primaryHoldingId: h.id,
+      primaryHoldingValue: -Infinity
+    };
+    current.totalCurrent += h.currentValue;
+    current.holdingIds.push(h.id);
+    if (h.platformId) current.platformIds.add(h.platformId);
+    if (h.currentValue > current.primaryHoldingValue) {
+      current.primaryHoldingValue = h.currentValue;
+      current.primaryHoldingId = h.id;
+    }
+    map.set(key, current);
+  }
+
+  const items = Array.from(map.values()).map((row) => {
+    const share = (row.totalCurrent / eq) * 100;
+    const level = concentrationLevel(share);
+    const attentionLabel = level === 'high' ? 'Concentracao alta no ativo' : level === 'medium' ? 'Peso relevante no ativo' : null;
+
+    return {
+      assetId: row.assetId,
+      code: row.code,
+      name: row.name,
+      totalCurrent: row.totalCurrent,
+      sharePct: round2(share),
+      positionsCount: row.holdingIds.length,
+      platformsCount: row.platformIds.size || 1,
+      concentrationLevel: level,
+      attentionLabel,
+      primaryHoldingId: row.primaryHoldingId
+    };
+  });
+
+  return items.sort((a, b) => b.totalCurrent - a.totalCurrent || a.name.localeCompare(b.name));
+}
+
+function buildInstitutionConcentrations(holdings: PortfolioHolding[], totalEquity: number): PortfolioInstitutionConcentration[] {
+  const eq = totalEquity > 0 ? totalEquity : 1;
+  const map = new Map<string, { platformId: string; platformName: string; totalCurrent: number; positionsCount: number; categories: Set<string> }>();
+
+  for (const h of holdings) {
+    const key = h.platformId || 'unknown';
+    const name = h.platformName || 'Instituicao nao informada';
+    const current = map.get(key) ?? {
+      platformId: key,
+      platformName: name,
+      totalCurrent: 0,
+      positionsCount: 0,
+      categories: new Set<string>()
+    };
+    current.totalCurrent += h.currentValue;
+    current.positionsCount += 1;
+    if (h.categoryKey) current.categories.add(h.categoryKey);
+    map.set(key, current);
+  }
+
+  const items = Array.from(map.values()).map((row) => {
+    const share = (row.totalCurrent / eq) * 100;
+    const level = concentrationLevel(share);
+    const attentionLabel = level === 'high' ? 'Concentracao alta na instituicao' : level === 'medium' ? 'Dependencia relevante' : null;
+
+    return {
+      platformId: row.platformId,
+      platformName: row.platformName,
+      totalCurrent: row.totalCurrent,
+      sharePct: round2(share),
+      positionsCount: row.positionsCount,
+      categoriesCount: row.categories.size || 1,
+      concentrationLevel: level,
+      attentionLabel
+    };
+  });
+
+  return items.sort((a, b) => b.totalCurrent - a.totalCurrent || a.platformName.localeCompare(b.platformName));
 }
 
 function round2(n: number): number {
