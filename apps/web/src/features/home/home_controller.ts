@@ -3,6 +3,7 @@ import type { DashboardDataSource } from '../../core/data/data_sources';
 import { tryParseRoute, type AppRoute } from '../../core/router';
 import type { OperationFeedback } from '../../core/ops/load_state';
 import { loading } from '../../core/ops/load_state';
+import { toErrorFeedback } from '../../core/ops/error_catalog';
 
 export interface HomeNavigationTargets {
   primaryAction?: { label: string; pathname: string; route: AppRoute };
@@ -15,6 +16,7 @@ export interface HomeControllerResult {
   envelope: ApiDashboardHomeEnvelope;
   nav: HomeNavigationTargets;
   loadingFeedback: OperationFeedback;
+  errorFeedback?: OperationFeedback;
 }
 
 export interface HomeController {
@@ -33,7 +35,7 @@ export function createHomeController(input: { dashboard: DashboardDataSource }):
   return {
     async load() {
       const envelope = await dashboard.getDashboardHome();
-      if (!envelope.ok) return { envelope, nav: {}, loadingFeedback };
+      if (!envelope.ok) return { envelope, nav: {}, loadingFeedback, errorFeedback: toErrorFeedback(envelope.error, { area: 'home' }) };
 
       const nav = resolveNav(envelope.data);
       return { envelope, nav, loadingFeedback };
