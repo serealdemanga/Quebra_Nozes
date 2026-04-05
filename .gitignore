@@ -13,9 +13,13 @@ build/
 .vite/
 .next/
 coverage/
+*.tsbuildinfo
 
 # Cloudflare / wrangler
 .wrangler/
+
+# Logs
+*.log
 
 # OS / editor
 .DS_Store
