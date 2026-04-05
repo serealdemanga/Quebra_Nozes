@@ -61,4 +61,4 @@ EXTERNAL_REFERENCES_BRAPI_BASE_URL = "https://brapi.dev/api"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "esquilo-invest"
-database_id = "REPLACE_WITH_PROD_D1_DATABASE_ID"
+database_id = "2a4849fa-e980-4540-bd60-514b740287d3"
