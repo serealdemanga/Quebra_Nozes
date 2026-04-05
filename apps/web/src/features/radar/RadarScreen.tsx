@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { AppDataSources } from '../../core/data/data_sources';
-import type { AnalysisData, DashboardHomeData } from '../../core/data/contracts';
+import type { AnalysisData, DashboardHomeData, ProfileContextGetData } from '../../core/data/contracts';
 
 export interface RadarScreenProps {
   dataSources: AppDataSources;
@@ -12,7 +12,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
   const [state, setState] = useState<
     | { kind: 'loading' }
     | { kind: 'error'; message: string }
-    | { kind: 'ready'; data: AnalysisData; dashboard: DashboardHomeData | null }
+    | { kind: 'ready'; data: AnalysisData; dashboard: DashboardHomeData | null; profile: ProfileContextGetData | null }
   >({ kind: 'loading' });
 
   useEffect(() => {
@@ -20,12 +20,17 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
     setState({ kind: 'loading' });
     (async () => {
       try {
-        const [analysisRes, dashboardRes] = await Promise.all([
+        const [analysisRes, dashboardRes, profileRes] = await Promise.all([
           props.dataSources.analysis.getAnalysis(),
           props.dataSources.dashboard.getDashboardHome().catch((e) => ({
             ok: false,
             meta: { requestId: 'req_dash_failed', timestamp: new Date().toISOString(), version: 'v1' },
             error: { code: 'dashboard_failed', message: e instanceof Error ? e.message : 'Falha ao carregar dashboard' }
+          })),
+          props.dataSources.profile.getProfileContext().catch((e) => ({
+            ok: false,
+            meta: { requestId: 'req_profile_failed', timestamp: new Date().toISOString(), version: 'v1' },
+            error: { code: 'profile_failed', message: e instanceof Error ? e.message : 'Falha ao carregar perfil' }
           }))
         ]);
         if (cancelled) return;
@@ -33,7 +38,12 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
           setState({ kind: 'error', message: `${analysisRes.error.code}: ${analysisRes.error.message}` });
           return;
         }
-        setState({ kind: 'ready', data: analysisRes.data, dashboard: dashboardRes.ok ? dashboardRes.data : null });
+        setState({
+          kind: 'ready',
+          data: analysisRes.data,
+          dashboard: dashboardRes.ok ? dashboardRes.data : null,
+          profile: profileRes.ok ? profileRes.data : null
+        });
       } catch (e) {
         if (cancelled) return;
         setState({ kind: 'error', message: e instanceof Error ? e.message : 'Falha ao carregar' });
@@ -74,7 +84,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
               <div style={{ color: 'var(--c-slate)' }}>{state.message}</div>
             </div>
           ) : (
-            <RadarContent data={state.data} dashboard={state.dashboard} onGoToTarget={props.onGoToTarget} />
+            <RadarContent data={state.data} dashboard={state.dashboard} profile={state.profile} onGoToTarget={props.onGoToTarget} />
           )}
         </main>
       </div>
@@ -82,7 +92,7 @@ export function RadarScreen(props: RadarScreenProps): JSX.Element {
   );
 }
 
-function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData | null; onGoToTarget(path: string): void }): JSX.Element {
+function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData | null; profile: ProfileContextGetData | null; onGoToTarget(path: string): void }): JSX.Element {
   const d = props.data;
 
   if (d.screenState === 'redirect_onboarding') {
@@ -111,6 +121,7 @@ function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData 
   // ready
   const breakdown = deriveScoreBreakdown(d);
   const structure = deriveStructureImpact(props.dashboard);
+  const reality = deriveRealityImpact(props.profile, props.dashboard);
   return (
     <>
       <section className="card" style={{ padding: 16 }}>
@@ -164,6 +175,31 @@ function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData 
                   <li key={idx}>{tip}</li>
                 ))}
               </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {reality ? (
+        <section className="card" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Sua realidade x score</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: -0.2 }}>{reality.title}</div>
+          <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.55 }}>{reality.body}</div>
+          {reality.tips.length ? (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 900, marginBottom: 6 }}>Como usar isso</div>
+              <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--c-slate)', lineHeight: 1.55 }}>
+                {reality.tips.map((tip, idx) => (
+                  <li key={idx}>{tip}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {reality.cta ? (
+            <div style={{ marginTop: 12 }}>
+              <button className="btn btnPrimary" onClick={() => props.onGoToTarget(reality.cta.target)}>
+                {reality.cta.label}
+              </button>
             </div>
           ) : null}
         </section>
@@ -310,4 +346,70 @@ function deriveStructureImpact(
   }
 
   return { title, body, tips };
+}
+
+function deriveRealityImpact(
+  profile: ProfileContextGetData | null,
+  dashboard: DashboardHomeData | null
+): null | { title: string; body: string; tips: string[]; cta: null | { label: string; target: string } } {
+  if (!profile) return null;
+  if (!dashboard || (dashboard.screenState !== 'ready' && dashboard.screenState !== 'portfolio_ready_analysis_pending')) {
+    return null;
+  }
+
+  const ctx = profile.context;
+  const monthlyIncomeRange = ctx.monthlyIncomeRange;
+  const monthlyInvestmentTarget = ctx.monthlyInvestmentTarget ?? null;
+  const availableToInvest = ctx.availableToInvest ?? null;
+  const equity = Number(dashboard.hero?.totalEquity || 0);
+
+  const missing = !monthlyIncomeRange || !monthlyInvestmentTarget || monthlyInvestmentTarget <= 0;
+  if (missing) {
+    return {
+      title: 'Sem contexto suficiente para personalizar',
+      body: 'A mesma carteira pode ter leitura diferente para pessoas diferentes. Complete sua renda e meta de aporte para evitar uma análise genérica.',
+      tips: ['Defina um alvo de aporte mensal que caiba na sua realidade.', 'Use o score como guia de decisão, não como julgamento.'],
+      cta: { label: 'Completar contexto', target: '/onboarding' }
+    };
+  }
+
+  const targetPct = equity > 0 ? monthlyInvestmentTarget / equity : null;
+  const tips: string[] = [];
+
+  let title = 'Aporte consistente acelera melhoria do score';
+  let body = 'Seu alvo de aporte ajuda a definir o ritmo de melhoria do score sem depender de vender nada agora.';
+
+  if (availableToInvest != null && monthlyInvestmentTarget > availableToInvest) {
+    title = 'Meta de aporte acima da capacidade';
+    body = `Seu alvo mensal (${formatMoney(monthlyInvestmentTarget)}) esta acima do que voce disse que consegue investir (${formatMoney(availableToInvest)}). Ajustar isso evita frustracao e torna o plano executavel.`;
+    tips.push('Ajuste o alvo mensal para algo sustentavel por pelo menos 3 meses.');
+    tips.push('Foque em diluir concentracao com aportes pequenos e repetidos.');
+  } else if (targetPct != null && targetPct < 0.005) {
+    title = 'Ritmo lento para mudar a estrutura';
+    body = `Com patrimonio atual de ~${formatMoney(equity)}, um aporte mensal de ${formatMoney(monthlyInvestmentTarget)} tende a mudar a estrutura devagar. O score melhora, mas em passos menores.`;
+    tips.push('Se fizer sentido, aumente o aporte ou crie um aporte extra pontual quando houver folga.');
+    tips.push('Priorize aportes no bloco sub-representado para diluir concentracao.');
+  } else if (targetPct != null && targetPct >= 0.015) {
+    title = 'Ritmo forte para rebalancear com aportes';
+    body = `Com patrimonio atual de ~${formatMoney(equity)}, seu aporte mensal (${formatMoney(monthlyInvestmentTarget)}) permite rebalancear sem pressa e tende a puxar o score para cima mais rápido.`;
+    tips.push('Defina um teto por classe e use o aporte para trazer o que esta abaixo do alvo.');
+  } else {
+    title = 'Ritmo razoavel e previsivel';
+    body = `Seu aporte mensal (${formatMoney(monthlyInvestmentTarget)}) cria um caminho previsivel para ajustar a carteira sem decisões abruptas.`;
+    tips.push('Mantenha consistencia e reavalie a distribuicao a cada 30 dias.');
+  }
+
+  if (monthlyIncomeRange) {
+    tips.push(`Renda declarada: ${monthlyIncomeRange}. Use isso como referencia para manter metas realistas.`);
+  }
+
+  return { title, body, tips: tips.slice(0, 4), cta: null };
+}
+
+function formatMoney(value: number): string {
+  const v = Number(value || 0);
+  if (!Number.isFinite(v)) return 'R$ 0';
+  const rounded = Math.round(v);
+  // Mantem simples (sem Intl para evitar dependencias e diferencas de runtime).
+  return `R$ ${String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
 }
