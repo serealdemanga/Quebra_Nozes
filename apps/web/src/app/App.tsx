@@ -115,10 +115,7 @@ export function App(): JSX.Element {
     return (
       <RadarScreen
         dataSources={dataSources}
-        onBack={() => navigate('/home')}
         onGoToTarget={(path) => navigate(path)}
-        onGoToHome={() => navigate('/home')}
-        onGoToPortfolio={() => navigate('/portfolio')}
       />
     );
   }
