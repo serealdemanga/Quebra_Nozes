@@ -8,6 +8,7 @@ import type {
 } from '../../core/data/contracts';
 import type { PortfolioDataSource } from '../../core/data/data_sources';
 import { createRouter, type Router } from '../../core/router';
+import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view_models/empty_state';
 
 export type PortfolioLocalFilters = {
   categoryKey?: string;
@@ -42,7 +43,7 @@ export type PortfolioReadyViewModel = {
 export type PortfolioEmptyViewModel = {
   kind: 'empty';
   portfolioId: string;
-  emptyState: PortfolioDataEmpty['emptyState'];
+  emptyState: EmptyStateViewModel;
 };
 
 export type PortfolioRedirectViewModel = {
@@ -104,7 +105,7 @@ function buildViewModel(data: PortfolioData, query: PortfolioQuery, router: Rout
   }
 
   if (data.screenState === 'empty') {
-    return { kind: 'empty', portfolioId: data.portfolioId, emptyState: data.emptyState };
+    return { kind: 'empty', portfolioId: data.portfolioId, emptyState: toEmptyStateViewModel(data.emptyState) };
   }
 
   // ready
@@ -161,4 +162,3 @@ function buildCategorySummaries(groups: PortfolioGroup[], totalEquity: number): 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
-

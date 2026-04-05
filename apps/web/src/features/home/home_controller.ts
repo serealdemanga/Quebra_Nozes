@@ -1,4 +1,4 @@
-import type { ApiDashboardHomeEnvelope, DashboardHomeData, ScreenStateRedirect } from '../../core/data/contracts';
+import type { ApiDashboardHomeEnvelope, DashboardHomeData, DashboardHomeEmptyData, ScreenStateRedirect } from '../../core/data/contracts';
 import type { DashboardDataSource } from '../../core/data/data_sources';
 import { tryParseRoute, type AppRoute } from '../../core/router';
 
@@ -52,6 +52,15 @@ function resolveNav(data: DashboardHomeData): HomeNavigationTargets {
 
   const targets: HomeNavigationTargets = {};
 
+  if (data.screenState === 'empty') {
+    const empty = data as DashboardHomeEmptyData;
+    const pathname = empty.emptyState.target;
+    const route = tryParseRoute({ pathname });
+    if (route) {
+      targets.primaryAction = { label: empty.emptyState.ctaLabel, pathname, route };
+    }
+  }
+
   // CTA principal vem do backend; valida antes de expor.
   if ('primaryAction' in data && data.primaryAction?.target) {
     const pathname = data.primaryAction.target;
@@ -80,4 +89,3 @@ function resolveNav(data: DashboardHomeData): HomeNavigationTargets {
 
   return targets;
 }
-

@@ -1,10 +1,11 @@
 import type { AnalysisData, ApiAnalysisEnvelope, AnalysisPendingData, AnalysisReadyData } from '../../core/data/contracts';
 import type { AnalysisDataSource } from '../../core/data/data_sources';
 import { createRouter, tryParseRoute, type Router } from '../../core/router';
+import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view_models/empty_state';
 
 export type AnalysisViewModel =
   | { kind: 'redirect_onboarding'; redirectTo: string }
-  | { kind: 'pending'; portfolioId: string; pendingState: AnalysisPendingData['pendingState'] }
+  | { kind: 'pending'; portfolioId: string; pendingState: EmptyStateViewModel }
   | {
       kind: 'ready';
       portfolioId: string;
@@ -50,7 +51,10 @@ export function createAnalysisController(input: { analysis: AnalysisDataSource; 
       }
 
       if ('screenState' in data && data.screenState === 'pending') {
-        return { envelope, viewModel: { kind: 'pending', portfolioId: data.portfolioId, pendingState: data.pendingState } };
+        return {
+          envelope,
+          viewModel: { kind: 'pending', portfolioId: data.portfolioId, pendingState: toEmptyStateViewModel(data.pendingState) }
+        };
       }
 
       // ready

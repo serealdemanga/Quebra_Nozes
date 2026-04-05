@@ -11,10 +11,11 @@ import type {
 } from '../../core/data/contracts';
 import type { HistoryDataSource } from '../../core/data/data_sources';
 import { createRouter, type Router } from '../../core/router';
+import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view_models/empty_state';
 
 export type HistoryViewModel =
   | { kind: 'redirect_onboarding'; redirectTo: string }
-  | { kind: 'empty'; portfolioId: string; emptyState: EmptyState }
+  | { kind: 'empty'; portfolioId: string; emptyState: EmptyStateViewModel }
   | {
       kind: 'ready';
       portfolioId: string;
@@ -71,7 +72,7 @@ export function createHistoryController(input: { history: HistoryDataSource; rou
           ? (sData as HistorySnapshotsEmptyData).emptyState
           : (tData as HistoryTimelineEmptyData).emptyState);
         const portfolioId = sData.portfolioId;
-        return { snapshots, timeline, viewModel: { kind: 'empty', portfolioId, emptyState } };
+        return { snapshots, timeline, viewModel: { kind: 'empty', portfolioId, emptyState: toEmptyStateViewModel(emptyState) } };
       }
 
       const sReady = sData as HistorySnapshotsReadyData;
