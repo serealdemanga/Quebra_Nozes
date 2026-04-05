@@ -9,8 +9,10 @@ Serviço HTTP separado para extração canônica de carteira a partir de PDF, im
 ## Estratégia
 1. tenta regra simples quando há texto extraído
 2. se a regra não fecha com confiança alta, chama OpenAI
-3. se OpenAI falhar ou devolver resposta inválida, usa Gemini
-4. salva request bruto e payload normalizado para auditoria
+3. OpenAI aceita imagem direto e PDF direto nesta versão
+4. se OpenAI falhar ou não suportar bem o input, usa Gemini
+5. Gemini pode usar inline data para arquivos menores e upload de arquivo para cargas maiores ou MIME menos confortáveis inline
+6. salva request bruto e payload normalizado para auditoria
 
 ## Input esperado
 ```json
@@ -21,9 +23,3 @@ Serviço HTTP separado para extração canônica de carteira a partir de PDF, im
   "fileBase64": "...opcional...",
   "documentId": "...opcional..."
 }
-```
-
-## Observações
-- OpenAI entra primeiro para texto e imagem.
-- Binário sem texto extraído e não-imagem tende a cair no fallback Gemini por capacidade.
-- O serviço não commita nada na carteira. Ele só devolve payload canônico para a camada de preview/import.
