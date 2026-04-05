@@ -95,22 +95,23 @@ jobs:
           sed -i "s/${PLACEHOLDER}/${{ secrets.CF_D1_DATABASE_ID }}/g" \
             04_STARTER_BACKEND/esquilo_cloudflare_d1_starter/wrangler.toml
 
-      # Cria o .env do frontend para que VITE_API_BASE_URL seja embutido no build.
-      # O secret VITE_API_BASE_URL deve conter a URL do Worker para cada environment.
-      - name: Validate web app secrets
-        run: |
-          set -euo pipefail
-          if [ -z "${{ secrets.VITE_API_BASE_URL }}" ]; then
-            echo "Missing secret: VITE_API_BASE_URL." >&2
-            exit 1
-          fi
-
+      # Cria o .env do frontend.
+      # Se VITE_API_BASE_URL existir, usa a URL explícita.
+      # Se não existir, deixa o app usar mesma origem — comportamento correto
+      # quando SPA + API /v1/* estão no mesmo Worker.
       - name: Create web app .env
         run: |
-          printf 'VITE_API_BASE_URL=%s\nVITE_APP_ENV=%s\nVITE_DATA_SOURCE_MODE=http\n' \
-            "${{ secrets.VITE_API_BASE_URL }}" \
-            "$TARGET_ENV" \
-            > apps/web/app/.env
+          set -euo pipefail
+          {
+            if [ -n "${{ secrets.VITE_API_BASE_URL }}" ]; then
+              printf 'VITE_API_BASE_URL=%s\n' "${{ secrets.VITE_API_BASE_URL }}"
+              echo "Using explicit VITE_API_BASE_URL from secrets." >&2
+            else
+              echo "VITE_API_BASE_URL not set — using same-origin API fallback." >&2
+            fi
+            printf 'VITE_APP_ENV=%s\n' "$TARGET_ENV"
+            printf 'VITE_DATA_SOURCE_MODE=http\n'
+          } > apps/web/app/.env
 
       - name: Deploy (build gate + wrangler)
         working-directory: 04_STARTER_BACKEND/esquilo_cloudflare_d1_starter

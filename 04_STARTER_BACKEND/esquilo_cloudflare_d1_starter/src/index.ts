@@ -18,6 +18,22 @@ import type { Env } from './types/env';
 
 const router = new Router();
 
+function resolveCorsOrigin(request: Request, env: Env): string | null {
+  const origin = request.headers.get('Origin');
+  if (!origin || !env.CORS_ALLOWED_ORIGINS) return null;
+  const allowed = env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean);
+  return allowed.includes(origin) ? origin : null;
+}
+
+function withCors(response: Response, allowedOrigin: string | null): Response {
+  if (!allowedOrigin) return response;
+  const next = new Response(response.body, response);
+  next.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+  next.headers.set('Access-Control-Allow-Credentials', 'true');
+  next.headers.set('Vary', 'Origin');
+  return next;
+}
+
 router.register('GET', '/v1/health', getHealth);
 router.register('POST', '/v1/auth/register', postAuthRegister);
 router.register('POST', '/v1/auth/login', postAuthLogin);
@@ -47,28 +63,6 @@ router.register('POST', '/v1/imports/:importId/rows/:rowId/duplicate-resolution'
 router.register('POST', '/v1/imports/:importId/commit', postImportCommit);
 router.register('GET', '/v1/ops/events', getOperationalEvents);
 
-// ---------------------------------------------------------------------------
-// CORS helpers
-// ---------------------------------------------------------------------------
-
-function resolveCorsOrigin(request: Request, env: Env): string | null {
-  const origin = request.headers.get('Origin');
-  if (!origin || !env.CORS_ALLOWED_ORIGINS) return null;
-  const allowed = env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean);
-  return allowed.includes(origin) ? origin : null;
-}
-
-function withCors(response: Response, allowedOrigin: string | null): Response {
-  if (!allowedOrigin) return response;
-  const next = new Response(response.body, response);
-  next.headers.set('Access-Control-Allow-Origin', allowedOrigin);
-  next.headers.set('Access-Control-Allow-Credentials', 'true');
-  next.headers.set('Vary', 'Origin');
-  return next;
-}
-
-// ---------------------------------------------------------------------------
-
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const startedAt = Date.now();
@@ -86,7 +80,7 @@ export default {
             'Access-Control-Allow-Origin': allowedOrigin,
             'Access-Control-Allow-Credentials': 'true',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, X-Request-ID',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie',
             'Access-Control-Max-Age': '86400',
             'Vary': 'Origin',
           }

@@ -59,7 +59,11 @@ function safeJson(value: unknown): string {
 
 function toErrorDetails(error: unknown): Record<string, unknown> {
   if (error instanceof Error) {
-    return { name: error.name, message: error.message, stack: error.stack };
+    const base: Record<string, unknown> = { name: error.name, message: error.message, stack: error.stack };
+    // D1Error expõe causeDetails com o erro original do runtime — inclui para diagnóstico.
+    const cause = (error as Record<string, unknown>).causeDetails;
+    if (cause && typeof cause === 'object') base.causeDetails = cause;
+    return base;
   }
   return { value: String(error) };
 }
