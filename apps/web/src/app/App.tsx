@@ -7,6 +7,7 @@ import { SplashScreen } from '../features/splash/SplashScreen';
 import { OnboardingScreen } from '../features/onboarding/OnboardingScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { PortfolioScreen } from '../features/portfolio/PortfolioScreen';
+import { HoldingDetailScreen } from '../features/holding_detail/HoldingDetailScreen';
 
 function getEnv(): AppEnv {
   const raw = String(import.meta.env.VITE_APP_ENV ?? 'local');
@@ -88,6 +89,17 @@ export function App(): JSX.Element {
         dataSources={dataSources}
         onBack={() => navigate('/home')}
         onOpenHolding={({ portfolioId, holdingId }) => navigate(`/portfolio/${encodeURIComponent(portfolioId)}/holdings/${encodeURIComponent(holdingId)}`)}
+      />
+    );
+  }
+
+  if (state.route.id === 'holding_detail') {
+    return (
+      <HoldingDetailScreen
+        dataSources={dataSources}
+        input={{ portfolioId: state.route.params.portfolioId, holdingId: state.route.params.holdingId }}
+        onBack={() => navigate('/portfolio')}
+        onOpenExternal={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
       />
     );
   }
