@@ -127,6 +127,7 @@ function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData 
   // ready
   const breakdown = deriveScoreBreakdown(d);
   const structure = deriveStructureImpact(props.dashboard);
+  const concentrationAlert = deriveConcentrationAlert(props.dashboard);
   const reality = deriveRealityImpact(props.profile, props.dashboard);
   const behavior = deriveBehaviorImpact(props.timeline);
   const evolution = deriveScoreEvolution(props.timeline);
@@ -141,6 +142,33 @@ function RadarContent(props: { data: AnalysisData; dashboard: DashboardHomeData 
           <ScoreBadge value={d.score.value} status={d.score.status} />
         </div>
       </section>
+
+      {concentrationAlert ? (
+        <section className="card" style={{ padding: 16, borderColor: 'rgba(245,106,42,0.45)', background: 'rgba(255,255,255,0.78)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontWeight: 900, marginBottom: 6 }}>Alerta</div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: -0.2 }}>{concentrationAlert.title}</div>
+              <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.55 }}>{concentrationAlert.body}</div>
+            </div>
+            <div>
+              <button className="btn btnPrimary" onClick={() => props.onGoToTarget('/portfolio')}>
+                Ver carteira
+              </button>
+            </div>
+          </div>
+          {concentrationAlert.tips.length ? (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 900, marginBottom: 6 }}>Acao viavel agora</div>
+              <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--c-slate)', lineHeight: 1.55 }}>
+                {concentrationAlert.tips.map((tip, idx) => (
+                  <li key={idx}>{tip}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="card" style={{ padding: 16 }}>
         <div style={{ fontWeight: 900, marginBottom: 10 }}>O que compoe a nota</div>
@@ -390,6 +418,35 @@ function deriveStructureImpact(
   }
 
   return { title, body, tips };
+}
+
+function deriveConcentrationAlert(
+  dashboard: DashboardHomeData | null
+): null | { title: string; body: string; tips: string[] } {
+  if (!dashboard) return null;
+  if (dashboard.screenState !== 'ready' && dashboard.screenState !== 'portfolio_ready_analysis_pending') return null;
+  const dist = dashboard.distribution || [];
+  if (!dist.length) return null;
+
+  const top = dist[0];
+  const topPct = Number(top.sharePct || 0);
+  const hhi = dist.reduce((acc, item) => {
+    const p = Math.max(0, Number(item.sharePct || 0)) / 100;
+    return acc + p * p;
+  }, 0);
+
+  if (topPct < 40 && hhi < 0.35) return null;
+
+  const tips: string[] = [];
+  tips.push('Pare de reforcar o bloco dominante nos proximos aportes.');
+  tips.push('Direcione aportes para blocos menores ate reduzir a concentracao.');
+  tips.push('Defina um teto por classe (ex: 35%) e use isso como regra simples.');
+
+  return {
+    title: 'Concentracao excessiva',
+    body: `${top.label} esta com cerca de ${Math.round(topPct)}% do patrimonio. Isso aumenta o risco e tende a pressionar o score se continuar crescendo sozinho.`,
+    tips: tips.slice(0, 3)
+  };
 }
 
 function deriveRealityImpact(
