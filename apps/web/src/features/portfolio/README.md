@@ -16,3 +16,6 @@ Ler a carteira por categoria e por ativo sem confusão.
 
 ## Regra
 A carteira precisa ser legível mesmo sem filtro avançado no começo.
+
+## Filtros (contrato atual)
+- `performance=all|best|worst` (opcional)
