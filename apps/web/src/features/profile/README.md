@@ -19,4 +19,4 @@ O perfil melhora a leitura da carteira. Não deve parecer cadastro bancário cha
 
 ## Estados (E2E-003)
 - ao reabrir, dados devem reaparecer iguais ao salvo (fonte de verdade = GET /v1/profile/context).
-- salvar deve atualizar `onboarding` quando o usuário concluir o fluxo.
+- salvar após onboarding usa PUT sem `step` (patch em `context`), para nao reabrir onboarding.
