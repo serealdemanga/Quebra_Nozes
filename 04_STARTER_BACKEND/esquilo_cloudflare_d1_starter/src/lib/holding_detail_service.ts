@@ -66,12 +66,16 @@ export async function getHoldingDetailData(request: Request, env: Env, params: R
   });
 
   const ranking = buildRanking({ allocationPct, performancePct, hasQuote: currentPrice != null, benchmarkComparison });
+  const holdingCreatedDate = toIsoDate(holding.created_at) ?? new Date().toISOString().slice(0, 10);
+  const holdingAgeDays = daysBetweenIsoDates(holdingCreatedDate, new Date().toISOString().slice(0, 10));
   const recommendation = buildRecommendation({
     allocationPct,
     performancePct,
     hasQuote: currentPrice != null,
     analysisAction: latestAnalysis?.primary_action || '',
-    benchmarkComparison
+    benchmarkComparison,
+    assetTypeCode: holding.asset_type_code || '',
+    holdingAgeDays
   });
   const categoryContext = buildCategoryContext({
     categoryKey,
@@ -285,6 +289,8 @@ function buildRecommendation(input: {
         label: string;
       }
     | null;
+  assetTypeCode: string;
+  holdingAgeDays: number | null;
 }) {
   if (!input.hasQuote) {
     return {
@@ -313,6 +319,19 @@ function buildRecommendation(input: {
       code: 'review_exposure',
       title: 'Revisar exposicao',
       body: 'O ativo esta perdendo valor e ainda ocupa peso relevante na carteira. ' + appendAnalysisContext(input.analysisAction)
+    };
+  }
+
+  // US065: fund review recommendation without requiring CDI. Conservative window to avoid short-term noise.
+  const assetType = (input.assetTypeCode || '').toUpperCase();
+  if (assetType === 'FUND' && input.holdingAgeDays != null && input.holdingAgeDays >= 90 && input.performancePct != null && input.performancePct <= -5 && input.allocationPct >= 8) {
+    return {
+      code: 'review_fund',
+      title: 'Revisar fundo',
+      body:
+        'O fundo esta com performance negativa por um periodo relevante e tem peso material na carteira. ' +
+        'Revise taxas, estrategia e se ele ainda cumpre o papel esperado. ' +
+        appendAnalysisContext(input.analysisAction)
     };
   }
   if (input.performancePct != null && input.performancePct > 15 && input.allocationPct > 20) {
