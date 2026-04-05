@@ -102,6 +102,7 @@ function RadarContent(props: { data: AnalysisData; onGoToTarget(path: string): v
   }
 
   // ready
+  const breakdown = deriveScoreBreakdown(d);
   return (
     <>
       <section className="card" style={{ padding: 16 }}>
@@ -111,6 +112,34 @@ function RadarContent(props: { data: AnalysisData; onGoToTarget(path: string): v
             <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.5 }}>{d.score.explanation}</div>
           </div>
           <ScoreBadge value={d.score.value} status={d.score.status} />
+        </div>
+      </section>
+
+      <section className="card" style={{ padding: 16 }}>
+        <div style={{ fontWeight: 900, marginBottom: 10 }}>O que compoe a nota</div>
+        <div style={{ display: 'grid', gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 900, marginBottom: 6 }}>Ajuda</div>
+            <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--c-slate)', lineHeight: 1.55 }}>
+              {breakdown.positives.map((item, idx) => (
+                <li key={idx}>
+                  <div style={{ fontWeight: 900, color: 'var(--c-ink)' }}>{item.title}</div>
+                  <div>{item.body}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <div style={{ fontWeight: 900, marginBottom: 6 }}>Atrasa</div>
+            <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--c-slate)', lineHeight: 1.55 }}>
+              {breakdown.negatives.map((item, idx) => (
+                <li key={idx}>
+                  <div style={{ fontWeight: 900, color: 'var(--c-ink)' }}>{item.title}</div>
+                  <div>{item.body}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
@@ -163,3 +192,57 @@ function ScoreBadge(props: { value: number; status: string }): JSX.Element {
   );
 }
 
+function deriveScoreBreakdown(
+  data: Extract<AnalysisData, { screenState: 'ready' }>
+): { positives: Array<{ title: string; body: string }>; negatives: Array<{ title: string; body: string }> } {
+  const positives: Array<{ title: string; body: string }> = [];
+  const negatives: Array<{ title: string; body: string }> = [];
+
+  // Negativo mais explícito (para não virar "caixa preta").
+  if (data.primaryProblem?.title || data.primaryProblem?.body) {
+    negatives.push({
+      title: data.primaryProblem.title || 'Ponto de atencao',
+      body: data.primaryProblem.body || 'Existe um fator que pressiona seu score.'
+    });
+  }
+
+  for (const insight of data.insights || []) {
+    const text = `${insight.kind} ${insight.title} ${insight.body}`.toLowerCase();
+    const isNegative = text.includes('concentr') || text.includes('risco') || text.includes('press') || text.includes('perda') || text.includes('alto');
+    const bucket = isNegative ? negatives : positives;
+    bucket.push({
+      title: insight.title || (isNegative ? 'Fator de risco' : 'Fator positivo'),
+      body: insight.body
+    });
+  }
+
+  if (!positives.length) {
+    positives.push({
+      title: 'Base estruturada',
+      body: data.score.value >= 60 ? 'A carteira tem base suficiente para evoluir com ajustes incrementais.' : 'Ha sinais positivos, mas a base ainda pede organizacao.'
+    });
+  }
+  if (!negatives.length) {
+    negatives.push({
+      title: 'Sem alertas dominantes',
+      body: 'Nenhum fator negativo dominante foi identificado nesta leitura.'
+    });
+  }
+
+  return {
+    positives: dedupeByTitle(positives).slice(0, 4),
+    negatives: dedupeByTitle(negatives).slice(0, 4)
+  };
+}
+
+function dedupeByTitle(items: Array<{ title: string; body: string }>): Array<{ title: string; body: string }> {
+  const seen = new Set<string>();
+  const out: Array<{ title: string; body: string }> = [];
+  for (const item of items) {
+    const key = item.title.trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
