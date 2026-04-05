@@ -60,7 +60,7 @@ export type HistorySnapshotsReadyData = {
     totalProfitLoss: number;
     totalProfitLossPct: number;
     createdAt: string;
-    analysisBadge: null | { status: string; primaryProblem: string; primaryAction: string };
+    analysisBadge: null | { scoreValue?: number | null; status: string; primaryProblem: string; primaryAction: string };
   }>;
 };
 
@@ -81,7 +81,7 @@ export type HistoryTimelineItemSnapshot = {
     totalProfitLoss: number;
     totalProfitLossPct: number;
   };
-  recommendation: null | { status: string; primaryProblem: string; primaryAction: string };
+  recommendation: null | { scoreValue?: number | null; status: string; primaryProblem: string; primaryAction: string };
 };
 
 export type HistoryTimelineItemEvent = {
