@@ -13,6 +13,7 @@ import { HistoryScreen } from '../features/history/HistoryScreen';
 import { ImportsCenterScreen } from '../features/imports/ImportsCenterScreen';
 import { ImportsEntryScreen } from '../features/imports/ImportsEntryScreen';
 import { ImportsPreviewScreen } from '../features/imports/ImportsPreviewScreen';
+import { ProfileScreen } from '../features/profile/ProfileScreen';
 
 function getEnv(): AppEnv {
   const raw = String(import.meta.env.VITE_APP_ENV ?? 'local');
@@ -138,6 +139,10 @@ export function App(): JSX.Element {
 
   if (state.route.id === 'imports_preview') {
     return <ImportsPreviewScreen dataSources={dataSources} importId={state.route.params.importId} onGoToTarget={(path) => navigate(path)} />;
+  }
+
+  if (state.route.id === 'profile') {
+    return <ProfileScreen dataSources={dataSources} onGoToTarget={(path) => navigate(path)} />;
   }
 
   // placeholder headless: as telas vão entrando uma a uma, sempre com contratos/mocks.
