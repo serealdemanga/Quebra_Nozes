@@ -29,6 +29,7 @@ export type PortfolioCategorySummary = {
   totalCurrent: number;
   sharePct: number;
   holdingsCount: number;
+  concentrationLevel: 'low' | 'medium' | 'high';
 };
 
 export type PortfolioReadyViewModel = {
@@ -171,11 +172,19 @@ function buildCategorySummaries(groups: PortfolioGroup[], totalEquity: number): 
       categoryLabel: g.categoryLabel,
       totalCurrent: g.totalCurrent,
       sharePct: round2((g.totalCurrent / eq) * 100),
-      holdingsCount: g.holdings.length
+      holdingsCount: g.holdings.length,
+      concentrationLevel: concentrationLevel((g.totalCurrent / eq) * 100)
     }))
     .sort((a, b) => b.totalCurrent - a.totalCurrent);
 }
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+function concentrationLevel(sharePct: number): 'low' | 'medium' | 'high' {
+  // Heuristica simples para leitura macro (US031) sem inventar regra financeira complexa.
+  if (sharePct >= 60) return 'high';
+  if (sharePct >= 30) return 'medium';
+  return 'low';
 }
