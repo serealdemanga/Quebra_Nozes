@@ -59,6 +59,18 @@ export function createLocalMockDataSources(options: MockProviderOptions): AppDat
     },
     holdingDetail: {
       async getHoldingDetail(input: { portfolioId: string; holdingId: string }): Promise<ApiHoldingDetailEnvelope> {
+        if (basePath.includes('apps/web/src/core/data/mock/hml')) {
+          return {
+            ok: true,
+            meta: {
+              requestId: 'req_hml_holding_redirect',
+              timestamp: new Date().toISOString(),
+              version: 'v1'
+            },
+            data: { screenState: 'redirect_onboarding', redirectTo: '/onboarding' }
+          };
+        }
+
         // Mock deterministico por holdingId, para cobrir fundo/previdencia/acao sem UI real.
         const holdingId = input.holdingId;
         const file =

@@ -17,3 +17,6 @@ Detalhe existe para orientar decisao. Se nao muda acao, nao merece complexidade.
 
 ## Tipos (US034/US035)
 A tela pode variar blocos com base em `holding.assetTypeCode` (ex.: `FUND` vs `PENSION`) sem mudar o contrato base.
+
+## Implementacao (sem layout)
+`holding_detail_controller.ts` centraliza leitura do contrato e targets de navegacao.
