@@ -83,9 +83,7 @@ export function App(): JSX.Element {
     return (
       <HomeScreen
         dataSources={dataSources}
-        onGoToOnboarding={() => navigate('/onboarding')}
-        onGoToPortfolio={() => navigate('/portfolio')}
-        onGoToRadar={() => navigate('/radar')}
+        onGoToTarget={(path) => navigate(path)}
       />
     );
   }
