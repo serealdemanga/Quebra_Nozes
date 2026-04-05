@@ -27,7 +27,7 @@ INSERT INTO assets (id, asset_type_id, code, name, normalized_name) VALUES
 
 -- Cenario 1: carteira equilibrada (pronta)
 INSERT INTO users (id, cpf, email, password_hash, display_name, status) VALUES
-('usr_seed_balanced', '11122233344', 'balanced@example.com', 'pbkdf2_sha256$210000$AQIDBAUGBwgJCgsMDQ4PEA$jbWPdVpAx7pu8ZCx0wY0j1VsKVnFfedYNCZR6r-R19Y', 'Usuario Balanced', 'ACTIVE');
+('usr_seed_balanced', '11122233344', 'balanced@example.com', 'pbkdf2_sha256$60000$GTeDS3h2djcs/EiqYWxOGg==$Q6RKrmtDOY/zfcKVM1Og9bB9aFoexCafEMR2FwOvUDg=', 'Usuario Balanced', 'ACTIVE');
 
 INSERT INTO auth_sessions (id, user_id, session_token_hash, remember_device, expires_at, created_at, last_seen_at) VALUES
 ('ses_seed_balanced', 'usr_seed_balanced', '9fcb045ffe3cdb6c05a05d4d4d7be11d531a017bd5082d886096a9d8a1ec43aa', 1, '2099-01-01T00:00:00.000Z', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
@@ -108,7 +108,7 @@ INSERT INTO operational_events (id, user_id, portfolio_id, event_type, event_sta
 
 -- Cenario 2: carteira concentrada (edge case de concentracao)
 INSERT INTO users (id, cpf, email, password_hash, display_name, status) VALUES
-('usr_seed_concentrated', '55566677788', 'concentrated@example.com', 'pbkdf2_sha256$210000$__79_Pv6-fj39vX08_Lx8A$b36UdHYUtbu0t3p_Gb2o-X9cmfcPy1rrY9bReX3waSM', 'Usuario Concentrated', 'ACTIVE');
+('usr_seed_concentrated', '55566677788', 'concentrated@example.com', 'pbkdf2_sha256$60000$4Lh1G9QMgFP6UfGAhbINmQ==$ICcHoMtavBfUpNghcHzr8fAAJs/d9xhrdnn1tpLa5U0=', 'Usuario Concentrated', 'ACTIVE');
 
 INSERT INTO auth_sessions (id, user_id, session_token_hash, remember_device, expires_at, created_at, last_seen_at) VALUES
 ('ses_seed_concentrated', 'usr_seed_concentrated', '5ba0a14d6543bd8c93a5197b64b943ff76e016f0c2b6e77c3d3365e91338508a', 1, '2099-01-01T00:00:00.000Z', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
@@ -180,7 +180,7 @@ INSERT INTO operational_events (id, user_id, portfolio_id, event_type, event_sta
 
 -- Cenario 3: carteira vazia (com contexto) para testar estados "empty"
 INSERT INTO users (id, cpf, email, password_hash, display_name, status) VALUES
-('usr_seed_empty', '99988877766', 'empty@example.com', 'pbkdf2_sha256$210000$AAcOFRwjKjE4P0ZNVFtiaQ$RFW9BH_jV6E5_y_BqndRkjeIib3-IbqHpeSEZcZtgs4', 'Usuario Empty', 'ACTIVE');
+('usr_seed_empty', '99988877766', 'empty@example.com', 'pbkdf2_sha256$60000$7VxV33eIoNB07+/sLCXkAg==$KwzQwPqOkh0VdDtMdILtvAJTaOjgTnFK9czN+QybK44=', 'Usuario Empty', 'ACTIVE');
 
 INSERT INTO auth_sessions (id, user_id, session_token_hash, remember_device, expires_at, created_at, last_seen_at) VALUES
 ('ses_seed_empty', 'usr_seed_empty', '575a474bedc88fcd8e64833f61af36d2587cf599698e308d89fb094fe0343c64', 1, '2099-01-01T00:00:00.000Z', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
