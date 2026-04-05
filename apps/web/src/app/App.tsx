@@ -8,6 +8,7 @@ import { OnboardingScreen } from '../features/onboarding/OnboardingScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { PortfolioScreen } from '../features/portfolio/PortfolioScreen';
 import { HoldingDetailScreen } from '../features/holding_detail/HoldingDetailScreen';
+import { RadarScreen } from '../features/radar/RadarScreen';
 
 function getEnv(): AppEnv {
   const raw = String(import.meta.env.VITE_APP_ENV ?? 'local');
@@ -100,6 +101,16 @@ export function App(): JSX.Element {
         input={{ portfolioId: state.route.params.portfolioId, holdingId: state.route.params.holdingId }}
         onBack={() => navigate('/portfolio')}
         onOpenExternal={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
+      />
+    );
+  }
+
+  if (state.route.id === 'radar') {
+    return (
+      <RadarScreen
+        dataSources={dataSources}
+        onBack={() => navigate('/home')}
+        onGoToTarget={(path) => navigate(path)}
       />
     );
   }
