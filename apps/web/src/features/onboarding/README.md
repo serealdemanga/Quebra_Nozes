@@ -11,9 +11,8 @@ O onboarding usa `GET/PUT /v1/profile/context` como fonte de verdade:
 
 ## Estados obrigatorios (E2E-002 / E2E-018)
 - sem contexto: guiar passo a passo usando `onboarding.missing`
-- revisao: permitir confirmar antes de concluir (`step=confirm`)
+- revisao: permitir confirmar antes de concluir (`review` local + `step=confirm`)
 - concluido: redirecionar para Home (ou proxima etapa definida)
 
 ## Regra
 Nao fazer roundtrip por clique: persistir por etapa concluida (goal, risk_quiz, income_horizon, platforms, confirm).
-
