@@ -2,6 +2,8 @@ import type { AnalysisData, ApiAnalysisEnvelope, AnalysisPendingData, AnalysisRe
 import type { AnalysisDataSource } from '../../core/data/data_sources';
 import { createRouter, tryParseRoute, type Router } from '../../core/router';
 import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view_models/empty_state';
+import type { OperationFeedback } from '../../core/ops/load_state';
+import { loading } from '../../core/ops/load_state';
 
 export type AnalysisViewModel =
   | { kind: 'redirect_onboarding'; redirectTo: string }
@@ -26,6 +28,7 @@ export type AnalysisViewModel =
 export interface AnalysisControllerResult {
   envelope: ApiAnalysisEnvelope;
   viewModel: AnalysisViewModel;
+  loadingFeedback: OperationFeedback;
 }
 
 export interface AnalysisController {
@@ -39,21 +42,23 @@ export interface AnalysisController {
 export function createAnalysisController(input: { analysis: AnalysisDataSource; router?: Router }): AnalysisController {
   const analysis = input.analysis;
   const router = input.router ?? createRouter();
+  const loadingFeedback = loading('Carregando Radar', 'Gerando/recuperando analise e score.');
 
   return {
     async load() {
       const envelope = await analysis.getAnalysis();
-      if (!envelope.ok) return { envelope, viewModel: { kind: 'error', code: envelope.error.code, message: envelope.error.message } };
+      if (!envelope.ok) return { envelope, viewModel: { kind: 'error', code: envelope.error.code, message: envelope.error.message }, loadingFeedback };
 
       const data = envelope.data as AnalysisData;
       if ('screenState' in data && data.screenState === 'redirect_onboarding') {
-        return { envelope, viewModel: { kind: 'redirect_onboarding', redirectTo: data.redirectTo || '/onboarding' } };
+        return { envelope, viewModel: { kind: 'redirect_onboarding', redirectTo: data.redirectTo || '/onboarding' }, loadingFeedback };
       }
 
       if ('screenState' in data && data.screenState === 'pending') {
         return {
           envelope,
-          viewModel: { kind: 'pending', portfolioId: data.portfolioId, pendingState: toEmptyStateViewModel(data.pendingState) }
+          viewModel: { kind: 'pending', portfolioId: data.portfolioId, pendingState: toEmptyStateViewModel(data.pendingState) },
+          loadingFeedback
         };
       }
 
@@ -64,6 +69,7 @@ export function createAnalysisController(input: { analysis: AnalysisDataSource; 
 
       return {
         envelope,
+        loadingFeedback,
         viewModel: {
           kind: 'ready',
           portfolioId: ready.portfolioId,

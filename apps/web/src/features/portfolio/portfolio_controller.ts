@@ -9,6 +9,8 @@ import type {
 import type { PortfolioDataSource } from '../../core/data/data_sources';
 import { createRouter, type Router } from '../../core/router';
 import { toEmptyStateViewModel, type EmptyStateViewModel } from '../../core/view_models/empty_state';
+import type { OperationFeedback } from '../../core/ops/load_state';
+import { loading } from '../../core/ops/load_state';
 
 export type PortfolioLocalFilters = {
   categoryKey?: string;
@@ -66,6 +68,7 @@ export type PortfolioViewModel =
 export interface PortfolioControllerResult {
   envelope: ApiPortfolioEnvelope;
   viewModel: PortfolioViewModel;
+  loadingFeedback: OperationFeedback;
 }
 
 export interface PortfolioController {
@@ -81,6 +84,7 @@ export interface PortfolioController {
 export function createPortfolioController(input: { portfolio: PortfolioDataSource; router?: Router }): PortfolioController {
   const portfolio = input.portfolio;
   const router = input.router ?? createRouter();
+  const loadingFeedback = loading('Carregando Carteira', 'Lendo posicoes e agrupando por categoria.');
 
   return {
     async load(query) {
@@ -89,12 +93,13 @@ export function createPortfolioController(input: { portfolio: PortfolioDataSourc
       if (!envelope.ok) {
         return {
           envelope,
-          viewModel: { kind: 'error', code: envelope.error.code, message: envelope.error.message }
+          viewModel: { kind: 'error', code: envelope.error.code, message: envelope.error.message },
+          loadingFeedback
         };
       }
 
       const viewModel = buildViewModel(envelope.data, query ?? {}, router);
-      return { envelope, viewModel };
+      return { envelope, viewModel, loadingFeedback };
     }
   };
 }
