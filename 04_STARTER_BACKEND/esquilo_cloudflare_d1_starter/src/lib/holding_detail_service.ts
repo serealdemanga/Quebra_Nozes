@@ -1,6 +1,7 @@
 import type { Env } from '../types/env';
 import { ok, fail } from './http';
 import { hashToken } from './auth_crypto';
+import { getExternalQuoteForStockBvmf } from './external_references_service';
 import {
   findHoldingSessionStateByTokenHash,
   findHoldingDetailById,
@@ -39,7 +40,19 @@ export async function getHoldingDetailData(request: Request, env: Env, params: R
 
   const investedAmount = Number(holding.invested_amount || 0);
   const currentValue = Number(holding.current_amount || 0);
-  const currentPrice = holding.current_price == null ? null : Number(holding.current_price);
+  const storedCurrentPrice = holding.current_price == null ? null : Number(holding.current_price);
+  let currentPrice = storedCurrentPrice;
+  let sourceWarning: string | undefined;
+
+  // External quote is complementary: only used when we don't have current_price stored.
+  const normalizedType = (holding.asset_type_code || '').toUpperCase();
+  if (currentPrice == null && normalizedType === 'STOCK' && holding.code) {
+    const quote = await getExternalQuoteForStockBvmf(env, holding.code);
+    if (quote?.price != null) {
+      currentPrice = quote.price;
+      sourceWarning = 'Cotacao veio de fonte externa complementar.';
+    }
+  }
   const averagePrice = Number(holding.average_price || 0);
   const performanceValue = currentValue - investedAmount;
   const performancePct = investedAmount > 0 ? (performanceValue / investedAmount) * 100 : null;
@@ -74,7 +87,7 @@ export async function getHoldingDetailData(request: Request, env: Env, params: R
       performancePct,
       allocationPct,
       recommendation: recommendation.title,
-      statusLabel: currentPrice == null ? 'Sem cotacao atual' : 'Cotacao disponivel',
+      statusLabel: currentPrice == null ? 'Sem cotacao atual' : sourceWarning ? 'Cotacao externa' : 'Cotacao disponivel',
       quotationStatus: currentPrice == null ? 'missing_quote' : 'priced',
       notes: holding.notes || '',
       stopLoss: holding.stop_loss == null ? null : Number(holding.stop_loss),
@@ -86,7 +99,7 @@ export async function getHoldingDetailData(request: Request, env: Env, params: R
     recommendation,
     categoryContext,
     externalLink: buildExternalLink(holding.asset_type_code || '', holding.code || '')
-  });
+  }, sourceWarning);
 }
 
 function buildRanking(input: { allocationPct: number; performancePct: number | null; hasQuote: boolean }) {

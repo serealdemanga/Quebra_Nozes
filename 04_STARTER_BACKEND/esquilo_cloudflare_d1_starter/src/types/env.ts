@@ -12,4 +12,9 @@ export interface Env {
   APPS_SCRIPT_RECOVERY_SECRET?: string;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
+
+  // Complementary external references (must never be required for core flows).
+  EXTERNAL_REFERENCES_ENABLED?: string;
+  EXTERNAL_REFERENCES_BRAPI_BASE_URL?: string;
+  EXTERNAL_REFERENCES_BRAPI_TOKEN?: string;
 }

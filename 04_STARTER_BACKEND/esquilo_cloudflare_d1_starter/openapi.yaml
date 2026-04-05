@@ -349,6 +349,9 @@ components:
               type: string
             externalReferences:
               type: string
+              description: |
+                Complementary external references health. Must never block core flows.
+              enum: [disabled, degraded, ok]
 
     HomeEnvelope:
       allOf:

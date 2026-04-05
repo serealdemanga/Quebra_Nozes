@@ -1,9 +1,11 @@
 import type { Env } from '../types/env';
 import { ok, fail } from '../lib/http';
+import { getExternalReferencesServiceStatus } from '../lib/external_references_service';
 
 export async function getHealth(_request: Request, env: Env): Promise<Response> {
   try {
     await env.DB.prepare('SELECT 1 as ok').first();
+    const externalStatus = await getExternalReferencesServiceStatus(env);
 
     return ok(env.API_VERSION, {
       status: 'ok',
@@ -11,7 +13,7 @@ export async function getHealth(_request: Request, env: Env): Promise<Response> 
       apiVersion: env.API_VERSION,
       services: {
         d1: 'ok',
-        externalReferences: 'unknown'
+        externalReferences: externalStatus
       }
     });
   } catch (error) {

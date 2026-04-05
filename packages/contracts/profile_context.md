@@ -54,7 +54,7 @@ Headers:
     "status": "ok",
     "appEnv": "local",
     "apiVersion": "v1",
-    "services": { "d1": "ok", "externalReferences": "unknown" }
+    "services": { "d1": "ok", "externalReferences": "disabled|degraded|ok" }
   }
 }
 ```
