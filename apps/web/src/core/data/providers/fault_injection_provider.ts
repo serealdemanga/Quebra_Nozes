@@ -94,6 +94,13 @@ export function withFaultInjection(inner: AppDataSources, faults: FaultConfig): 
         return await inner.profile.putProfileContext(input);
       }
     },
+    importsCenter: {
+      async getImportsCenter() {
+        const spec = shouldFail('imports.center');
+        if (spec) return fail(spec);
+        return await inner.importsCenter.getImportsCenter();
+      }
+    },
     imports: {
       async startImport(input) {
         const spec = shouldFail('imports.start');

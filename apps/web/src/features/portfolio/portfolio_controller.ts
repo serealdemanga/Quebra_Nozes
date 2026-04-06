@@ -214,7 +214,7 @@ function buildAssetConcentrations(holdings: PortfolioHolding[], totalEquity: num
     string,
     {
       assetId: string;
-      code: string;
+      code: string | null;
       name: string;
       totalCurrent: number;
       holdingIds: string[];

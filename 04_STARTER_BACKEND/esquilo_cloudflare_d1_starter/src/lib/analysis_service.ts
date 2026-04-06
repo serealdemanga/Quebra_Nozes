@@ -64,7 +64,7 @@ export async function getAnalysisData(request: Request, env: Env): Promise<Respo
     snapshotId: analysis.snapshot_id,
     score: {
       value: Number(analysis.score_value || 0),
-      status: analysis.score_status || 'Calculado',
+      status: translateScoreStatus(analysis.score_status),
       explanation: summaryText || 'Análise consolidada disponível.'
     },
     primaryProblem: {
@@ -112,6 +112,18 @@ function extractSummaryFromMessaging(value: string | null): string {
   } catch {
     return '';
   }
+}
+
+function translateScoreStatus(status: string | null | undefined): string {
+  if (!status) return 'Calculado';
+  const map: Record<string, string> = {
+    saudavel: 'Saudável',
+    ok: 'Ok',
+    atencao_moderada: 'Atenção Moderada',
+    atencao_critica: 'Atenção Crítica',
+    critico: 'Crítico',
+  };
+  return map[status.toLowerCase()] ?? status;
 }
 
 function readCookie(cookieHeader: string, cookieName: string): string {

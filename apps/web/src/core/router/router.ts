@@ -72,6 +72,27 @@ export function createRouter(): Router {
   };
 }
 
+export function tryParseRoute(location: RouterLocationLike): AppRoute | null {
+  const path = normalizePath(location.pathname);
+  if (path === '/') return { id: 'splash' };
+  if (path === '/auth/login') return { id: 'auth_login' };
+  if (path === '/onboarding') return { id: 'onboarding' };
+  if (path === '/home') return { id: 'home' };
+  if (path === '/portfolio') return { id: 'portfolio' };
+  if (path === '/imports') return { id: 'imports' };
+  if (path === '/imports/entry') return { id: 'imports_entry' };
+  if (path === '/profile') return { id: 'profile' };
+  if (path === '/history') return { id: 'history' };
+  if (path === '/history/snapshots') return { id: 'history' };
+  if (path === '/history/timeline') return { id: 'history' };
+  if (path === '/radar') return { id: 'radar' };
+  const holding = matchHoldingDetail(path);
+  if (holding) return holding;
+  const preview = matchImportsPreview(path);
+  if (preview) return preview;
+  return null;
+}
+
 export function isRouteId(id: string): id is RouteId {
   return (
     id === 'splash' ||
@@ -91,7 +112,10 @@ export function isRouteId(id: string): id is RouteId {
 
 function normalizePath(pathname: string): string {
   if (!pathname) return '/';
-  const p = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  let p = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  // strip /app prefix (production serves under /app/)
+  if (p.startsWith('/app/')) p = p.slice(4);
+  else if (p === '/app') p = '/';
   // remove trailing slash (exceto raiz)
   return p.length > 1 ? p.replace(/\/+$/, '') : p;
 }

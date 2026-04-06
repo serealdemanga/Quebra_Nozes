@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { AppDataSources } from '../../core/data/data_sources';
-import type { HoldingDetailData, HoldingDetailDataReady } from '../../core/data/contracts';
+import { ShellLayout } from '../../app/ShellLayout';
+import { formatMoney, formatPct } from '../../core/ops/format';
+import { createHoldingDetailController, type HoldingDetailViewModel } from './holding_detail_controller';
 
 export interface HoldingDetailScreenProps {
   dataSources: AppDataSources;
@@ -10,93 +12,70 @@ export interface HoldingDetailScreenProps {
 }
 
 export function HoldingDetailScreen(props: HoldingDetailScreenProps): JSX.Element {
-  const [state, setState] = useState<
-    | { kind: 'loading' }
-    | { kind: 'error'; message: string }
-    | { kind: 'ready'; data: HoldingDetailData }
-  >({ kind: 'loading' });
+  const [vm, setVm] = useState<HoldingDetailViewModel>({ kind: 'error', message: '' });
+  const [loading, setLoading] = useState(true);
+
+  const controller = useMemo(
+    () => createHoldingDetailController({ holdingDetail: props.dataSources.holdingDetail }),
+    [props.dataSources]
+  );
 
   useEffect(() => {
     let cancelled = false;
-    setState({ kind: 'loading' });
-    (async () => {
-      try {
-        const res = await props.dataSources.holdingDetail.getHoldingDetail(props.input);
-        if (cancelled) return;
-        if (!res.ok) {
-          setState({ kind: 'error', message: `${res.error.code}: ${res.error.message}` });
-          return;
-        }
-        setState({ kind: 'ready', data: res.data });
-      } catch (e) {
-        if (cancelled) return;
-        setState({ kind: 'error', message: e instanceof Error ? e.message : 'Falha ao carregar' });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [props.dataSources, props.input.holdingId, props.input.portfolioId]);
+    setLoading(true);
+    controller.load(props.input).then((result) => {
+      if (cancelled) return;
+      setVm(result.viewModel);
+      setLoading(false);
+    }).catch((e) => {
+      if (cancelled) return;
+      setVm({ kind: 'error', message: e instanceof Error ? e.message : 'Falha ao carregar' });
+      setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [controller, props.input.holdingId, props.input.portfolioId]);
 
   return (
-    <div className="app">
-      <div className="container" style={{ paddingTop: 18, paddingBottom: 28 }}>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img
-              src="/brand/esquilo-icon.png"
-              alt="Esquilo"
-              width={34}
-              height={34}
-              style={{ borderRadius: 12, background: 'rgba(255,255,255,0.85)', boxShadow: 'var(--shadow-1)' }}
-            />
-            <div style={{ fontWeight: 900 }}>Detalhe</div>
-          </div>
-          <button className="btn btnGhost" onClick={props.onBack}>
-            Voltar
-          </button>
-        </header>
-
-        <main style={{ marginTop: 14, display: 'grid', gap: 12 }}>
-          {state.kind === 'loading' ? (
-            <div className="card" style={{ padding: 16 }}>
-              Carregando...
-            </div>
-          ) : state.kind === 'error' ? (
-            <div className="card" style={{ padding: 16 }}>
-              <div style={{ fontWeight: 900, marginBottom: 6 }}>Nao foi possivel carregar</div>
-              <div style={{ color: 'var(--c-slate)' }}>{state.message}</div>
-            </div>
-          ) : (
-            <HoldingDetailContent data={state.data} onOpenExternal={props.onOpenExternal} />
-          )}
-        </main>
-      </div>
-    </div>
+    <ShellLayout
+      title="Detalhe"
+      activeRouteId="holding_detail"
+      onNavigate={props.onBack}
+      rightSlot={
+        <button className="btn btnGhost" onClick={props.onBack}>
+          Voltar
+        </button>
+      }
+    >
+      {loading ? (
+        <div className="card" style={{ padding: 16 }}>Carregando...</div>
+      ) : vm.kind === 'error' ? (
+        <div className="card" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Nao foi possivel carregar</div>
+          <div style={{ color: 'var(--c-slate)' }}>{vm.message}</div>
+        </div>
+      ) : vm.kind === 'redirect_onboarding' ? (
+        <div className="card" style={{ padding: 16 }}>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Antes de tudo</div>
+          <div style={{ color: 'var(--c-slate)' }}>Complete seu contexto para personalizar a leitura.</div>
+        </div>
+      ) : (
+        <HoldingDetailReady vm={vm} onOpenExternal={props.onOpenExternal} />
+      )}
+    </ShellLayout>
   );
 }
 
-function HoldingDetailContent(props: { data: HoldingDetailData; onOpenExternal(url: string): void }): JSX.Element {
-  const d = props.data;
-
-  if (d.screenState === 'redirect_onboarding') {
-    return (
-      <div className="card" style={{ padding: 16 }}>
-        <div style={{ fontWeight: 900, marginBottom: 6 }}>Antes de tudo</div>
-        <div style={{ color: 'var(--c-slate)' }}>Complete seu contexto para personalizar a leitura.</div>
-      </div>
-    );
-  }
-
-  return <HoldingDetailReady data={d} onOpenExternal={props.onOpenExternal} />;
-}
-
-function HoldingDetailReady(props: { data: HoldingDetailDataReady; onOpenExternal(url: string): void }): JSX.Element {
-  const h = props.data.holding;
+function HoldingDetailReady(props: {
+  vm: Extract<HoldingDetailViewModel, { kind: 'ready' }>;
+  onOpenExternal(url: string): void;
+}): JSX.Element {
+  const { vm } = props;
+  const h = vm.holding;
   const perfPct = h.performancePct ?? null;
 
   return (
-    <>
+    <div style={{ display: 'grid', gap: 12 }}>
+      {/* Cabecalho do ativo */}
       <section className="card" style={{ padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'baseline' }}>
           <div>
@@ -105,9 +84,7 @@ function HoldingDetailReady(props: { data: HoldingDetailDataReady; onOpenExterna
               {h.name}
             </div>
             <div style={{ marginTop: 6, color: 'var(--c-slate)', fontSize: 12 }}>
-              {h.categoryLabel}
-              {h.platformName ? ` • ${h.platformName}` : ''}
-              {h.sourceKind ? ` • ${h.sourceKind}` : ''}
+              {vm.summary.subline}
             </div>
           </div>
           <div style={{ textAlign: 'right', color: 'var(--c-slate)', fontSize: 12 }}>
@@ -124,36 +101,76 @@ function HoldingDetailReady(props: { data: HoldingDetailDataReady; onOpenExterna
             tone={perfPct == null ? 'neutral' : perfPct >= 0 ? 'good' : 'bad'}
             hint={h.allocationPct != null ? `Peso: ${formatPct(h.allocationPct)}` : undefined}
           />
-          <Kpi label="Score" value={String(props.data.ranking.score)} hint={props.data.ranking.status} />
+          <Kpi label="Score" value={String(vm.ranking.score)} hint={vm.ranking.status} />
         </div>
+
+        {/* Papel do ativo na carteira (roleMessage) — feature das branches */}
+        {vm.summary.roleMessage ? (
+          <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(11,18,24,0.08)', color: 'var(--c-slate)', fontSize: 13, lineHeight: 1.55 }}>
+            {vm.summary.roleMessage}
+          </div>
+        ) : null}
       </section>
 
+      {/* Sinais de atencao — feature das branches */}
+      {vm.attentionSignals.length > 0 ? (
+        <section className="card" style={{ padding: 16, borderColor: 'rgba(232,92,92,0.35)' }}>
+          <div style={{ fontWeight: 900, marginBottom: 10 }}>Pontos de atencao</div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {vm.attentionSignals.map((s) => (
+              <div key={s.code} style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(232,92,92,0.07)', border: '1px solid rgba(232,92,92,0.2)' }}>
+                <div style={{ fontWeight: 900, fontSize: 13 }}>{s.title}</div>
+                <div style={{ marginTop: 4, color: 'var(--c-slate)', fontSize: 13, lineHeight: 1.5 }}>{s.body}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Sinais positivos — feature das branches */}
+      {vm.positiveSignals.length > 0 ? (
+        <section className="card" style={{ padding: 16, borderColor: 'rgba(111,207,151,0.35)' }}>
+          <div style={{ fontWeight: 900, marginBottom: 10 }}>Pontos positivos</div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {vm.positiveSignals.map((s) => (
+              <div key={s.code} style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(111,207,151,0.07)', border: '1px solid rgba(111,207,151,0.2)' }}>
+                <div style={{ fontWeight: 900, fontSize: 13 }}>{s.title}</div>
+                <div style={{ marginTop: 4, color: 'var(--c-slate)', fontSize: 13, lineHeight: 1.5 }}>{s.body}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Recomendacao */}
       <section className="card" style={{ padding: 16, borderColor: 'rgba(245,106,42,0.35)' }}>
         <div style={{ fontWeight: 900, marginBottom: 6 }}>Recomendacao</div>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: -0.2 }}>{props.data.recommendation.title}</div>
-        <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.55 }}>{props.data.recommendation.body}</div>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: -0.2 }}>{vm.recommendation.title}</div>
+        <div style={{ marginTop: 6, color: 'var(--c-slate)', lineHeight: 1.55 }}>{vm.recommendation.body}</div>
       </section>
 
+      {/* Contexto da categoria */}
       <section className="card" style={{ padding: 16 }}>
         <div style={{ fontWeight: 900, marginBottom: 10 }}>Contexto da categoria</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-          <Kpi label="Categoria" value={props.data.categoryContext.categoryLabel} hint={`Risco: ${props.data.categoryContext.categoryRisk}`} />
-          <Kpi label="Total atual" value={formatMoney(props.data.categoryContext.totalCurrent)} hint={`${props.data.categoryContext.holdingsCount} holdings`} />
-          <Kpi label="P&L" value={`${formatMoney(props.data.categoryContext.totalProfitLoss)} (${formatPct(props.data.categoryContext.totalProfitLossPct)})`} />
+          <Kpi label="Categoria" value={vm.categoryContext.categoryLabel} hint={`Risco: ${vm.categoryContext.categoryRisk}`} />
+          <Kpi label="Total atual" value={formatMoney(vm.categoryContext.totalCurrent)} hint={`${vm.categoryContext.holdingsCount} holdings`} />
+          <Kpi label="P&L" value={`${formatMoney(vm.categoryContext.totalProfitLoss)} (${formatPct(vm.categoryContext.totalProfitLossPct)})`} />
         </div>
-        <div style={{ marginTop: 10, color: 'var(--c-slate)', lineHeight: 1.55 }}>{props.data.categoryContext.primaryMessage}</div>
+        <div style={{ marginTop: 10, color: 'var(--c-slate)', lineHeight: 1.55 }}>{vm.categoryContext.primaryMessage}</div>
       </section>
 
-      {props.data.externalLink ? (
+      {/* Link externo */}
+      {vm.externalLink ? (
         <section className="card" style={{ padding: 16 }}>
           <div style={{ fontWeight: 900, marginBottom: 8 }}>Link externo</div>
-          <button className="btn btnGhost" onClick={() => props.onOpenExternal(props.data.externalLink!)}>
+          <button className="btn btnGhost" onClick={() => props.onOpenExternal(vm.externalLink!)}>
             Abrir cotacao / referencia
           </button>
-          <div style={{ marginTop: 8, fontSize: 12, color: 'var(--c-slate)' }}>{props.data.externalLink}</div>
+          <div style={{ marginTop: 8, fontSize: 12, color: 'var(--c-slate)' }}>{vm.externalLink}</div>
         </section>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -168,19 +185,5 @@ function Kpi(props: { label: string; value: string; hint?: string; tone?: 'neutr
       {props.hint ? <div style={{ marginTop: 4, fontSize: 12, color: 'var(--c-slate)' }}>{props.hint}</div> : null}
     </div>
   );
-}
-
-function formatMoney(v: number): string {
-  try {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-  } catch {
-    return `R$ ${v.toFixed(2)}`;
-  }
-}
-
-function formatPct(v: number): string {
-  const n = Math.round(v * 100) / 100;
-  const s = (n >= 0 ? `+${n}` : String(n)).replace('.', ',');
-  return `${s}%`;
 }
 

@@ -114,7 +114,8 @@ export function OnboardingScreen(props: OnboardingScreenProps): JSX.Element {
       if (!ok) return;
     }
     if (current.id === 'confirm') {
-      // Backend nao tem etapa `confirm` hoje; aqui e so uma revisao final sem roundtrip.
+      const ok = await saveStep('confirm', context);
+      if (!ok) return;
       props.onDone();
       return;
     }

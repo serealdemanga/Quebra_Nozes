@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { AppDataSources } from '../../core/data/data_sources';
 import type { ImportsCenterData, ImportsCenterImportItem } from '../../core/data/contracts';
 import { ShellLayout } from '../../app/ShellLayout';
+import { formatDateTime } from '../../core/ops/format';
 
 export interface ImportsCenterScreenProps {
   dataSources: AppDataSources;
@@ -151,13 +152,4 @@ function Kpi(props: { label: string; value: string }): JSX.Element {
   );
 }
 
-function formatDateTime(input: string | null): string {
-  if (!input) return '—';
-  try {
-    const d = new Date(input);
-    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
-  } catch {
-    return input;
-  }
-}
 

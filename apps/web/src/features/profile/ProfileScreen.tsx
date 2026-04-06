@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { AppDataSources } from '../../core/data/data_sources';
 import type { ProfileContextPayload, ProfilePlatformsUsed } from '../../core/data/contracts';
 import { ShellLayout } from '../../app/ShellLayout';
+import { createProfileController } from './profile_controller';
 
 export interface ProfileScreenProps {
   dataSources: AppDataSources;
@@ -35,51 +36,44 @@ export function ProfileScreen(props: ProfileScreenProps): JSX.Element {
 
   const normalizedDraft = useMemo(() => normalizeContextForUi(draft), [draft]);
 
+  const controller = useMemo(
+    () => createProfileController({ profile: props.dataSources.profile }),
+    [props.dataSources]
+  );
+
   useEffect(() => {
     let cancelled = false;
     setState({ kind: 'loading' });
-    (async () => {
-      try {
-        const res = await props.dataSources.profile.getProfileContext();
-        if (cancelled) return;
-        if (!res.ok) {
-          setState({ kind: 'error', message: `${res.error.code}: ${res.error.message}` });
-          return;
-        }
-        if (!res.data.onboarding?.completed) {
-          setState({ kind: 'blocked_onboarding' });
-          return;
-        }
-        setDraft(res.data.context ?? EMPTY_CONTEXT);
-        setState({ kind: 'ready' });
-      } catch (e) {
-        if (cancelled) return;
-        setState({ kind: 'error', message: e instanceof Error ? e.message : 'Falha ao carregar perfil' });
+    controller.load().then((res) => {
+      if (cancelled) return;
+      if (!res.ok) {
+        setState({ kind: 'error', message: `${res.error.code}: ${res.error.message}` });
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [props.dataSources]);
+      if (!res.data.onboarding?.completed) {
+        setState({ kind: 'blocked_onboarding' });
+        return;
+      }
+      setDraft(res.data.context ?? EMPTY_CONTEXT);
+      setState({ kind: 'ready' });
+    }).catch((e) => {
+      if (cancelled) return;
+      setState({ kind: 'error', message: e instanceof Error ? e.message : 'Falha ao carregar perfil' });
+    });
+    return () => { cancelled = true; };
+  }, [controller]);
 
   async function save(): Promise<void> {
     setSaving(true);
     setSaveError(null);
-    try {
-      // Backend exige um step valido; usamos income_horizon como "passo neutro" e mandamos o draft completo.
-      // Isso evita roundtrip por clique e mantem compatibilidade com as validacoes existentes.
-      const res = await props.dataSources.profile.putProfileContext({ step: 'income_horizon', context: normalizeContextForApi(draft) });
-      if (!res.ok) {
-        setSaveError(`${res.error.code}: ${res.error.message}`);
-        setSaving(false);
-        return;
-      }
-      setDraft(res.data.context ?? draft);
+    const result = await controller.save(normalizeContextForApi(draft));
+    if (!result.ok) {
+      setSaveError(result.message);
       setSaving(false);
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'Falha ao salvar');
-      setSaving(false);
+      return;
     }
+    setDraft(result.data.context ?? draft);
+    setSaving(false);
   }
 
   return (

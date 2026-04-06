@@ -31,11 +31,8 @@ export function createDataSources(input: DataSourceFactoryInput): AppDataSources
     });
   }
 
-  if (!input.httpBaseUrl) {
-    throw new Error('httpBaseUrl is required when mode=http');
-  }
-
-  return createHttpDataSources({ baseUrl: input.httpBaseUrl });
+  // httpBaseUrl defaults to same origin (empty string) for same-origin deployments
+  return createHttpDataSources({ baseUrl: input.httpBaseUrl ?? '' });
 }
 
 function resolveMode(appEnv: AppEnv, mode: DataSourceMode | undefined): Exclude<DataSourceMode, 'auto'> {

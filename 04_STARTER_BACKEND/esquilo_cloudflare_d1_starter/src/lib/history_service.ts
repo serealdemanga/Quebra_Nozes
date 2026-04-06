@@ -61,7 +61,7 @@ export async function getHistorySnapshotsData(request: Request, env: Env): Promi
         createdAt: snapshot.created_at,
         analysisBadge: badge ? {
           scoreValue: badge.score_value == null ? null : Number(badge.score_value),
-          status: badge.score_status || 'Análise disponível',
+          status: translateScoreStatus(badge.score_status),
           primaryProblem: badge.primary_problem || '',
           primaryAction: badge.primary_action || ''
         } : null
@@ -138,17 +138,19 @@ export async function getHistoryTimelineData(request: Request, env: Env): Promis
     };
   });
 
-  const eventItems = events.map((evt) => {
-    return {
-      kind: 'event' as const,
-      id: evt.id,
-      occurredAt: evt.occurredAt,
-      portfolioId: evt.portfolioId,
-      type: evt.type,
-      status: evt.status,
-      message: evt.message
-    };
-  });
+  const eventItems = events
+    .filter((evt) => evt.type !== 'auth_login')
+    .map((evt) => {
+      return {
+        kind: 'event' as const,
+        id: evt.id,
+        occurredAt: evt.occurredAt,
+        portfolioId: evt.portfolioId,
+        type: evt.type,
+        status: evt.status,
+        message: evt.message
+      };
+    });
 
   const items = [...snapshotItems, ...eventItems]
     .sort((a, b) => {
@@ -174,6 +176,18 @@ export async function getHistoryTimelineData(request: Request, env: Env): Promis
     },
     items
   });
+}
+
+function translateScoreStatus(status: string | null | undefined): string {
+  if (!status) return 'Análise disponível';
+  const map: Record<string, string> = {
+    saudavel: 'Saudável',
+    ok: 'Ok',
+    atencao_moderada: 'Atenção Moderada',
+    atencao_critica: 'Atenção Crítica',
+    critico: 'Crítico',
+  };
+  return map[status.toLowerCase()] ?? status;
 }
 
 function readCookie(cookieHeader: string, cookieName: string): string {

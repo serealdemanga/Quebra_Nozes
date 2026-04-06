@@ -128,7 +128,7 @@ export async function getDashboardHomeData(request: Request, env: Env): Promise<
     messagingJson: analysis.messaging_json,
     promptData: {
       scoreValue: Number(analysis.score_value || 0),
-      scoreStatus: analysis.score_status || 'Calculado',
+      scoreStatus: translateScoreStatus(analysis.score_status),
       primaryProblemTitle,
       primaryActionTitle,
       totals: {
@@ -147,7 +147,7 @@ export async function getDashboardHomeData(request: Request, env: Env): Promise<
       totalInvested: Number(snapshot.total_invested || 0),
       totalProfitLoss: Number(snapshot.total_profit_loss || 0),
       totalProfitLossPct: Number(snapshot.total_profit_loss_pct || 0),
-      statusLabel: analysis.score_status || 'Analise concluida'
+      statusLabel: translateScoreStatus(analysis.score_status)
     },
     primaryProblem: {
       code: analysis.primary_problem || 'analysis_ready',
@@ -164,7 +164,7 @@ export async function getDashboardHomeData(request: Request, env: Env): Promise<
     },
     score: {
       value: Number(analysis.score_value || 0),
-      status: analysis.score_status || 'Calculado',
+      status: translateScoreStatus(analysis.score_status),
       explanation: analysis.summary_text || 'Analise consolidada disponivel.'
     },
     distribution,
@@ -178,6 +178,18 @@ export async function getDashboardHomeData(request: Request, env: Env): Promise<
   };
 
   return ok(env.API_VERSION, readyData);
+}
+
+function translateScoreStatus(status: string | null | undefined): string {
+  if (!status) return 'Calculado';
+  const map: Record<string, string> = {
+    saudavel: 'Saudável',
+    ok: 'Ok',
+    atencao_moderada: 'Atenção Moderada',
+    atencao_critica: 'Atenção Crítica',
+    critico: 'Crítico',
+  };
+  return map[status.toLowerCase()] ?? status;
 }
 
 function readCookie(cookieHeader: string, cookieName: string): string {

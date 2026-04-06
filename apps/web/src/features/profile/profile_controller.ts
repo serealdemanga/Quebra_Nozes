@@ -1,11 +1,11 @@
-import type { ProfileContextPayload, ProfileContextPutData } from '../../core/data/contracts';
+import type { ApiProfileContextGetEnvelope, ProfileContextPayload, ProfileContextPutData } from '../../core/data/contracts';
 import type { ProfileDataSource } from '../../core/data/data_sources';
 
 export type ProfilePatch = Partial<ProfileContextPayload>;
 
 export interface ProfileController {
-  load(): ReturnType<ProfileDataSource['getProfileContext']>;
-  save(patch: ProfilePatch): Promise<{ ok: boolean; data?: ProfileContextPutData }>;
+  load(): Promise<ApiProfileContextGetEnvelope>;
+  save(patch: ProfilePatch): Promise<{ ok: true; data: ProfileContextPutData } | { ok: false; message: string }>;
 }
 
 /**
@@ -21,7 +21,7 @@ export function createProfileController(input: { profile: ProfileDataSource }): 
     },
     async save(patch) {
       const result = await profile.putProfileContext({ context: sanitizePatch(patch) });
-      if (!result.ok) return { ok: false };
+      if (!result.ok) return { ok: false, message: `${result.error.code}: ${result.error.message}` };
       return { ok: true, data: result.data };
     }
   };

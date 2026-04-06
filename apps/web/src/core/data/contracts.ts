@@ -12,60 +12,6 @@ export type EmptyState = {
   target: string;
 };
 
-// ===== Imports =====
-
-export type ImportTotals = {
-  totalRows: number;
-  validRows: number;
-  invalidRows: number;
-  duplicateRows: number;
-};
-
-export type ImportStartData = {
-  importId: string;
-  status: string;
-  nextStep: string;
-  importable: boolean;
-  totals?: ImportTotals;
-  document?: unknown | null;
-};
-
-export type ImportPreviewRow = {
-  id: string;
-  rowNumber: number;
-  source: Record<string, unknown>;
-  normalized: Record<string, unknown>;
-  resolutionStatus: string;
-  errorMessage: string | null;
-  fieldSources: Record<string, unknown>;
-  fieldConfidences: Record<string, unknown>;
-  warnings: unknown[];
-  reviewMeta: Record<string, unknown>;
-};
-
-export type ImportPreviewData = {
-  importId: string;
-  status: string;
-  origin: string;
-  readyToCommit: boolean;
-  importable: boolean;
-  totals?: ImportTotals;
-  document?: unknown | null;
-  rows: ImportPreviewRow[];
-};
-
-export type ImportCommitData = {
-  importId: string;
-  status: string;
-  createdSnapshotId: string;
-  affectedPositions: number;
-  nextStep: string;
-};
-
-export type ApiImportStartEnvelope = ApiEnvelope<ImportStartData>;
-export type ApiImportPreviewEnvelope = ApiEnvelope<ImportPreviewData>;
-export type ApiImportCommitEnvelope = ApiEnvelope<ImportCommitData>;
-
 // ===== Analysis (Radar) =====
 
 export type AnalysisPendingData = {

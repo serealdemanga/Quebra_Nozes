@@ -1,0 +1,1 @@
+const e=!0,a={requestId:"req_local_health",timestamp:"2026-03-31T01:00:00Z",version:"v1"},t={status:"ok",appEnv:"local",services:{database:"ok",analysis:"ok"}},s={ok:!0,meta:a,data:t};export{t as data,s as default,a as meta,e as ok};

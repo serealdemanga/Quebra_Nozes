@@ -1,0 +1,1 @@
+const o=!0,e={requestId:"req_hml_home",timestamp:"2026-03-31T01:00:00Z",version:"v1"},t={screenState:"redirect_onboarding",redirectTo:"/onboarding"},a={ok:!0,meta:e,data:t};export{t as data,a as default,e as meta,o as ok};

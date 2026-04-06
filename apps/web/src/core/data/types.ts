@@ -4,6 +4,7 @@ export interface ApiMeta {
   requestId: string;
   timestamp: string;
   version: string;
+  sourceWarning?: string | null;
 }
 
 export interface ApiError {
